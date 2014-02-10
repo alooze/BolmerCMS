@@ -50,8 +50,8 @@ class DataGrid {
         var $pagerClass;
 	var $noRecordMsg = "No records found.";
 
-	function DataGrid($id,$ds,$pageSize=20,$pageNumber=-1) {		
-		global $__DataGridCnt;
+	function DataGrid($id,$ds,$pageSize=20,$pageNumber=-1) {
+        global $__DataGridCnt;
 		
 		// set id
 		$__DataGridCnt++;
@@ -159,8 +159,7 @@ class DataGrid {
 
 		$this->_alt = 0;
 		$this->_total = 0;
-				
-		$this->_isDataset = is_resource($this->ds); // if not dataset then treat as array
+		$this->_isDataset = is_object($this->ds); // if not dataset then treat as array
 
 		if(!$cssStyle && !$cssClass) $cssStyle = "style='width:100%;border:1px solid silver;font-family:verdana,arial; font-size:11px;'";
 		if(!$columnHeaderStyle && !$columnHeaderClass) $columnHeaderStyle = "style='color:black;background-color:silver'";
