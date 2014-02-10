@@ -154,7 +154,7 @@ class DBAPI{
                 $db = trim($dbTable[0], '`');
                 //ORM::set_db($db);
                 /* @TODO: select DB */
-            }
+            };
         }
         $out = trim($table, '`');
         return $out;
@@ -174,24 +174,15 @@ class DBAPI{
      * @TODO вернуть старый билдер запросов
      */
     function select($fields = "*", $from = "", $where = "", $orderby = "", $limit = "") {
-        if(empty($from)) return false;
-
-        $q = ORM::for_table($this->_getTable($from));
-
-        $fields = explode(",", $fields);
-        if(!empty($fields)){
-            $q->select_many_expr($fields);
+        if (!$from)
+            return false;
+        else {
+            $from = $this->replaceFullTableName($from);
+            $where = ($where != "") ? "WHERE $where" : "";
+            $orderby = ($orderby != "") ? "ORDER BY $orderby " : "";
+            $limit = ($limit != "") ? "LIMIT $limit" : "";
+            return $this->query("SELECT $fields FROM $from $where $orderby $limit");
         }
-        if(!empty($where)){
-            $q->where_raw($where);
-        }
-        if(!empty($orderby)){
-            $q->order_by_expr($orderby);
-        }
-        if(!empty($limit)){
-            $q->limit($limit);
-        }
-        return $q->build_statement();
     }
     function insert($fields, $intotable, $fromfields = "*", $fromtable = "", $where = "", $limit = "") {
         if(empty($intotable)) return false;

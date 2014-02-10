@@ -61,7 +61,7 @@ $modx->invokeEvent("OnBeforeManagerLogin",
                             "rememberme"    => $rememberme
                         ));
 $fields = 'mu.*, ua.*';
-$from   = "{$tbl_manager_users} mu, {$tbl_user_attributes} ua";
+$from   = "{$tbl_manager_users} as mu, {$tbl_user_attributes} as ua";
 $where  = "BINARY mu.username='{$username}' and ua.internalKey=mu.id";
 $rs = $modx->db->select($fields, $from,$where);
 $limit = $modx->db->getRecordCount($rs);
