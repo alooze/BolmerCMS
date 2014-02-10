@@ -58,7 +58,10 @@ class DocumentParser {
     var $pluginsTime=array();
     var $aliasListing;
     private $version=array();
-
+    /**
+     * @var \MODxCore\Pimple
+     */
+    protected $_pimple = null;
     /**
      * Document constructor
      *
@@ -67,10 +70,27 @@ class DocumentParser {
     public function __construct() {
         $pimple = \MODxCore\Pimple::getInstance();
         $pimple['modx'] = $this;
+        $pimple['db'] = $pimple->share(function($inj){
+            return $inj['modx']->db;
+        });
+        $pimple['config'] = $pimple->share(function($inj){
+            return $inj['modx']->config;
+        });
+        $pimple['Response'] = $pimple->share(function($inj){
+            return new \MODxCore\Response($inj);
+        });
+        $pimple['HTML'] = $pimple->share(function($inj){
+            return new \MODxCore\HTML($inj);
+        });
+        $pimple['snippet'] = $pimple->share(function($inj){
+            return new \MODxCore\Parser\Snippet($inj);
+        });
 
         if(substr(PHP_OS,0,3) === 'WIN' && $pimple['global_config']['database_server']==='localhost'){
             $pimple['global_config']['database_server'] = '127.0.0.1';
         }
+        $this->_pimple = $pimple;
+
         $this->loadExtension('DBAPI') or die('Could not load DBAPI class.'); // load DBAPI class
         $this->dbConfig = &$this->db->config; // alias for backward compatibility
         $this->jscripts = array ();
@@ -146,112 +166,17 @@ class DocumentParser {
     function getMicroTime() {
         return \MODxCore\Helper::getMicroTime();
     }
-
-    /**
-     * Redirect
-     *
-     * @global string $base_url
-     * @global string $site_url
-     * @param string $url
-     * @param int $count_attempts
-     * @param type $type
-     * @param type $responseCode
-     * @return boolean
-     */
     function sendRedirect($url, $count_attempts= 0, $type= '', $responseCode= '') {
-        if (empty ($url)) {
-            return false;
-        } else {
-            if ($count_attempts == 1) {
-                // append the redirect count string to the url
-                $currentNumberOfRedirects= isset ($_REQUEST['err']) ? $_REQUEST['err'] : 0;
-                if ($currentNumberOfRedirects > 3) {
-                    $this->messageQuit('Redirection attempt failed - please ensure the document you\'re trying to redirect to exists. <p>Redirection URL: <i>' . $url . '</i></p>');
-                } else {
-                    $currentNumberOfRedirects += 1;
-                    if (strpos($url, "?") > 0) {
-                        $url .= "&err=$currentNumberOfRedirects";
-                    } else {
-                        $url .= "?err=$currentNumberOfRedirects";
-                    }
-                }
-            }
-            if ($type == 'REDIRECT_REFRESH') {
-                $header= 'Refresh: 0;URL=' . $url;
-            }
-            elseif ($type == 'REDIRECT_META') {
-                $header= '<META HTTP-EQUIV="Refresh" CONTENT="0; URL=' . $url . '" />';
-                echo $header;
-                exit;
-            }
-            elseif ($type == 'REDIRECT_HEADER' || empty ($type)) {
-                // check if url has /$base_url
-                global $base_url, $site_url;
-                if (substr($url, 0, strlen($base_url)) == $base_url) {
-                    // append $site_url to make it work with Location:
-                    $url= $site_url . substr($url, strlen($base_url));
-                }
-                if (strpos($url, "\n") === false) {
-                    $header= 'Location: ' . $url;
-                } else {
-                    $this->messageQuit('No newline allowed in redirect url.');
-                }
-            }
-            if ($responseCode && (strpos($responseCode, '30') !== false)) {
-                header($responseCode);
-            }
-            header($header);
-            exit();
-        }
+        return $this->_pimple['Response']->sendRedirect($url, $count_attempts, $type, $responseCode);
     }
-
-    /**
-     * Forward to another page
-     *
-     * @param int $id
-     * @param string $responseCode
-     */
     function sendForward($id, $responseCode= '') {
-        if ($this->forwards > 0) {
-            $this->forwards= $this->forwards - 1;
-            $this->documentIdentifier= $id;
-            $this->documentMethod= 'id';
-            $this->documentObject= $this->getDocumentObject('id', $id);
-            if ($responseCode) {
-                header($responseCode);
-            }
-            $this->prepareResponse();
-            exit();
-        } else {
-            header('HTTP/1.0 500 Internal Server Error');
-            die('<h1>ERROR: Too many forward attempts!</h1><p>The request could not be completed due to too many unsuccessful forward attempts.</p>');
-        }
+        return $this->_pimple['Response']->sendForward($id, $responseCode);
     }
-
-    /**
-     * Redirect to the error page, by calling sendForward(). This is called for example when the page was not found.
-     */
     function sendErrorPage() {
-        // invoke OnPageNotFound event
-        $this->invokeEvent('OnPageNotFound');
-        $url = $this->getConfig('error_page', $this->getConfig('site_start'));
-        $this->sendForward($url, 'HTTP/1.0 404 Not Found');
-        exit();
+        return $this->_pimple['Response']->sendErrorPage();
     }
-
     function sendUnauthorizedPage() {
-        // invoke OnPageUnauthorized event
-        $_REQUEST['refurl'] = $this->documentIdentifier;
-        $this->invokeEvent('OnPageUnauthorized');
-        if ($this->getConfig('unauthorized_page')) {
-            $unauthorizedPage= $this->getConfig('unauthorized_page');
-        } elseif ($this->getConfig('error_page')) {
-            $unauthorizedPage= $this->getConfig('error_page');
-        } else {
-            $unauthorizedPage= $this->getConfig('site_start');
-        }
-        $this->sendForward($unauthorizedPage, 'HTTP/1.1 401 Unauthorized');
-        exit();
+        $this->_pimple['Response']->sendUnauthorizedPage();
     }
 
     /**
@@ -950,251 +875,13 @@ class DocumentParser {
         unset($modx->event->params);
     }
 
-    /**
-     * Run a snippet
-     *
-     * @param string $snippet Code to run
-     * @param array $params
-     * @return string
-     */
     function evalSnippet($snippet, $params) {
-        $etomite = $modx = & $this;
-        $modx->event->params = & $params; // store params inside event object
-        if (is_array($params)) {
-            extract($params, EXTR_SKIP);
-        }
-        ob_start();
-        $snip = eval($snippet);
-        $msg = ob_get_contents();
-        ob_end_clean();
-        if ((0 < $this->getConfig('error_reporting')) && isset($php_errormsg)) {
-            $error_info = error_get_last();
-            if ($this->detectError($error_info['type'])) {
-                extract($error_info);
-                $msg = ($msg === false) ? 'ob_get_contents() error' : $msg;
-                $result = $this->messageQuit('PHP Parse Error', '', true, $type, $file, 'Snippet', $text, $line, $msg);
-                if ($this->isBackend()) {
-                    $this->event->alert('An error occurred while loading. Please see the event log for more information<p>' . $msg . $snip . '</p>');
-                }
-            }
-        }
-        unset($modx->event->params);
-        $this->currentSnippet = '';
-        if (is_array($snip) || is_object($snip)) {
-            return $snip;
-        } else {
-            return $msg . $snip;
-        }
+        return $this->_pimple['snippet']->evalSnippet($snippet, $params);
     }
 
-    /**
-     * Run snippets as per the tags in $documentSource and replace the tags with the returned values.
-     *
-     * @param string $documentSource
-     * @return string
-     */
     function evalSnippets($documentSource) {
-        if(strpos($documentSource,'[[')===false) return $documentSource;
-        $etomite= & $this;
-
-        $stack = $documentSource;
-        unset($documentSource);
-
-
-        $passes = $this->minParserPasses;
-
-        for($i= 0; $i < $passes; $i++)
-        {
-            $stack=$this->mergeSettingsContent($stack);
-            if($i == ($passes -1)) $bt = md5($stack);
-            $pieces = array();
-            $pieces = explode('[[', $stack);
-            $stack = '';
-            $loop_count = 0;
-
-            foreach($pieces as $piece)
-            {
-                if($loop_count < 1)                 $result = $piece;
-                elseif(strpos($piece,']]')===false) $result = '[[' . $piece;
-                else                                $result = $this->_get_snip_result($piece);
-
-                $stack .= $result;
-                $loop_count++; // End of foreach loop
-            }
-            if($i == ($passes -1) && $i < ($this->maxParserPasses - 1))
-            {
-                if($bt != md5($stack)) $passes++;
-            }
-        }
-        return $stack;
+       return $this->_pimple['snippet']->evalSnippets($documentSource);
     }
-
-    private function _get_snip_result($piece)
-    {
-        if ($this->dumpSnippets == 1) $sniptime = $this->getMicroTime();
-        $snip_call        = $this->_split_snip_call($piece);
-        $snip_name        = $snip_call['name'];
-        $except_snip_call = $snip_call['except_snip_call'];
-
-        $key = $snip_call['name'];
-
-        $snippetObject = $this->_get_snip_properties($snip_call);
-
-        $params   = array ();
-        $this->currentSnippet = $snippetObject['name'];
-
-        if(isset($snippetObject['properties'])) $params = $this->parseProperties($snippetObject['properties']);
-        else                                    $params = '';
-        // current params
-        if(!empty($snip_call['params']))
-        {
-            $snip_call['params'] = ltrim($snip_call['params'], '?');
-
-            $i = 0;
-            $limit = 50;
-            $params_stack = $snip_call['params'];
-            while(!empty($params_stack) && $i < $limit)
-            {
-                if(strpos($params_stack,'=')!==false) list($pname,$params_stack) = explode('=',$params_stack,2);
-                else {
-                    $pname=$params_stack;
-                    $params_stack = '';
-                }
-                $params_stack = trim($params_stack);
-                $delim = substr($params_stack, 0, 1);
-                $temp_params = array();
-                switch($delim)
-                {
-                    case '`':
-                    case '"':
-                    case "'":
-                        $params_stack = substr($params_stack,1);
-                        list($pvalue,$params_stack) = explode($delim,$params_stack,2);
-                        $params_stack = trim($params_stack);
-                        if(substr($params_stack, 0, 2)==='//')
-                        {
-                            $params_stack = strstr($params_stack, "\n");
-                        }
-                        break;
-                    default:
-                        if(strpos($params_stack, '&')!==false)
-                        {
-                            list($pvalue,$params_stack) = explode('&',$params_stack,2);
-                        }
-                        else $pvalue = $params_stack;
-                        $pvalue = trim($pvalue);
-                        $delim = '';
-                }
-                if($delim !== "'")
-                {
-                    $pvalue = (strpos($pvalue,'[*')!==false) ? $this->mergeDocumentContent($pvalue) : $pvalue;
-                    $pvalue = (strpos($pvalue,'[(')!==false) ? $this->mergeSettingsContent($pvalue) : $pvalue;
-                    $pvalue = (strpos($pvalue,'{{')!==false) ? $this->mergeChunkContent($pvalue)    : $pvalue;
-                    $pvalue = (strpos($pvalue,'[+')!==false) ? $this->mergePlaceholderContent($pvalue) : $pvalue;
-                }
-
-                $pname  = str_replace('&amp;', '', $pname);
-                $pname  = trim($pname);
-                $pname  = trim($pname,'&');
-                $params[$pname] = $pvalue;
-                $params_stack = trim($params_stack);
-                if($params_stack!=='') $params_stack = '&' . ltrim($params_stack,'&');
-                $i++;
-            }
-            unset($temp_params);
-        }
-        $value = $this->evalSnippet($snippetObject['content'], $params);
-
-        if($this->dumpSnippets == 1)
-        {
-            $sniptime = $this->getMicroTime() - $sniptime;
-            $this->snippetsCode .= '<fieldset><legend><b>' . $snippetObject['name'] . '</b> (' . sprintf('%2.2f ms', $sniptime*1000) . ')</legend>';
-            if ($this->event->name) $this->snippetsCode .= 'Current Event  => ' . $this->event->name . '<br>';
-            if ($this->event->activePlugin) $this->snippetsCode .= 'Current Plugin => ' . $this->event->activePlugin . '<br>';
-            foreach ($params as $k=>$v) $this->snippetsCode .=  $k . ' => ' . print_r($v, true) . '<br>';
-            $this->snippetsCode .= '<textarea style="width:60%;height:200px">' . htmlentities($value,ENT_NOQUOTES,$this->getConfig('modx_charset')) . '</textarea>';
-            $this->snippetsCode .= '</fieldset><br />';
-            $this->snippetsCount[$snippetObject['name']]++;
-            $this->snippetsTime[$snippetObject['name']] += $sniptime;
-        }
-        return $value . $except_snip_call;
-    }
-
-    private function _split_snip_call($src)
-    {
-        list($call,$snip['except_snip_call']) = explode(']]', $src, 2);
-        if(strpos($call, '?') !== false && strpos($call, "\n")!==false && strpos($call, '?') < strpos($call, "\n"))
-        {
-            list($name,$params) = explode('?',$call,2);
-        }
-        elseif(strpos($call, '?') !== false && strpos($call, "\n")!==false && strpos($call, "\n") < strpos($call, '?'))
-        {
-            list($name,$params) = explode("\n",$call,2);
-        }
-        elseif(strpos($call, '?') !== false)
-        {
-            list($name,$params) = explode('?',$call,2);
-        }
-        elseif((strpos($call, '&') !== false) && (strpos($call, '=') !== false) && (strpos($call, '?') === false))
-        {
-            list($name,$params) = explode('&',$call,2);
-            $params = "&{$params}";
-        }
-        elseif(strpos($call, "\n") !== false)
-        {
-            list($name,$params) = explode("\n",$call,2);
-        }
-        else
-        {
-            $name   = $call;
-            $params = '';
-        }
-        $snip['name']   = trim($name);
-        $snip['params'] = $params;
-        return $snip;
-    }
-
-    private function _get_snip_properties($snip_call)
-    {
-        $snip_name  = $snip_call['name'];
-
-        if(isset($this->snippetCache[$snip_name]))
-        {
-            $snippetObject['name']    = $snip_name;
-            $snippetObject['content'] = $this->snippetCache[$snip_name];
-            if(isset($this->snippetCache[$snip_name . 'Props']))
-            {
-                $snippetObject['properties'] = $this->snippetCache[$snip_name . 'Props'];
-            }
-        }
-        else
-        {
-            $tbl_snippets  = $this->getFullTableName('site_snippets');
-            $esc_snip_name = $this->db->escape($snip_name);
-            // get from db and store a copy inside cache
-            $result= $this->db->select('name,snippet,properties',$tbl_snippets,"name='{$esc_snip_name}'");
-            $added = false;
-            if($this->db->getRecordCount($result) == 1)
-            {
-                $row = $this->db->getRow($result);
-                if($row['name'] == $snip_name)
-                {
-                    $snippetObject['name']       = $row['name'];
-                    $snippetObject['content']    = $this->snippetCache[$snip_name]           = $row['snippet'];
-                    $snippetObject['properties'] = $this->snippetCache[$snip_name . 'Props'] = $row['properties'];
-                    $added = true;
-                }
-            }
-            if($added === false)
-            {
-                $snippetObject['name']       = $snip_name;
-                $snippetObject['content']    = $this->snippetCache[$snip_name] = 'return false;';
-                $snippetObject['properties'] = '';
-            }
-        }
-        return $snippetObject;
-    }
-
 
     function toAlias($text) {
         $suff= $this->getConfig('friendly_url_suffix');
@@ -1711,7 +1398,7 @@ class DocumentParser {
     }
 
     function webAlert($msg, $url= "") {
-        \MODxCore\HTML::webAlert($msg, $url);
+        return $this->_pimple['HTML']->webAlert($msg, $url);
     }
 
     function hasPermission($pm) {
@@ -2153,29 +1840,12 @@ class DocumentParser {
             }
     }
 
-    /**
-     * Returns the id of the current snippet.
-     *
-     * @return int
-     */
     function getSnippetId() {
-        if ($this->currentSnippet) {
-            $tbl= $this->getFullTableName("site_snippets");
-            $rs= $this->db->query("SELECT id FROM $tbl WHERE name='" . $this->db->escape($this->currentSnippet) . "' LIMIT 1");
-            $row= @ $this->db->getRow($rs);
-            if ($row['id'])
-                return $row['id'];
-        }
-        return 0;
+        return $this->_pimple['snippet']->getSnippetId();
     }
 
-    /**
-     * Returns the name of the current snippet.
-     *
-     * @return string
-     */
     function getSnippetName() {
-        return $this->currentSnippet;
+        return $this->_pimple['snippet']->getSnippetName();
     }
 
     /**
@@ -2319,34 +1989,8 @@ class DocumentParser {
         return (!is_null($data) && is_array($this->version) && isset($this->version[$data])) ? $this->version[$data] : $this->version;
     }
 
-    /**
-     * Executes a snippet.
-     *
-     * @param string $snippetName
-     * @param array $params Default: Empty array
-     * @return string
-     */
     function runSnippet($snippetName, $params= array ()) {
-        if (isset ($this->snippetCache[$snippetName])) {
-            $snippet= $this->snippetCache[$snippetName];
-            $properties= $this->snippetCache[$snippetName . "Props"];
-        } else { // not in cache so let's check the db
-            $sql= "SELECT `name`, `snippet`, `properties` FROM " . $this->getFullTableName("site_snippets") . " WHERE " . $this->getFullTableName("site_snippets") . ".`name`='" . $this->db->escape($snippetName) . "';";
-            $result= $this->db->query($sql);
-            if ($this->db->getRecordCount($result) == 1) {
-                $row= $this->db->getRow($result);
-                $snippet= $this->snippetCache[$row['name']]= $row['snippet'];
-                $properties= $this->snippetCache[$row['name'] . "Props"]= $row['properties'];
-            } else {
-                $snippet= $this->snippetCache[$snippetName]= "return false;";
-                $properties= '';
-            }
-        }
-        // load default params/properties
-        $parameters= $this->parseProperties($properties);
-        $parameters= array_merge($parameters, $params);
-        // run snippet
-        return $this->evalSnippet($snippet, $parameters);
+        return $this->_pimple['snippet']->runSnippet($snippetName, $params);
     }
 
     function getChunk($chunkName) {
@@ -2717,9 +2361,7 @@ class DocumentParser {
      * @return string The complete URL to the cache folder
      */
     function getCachePath() {
-        global $base_url;
-        $pth= $base_url . 'assets/cache/';
-        return $pth;
+        return MODX_BASE_URL . 'assets/cache/';
     }
 
     /**
@@ -2761,31 +2403,24 @@ class DocumentParser {
     function getLoginUserID($context= '') {
         return \MODxCore\User::getLoginUserID($context);
     }
-
     function getLoginUserName($context= '') {
         return \MODxCore\User::getLoginUserName($context);
     }
-
     function getLoginUserType() {
         return \MODxCore\User::getLoginUserType();
     }
-
     function getUserInfo($uid) {
         return \MODxCore\User::getUserInfo($uid);
     }
-
     function getWebUserInfo($uid) {
         return \MODxCore\User::getUserInfo($uid);
     }
-
     function getUserDocGroups($resolveIds= false) {
         return \MODxCore\User::getUserInfo($resolveIds);
     }
-
     function changeWebUserPassword($oldPwd, $newPwd) {
         return \MODxCore\User::changeWebUserPassword($oldPwd, $newPwd);
     }
-
     function isMemberOfWebGroup($groupNames= array ()) {
         return \MODxCore\User::isMemberOfWebGroup($groupNames);
     }
@@ -2913,15 +2548,10 @@ class DocumentParser {
     function stripTags($html, $allowed= "") {
         return \MODxCore\Helper::stripTags($html, $allowed);
     }
-
-    # Decode JSON regarding hexadecimal entity encoded MODX tags
     function jsonDecode($json, $assoc = false) {
-        // unmask MODX tags
-        $masked = array('&#x005B;', '&#x005D;', '&#x007B;', '&#x007D;');
-        $unmasked = array('[', ']', '{', '}');
-        $json = str_replace($masked, $unmasked, $json);
-        return json_decode($json, $assoc);
+        return \MODxCore\Lib\json::jsonDecode($json, array('assoc' => $assoc));
     }
+
     /**
      * Add an event listner to a plugin - only for use within the current execution cycle
      *
