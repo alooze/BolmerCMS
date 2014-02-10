@@ -71,8 +71,9 @@ class Debug{
         return $detected;
     }
     function messageQuit($msg= 'unspecified error', $query= '', $is_error= true, $nr= '', $file= '', $source= '', $text= '', $line= '', $output='') {
-        $version= isset ($GLOBALS['modx_version']) ? $GLOBALS['modx_version'] : '';
-        $release_date= isset ($GLOBALS['release_date']) ? $GLOBALS['release_date'] : '';
+
+        $version = $this->_inj['modx']->getVersionData('version');
+        $release_date= $this->_inj['modx']->getVersionData('release_date');
         $request_uri = "http://".$_SERVER['HTTP_HOST'].($_SERVER["SERVER_PORT"]==80?"":(":".$_SERVER["SERVER_PORT"])).$_SERVER['REQUEST_URI'];
         $request_uri = htmlspecialchars($request_uri, ENT_QUOTES, $this->_inj['modx']->getConfig('modx_charset'));
         $ua          = htmlspecialchars($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, $this->_inj['modx']->getConfig('modx_charset'));

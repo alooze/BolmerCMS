@@ -35,33 +35,10 @@ class OldFunctions {
         $listhtml .= $ordered == true ? $tabs . "</ol>\n" : $tabs . "</ul>\n";
         return $listhtml;
     }
-
-    
     function getUserData() {
         $client['ip'] = $_SERVER['REMOTE_ADDR'];
         $client['ua'] = $_SERVER['HTTP_USER_AGENT'];
     	return $client;
-    }
-    
-    # Returns true, install or interact when inside manager
-    // deprecated
-    function insideManager() {
-        $m= false;
-        if (defined('IN_MANAGER_MODE') && IN_MANAGER_MODE == 'true') {
-            $m= true;
-            if (defined('SNIPPET_INTERACTIVE_MODE') && SNIPPET_INTERACTIVE_MODE == 'true')
-                $m= "interact";
-            else
-                if (defined('SNIPPET_INSTALL_MODE') && SNIPPET_INSTALL_MODE == 'true')
-                    $m= "install";
-        }
-        return $m;
-    }
-
-    // deprecated
-    function putChunk($chunkName) { // alias name >.<
-    	global $modx;
-        return $modx->getChunk($chunkName);
     }
 
     function getDocGroups() {
@@ -170,17 +147,7 @@ class OldFunctions {
         }
         return $keywords;
     }
-    
-    function makeFriendlyURL($pre, $suff, $alias, $isfolder=0, $id=0) {
-    	global $modx;
-        if ($id == $modx->config['site_start'] && $modx->config['seostrict']==='1') {return '/';}
-        $Alias = explode('/',$alias);
-        $alias = array_pop($Alias);
-        $dir = implode('/', $Alias);
-        unset($Alias);
-        if($modx->config['make_folders']==='1' && $isfolder==1) $suff = '/';
-        return ($dir != '' ? "$dir/" : '') . $pre . $alias . $suff;
-    }
+
 
     /*############################################
       Etomite_dbFunctions.php

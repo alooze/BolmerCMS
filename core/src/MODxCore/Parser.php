@@ -379,4 +379,60 @@ class Parser{
     public function mergeSnippetsContent($content){
         return $this->_inj['snippet']->evalSnippets($content);
     }
+
+    /**
+     * Convert URL tags [~...~] to URLs
+     *
+     * @param string $documentSource
+     * @return string
+     */
+    function rewriteUrls($documentSource) {
+        // rewrite the urls
+        if ($this->_inj['modx']->getConfig('friendly_urls') == 1) {
+            $aliases= array ();
+            /* foreach ($this->aliasListing as $item) {
+                $aliases[$item['id']]= (strlen($item['path']) > 0 ? $item['path'] . '/' : '') . $item['alias'];
+                $isfolder[$item['id']]= $item['isfolder'];
+            } */
+            foreach($this->_inj['modx']->documentListing as $key=>$val){
+                $aliases[$val] = $key;
+                $isfolder[$val] = $this->_inj['modx']->aliasListing[$val]['isfolder'];
+            }
+            $in= '!\[\~([0-9]+)\~\]!ise'; // Use preg_replace with /e to make it evaluate PHP
+            $isfriendly= ($this->_inj['modx']->getConfig('friendly_alias_urls') == 1 ? 1 : 0);
+            $pref= $this->_inj['modx']->getConfig('friendly_url_prefix');
+            $suff= $this->_inj['modx']->getConfig('friendly_url_suffix');
+            $thealias= '$aliases[\\1]';
+            $thefolder= '$isfolder[\\1]';
+            if ($this->_inj['modx']->getConfig('seostrict')=='1'){
+
+                $found_friendlyurl= "\$this->toAlias(\$this->makeFriendlyURL('$pref','$suff',$thealias,$thefolder,'\\1'))";
+            }else{
+                $found_friendlyurl= "\$this->makeFriendlyURL('$pref','$suff',$thealias,$thefolder,'\\1')";
+            }
+            $not_found_friendlyurl= "\$this->makeFriendlyURL('$pref','$suff','" . '\\1' . "')";
+            $out= "({$isfriendly} && isset({$thealias}) ? {$found_friendlyurl} : {$not_found_friendlyurl})";
+            $documentSource= preg_replace($in, $out, $documentSource);
+
+        } else {
+            $in= '!\[\~([0-9]+)\~\]!is';
+            $out= "index.php?id=" . '\1';
+            $documentSource= preg_replace($in, $out, $documentSource);
+        }
+
+        return $documentSource;
+    }
+    function makeFriendlyURL($pre, $suff, $alias, $isfolder=0, $id=0) {
+        if ($id == $this->_inj['modx']->getConfig('site_start') && $this->_inj['modx']->getConfig('seostrict')==='1') {return '/';}
+        $Alias = explode('/',$alias);
+        $alias = array_pop($Alias);
+        $dir = implode('/', $Alias);
+        unset($Alias);
+        if($this->_inj['modx']->getConfig('make_folders')==='1' && $isfolder==1) $suff = '/';
+        return ($dir != '' ? "$dir/" : '') . $pre . $alias . $suff;
+    }
+    function toAlias($text) {
+        $suff= $this->_inj['modx']->getConfig('friendly_url_suffix');
+        return str_replace(array('.xml'.$suff,'.rss'.$suff,'.js'.$suff,'.css'.$suff),array('.xml','.rss','.js','.css'),$text);
+    }
 }

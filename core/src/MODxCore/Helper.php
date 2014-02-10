@@ -143,4 +143,26 @@ class Helper{
         return $strTime;
     }
 
+    function htmlchars($str, $flags = ENT_COMPAT){
+        $charset = getkey(modx('config'), 'modx_charset', 'UTF-8');
+        if(!is_scalar($str)){
+            $str = '';
+        }
+        $ent_str = htmlspecialchars($str, $flags, $charset);
+        if(!empty($str) && empty($ent_str)){
+            $detect_order = join(',', mb_detect_order());
+            $ent_str = mb_convert_encoding($str,$charset,$detect_order);
+        }
+        return $ent_str;
+    }
+
+    /**
+     * Returns the full table name based on db settings
+     *
+     * @param string $tbl Table name
+     * @return string Table name with prefix
+     */
+    public static function getFullTableName($tbl, $config) {
+        return getkey($config, 'dbase') . ".`" . getkey($config, 'table_prefix') . $tbl . "`";
+    }
 }

@@ -269,4 +269,295 @@
 
             // end post processing
         }
+
+
+        /**
+         * Returns true if we are currently in the manager backend
+         *
+         * @return boolean
+         */
+        function isBackend() {
+            return $this->insideManager() ? true : false;
+        }
+
+        /**
+         * Returns true if we are currently in the frontend
+         *
+         * @return boolean
+         */
+        function isFrontend() {
+            return !$this->insideManager() ? true : false;
+        }
+
+        # Returns true, install or interact when inside manager
+        function insideManager() {
+            $m= false;
+            if (defined('IN_MANAGER_MODE') && IN_MANAGER_MODE == 'true') {
+                $m= true;
+                if (defined('SNIPPET_INTERACTIVE_MODE') && SNIPPET_INTERACTIVE_MODE == 'true')
+                    $m= "interact";
+                else
+                    if (defined('SNIPPET_INSTALL_MODE') && SNIPPET_INSTALL_MODE == 'true')
+                        $m= "install";
+            }
+            return $m;
+        }
+
+        function sendStrictURI(){
+            // FIX URLs
+            if (empty($this->_inj['modx']->documentIdentifier) || $this->_inj['modx']->getConfig('seostrict')=='0' || $this->_inj['modx']->getConfig('friendly_urls')=='0')
+                return;
+            if ($this->_inj['modx']->getConfig('site_status') == 0) return;
+
+            $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https' : 'http';
+            $len_base_url = strlen($this->_inj['modx']->getConfig('base_url'));
+            if(strpos($_SERVER['REQUEST_URI'],'?'))
+                list($url_path,$url_query_string) = explode('?', $_SERVER['REQUEST_URI'],2);
+            else $url_path = $_SERVER['REQUEST_URI'];
+            $url_path = $_GET['q'];//LANG
+
+
+            if(substr($url_path,0,$len_base_url)===$this->_inj['modx']->getConfig('base_url'))
+                $url_path = substr($url_path,$len_base_url);
+
+            $strictURL =  $this->_inj['modx']->toAlias($this->_inj['modx']->makeUrl($this->_inj['modx']->documentIdentifier));
+
+            if(substr($strictURL,0,$len_base_url)===$this->_inj['modx']->getConfig('base_url'))
+                $strictURL = substr($strictURL,$len_base_url);
+            $http_host = $_SERVER['HTTP_HOST'];
+            $requestedURL = "{$scheme}://{$http_host}" . '/'.$_GET['q']; //LANG
+
+            $site_url = $this->_inj['modx']->getConfig('site_url');
+
+            if ($this->_inj['modx']->documentIdentifier == $this->_inj['modx']->getConfig('site_start')){
+                if ($requestedURL != $this->_inj['modx']->getConfig('site_url')){
+                    // Force redirect of site start
+                    // $this->sendErrorPage();
+                    $qstring = isset($url_query_string) ? preg_replace("#(^|&)(q|id)=[^&]+#", '', $url_query_string) : ''; // Strip conflicting id/q from query string
+                    if ($qstring) $url = "{$site_url}?{$qstring}";
+                    else          $url = $site_url;
+                    if ($this->_inj['modx']->getConfig('base_url') != $_SERVER['REQUEST_URI']){
+                        if (empty($_POST)){
+                            if (('/?'.$qstring) != $_SERVER['REQUEST_URI']) {
+                                $this->sendRedirect($url,0,'REDIRECT_HEADER', 'HTTP/1.0 301 Moved Permanently');
+                                exit(0);
+                            }
+                        }
+                    }
+                }
+            }elseif ($url_path != $strictURL && $this->_inj['modx']->documentIdentifier != $this->_inj['modx']->getConfig('error_page')){
+                // Force page redirect
+                //$strictURL = ltrim($strictURL,'/');
+
+                if(!empty($url_query_string))
+                    $qstring = preg_replace("#(^|&)(q|id)=[^&]+#", '', $url_query_string);  // Strip conflicting id/q from query string
+                if ($qstring) $url = "{$site_url}{$strictURL}?{$qstring}";
+                else          $url = "{$site_url}{$strictURL}";
+                $this->sendRedirect($url,0,'REDIRECT_HEADER', 'HTTP/1.0 301 Moved Permanently');
+                exit(0);
+            }
+            return;
+        }
+
+        /**
+         * Final processing and output of the document/resource.
+         *
+         * - runs uncached snippets
+         * - add javascript to <head>
+         * - removes unused placeholders
+         * - converts URL tags [~...~] to URLs
+         *
+         * @param boolean $noEvent Default: false
+         */
+        function outputContent($noEvent= false) {
+            $this->_inj['modx']->documentOutput= $this->_inj['modx']->documentContent;
+            if ($this->_inj['modx']->documentGenerated == 1 && $this->_inj['modx']->documentObject['cacheable'] == 1 && $this->_inj['modx']->documentObject['type'] == 'document' && $this->_inj['modx']->documentObject['published'] == 1) {
+                if (!empty($this->_inj['modx']->sjscripts)) $this->_inj['modx']->documentObject['__MODxSJScripts__'] = $this->_inj['modx']->sjscripts;
+                if (!empty($this->_inj['modx']->jscripts)) $this->_inj['modx']->documentObject['__MODxJScripts__'] = $this->_inj['modx']->jscripts;
+            }
+
+            // check for non-cached snippet output
+            if (strpos($this->_inj['modx']->documentOutput, '[!') > -1) {
+                $this->_inj['modx']->documentOutput= str_replace('[!', '[[', $this->_inj['modx']->documentOutput);
+                $this->_inj['modx']->documentOutput= str_replace('!]', ']]', $this->_inj['modx']->documentOutput);
+
+                // Parse document source
+                $this->_inj['modx']->documentOutput= $this->_inj['modx']->parseDocumentSource($this->_inj['modx']->documentOutput);
+            }
+
+            // Moved from prepareResponse() by sirlancelot
+            // Insert Startup jscripts & CSS scripts into template - template must have a <head> tag
+            if ($js= $this->_inj['modx']->getRegisteredClientStartupScripts()) {
+                // change to just before closing </head>
+                // $this->documentContent = preg_replace("/(<head[^>]*>)/i", "\\1\n".$js, $this->documentContent);
+                $this->_inj['modx']->documentOutput= preg_replace("/(<\/head>)/i", $js . "\n\\1", $this->_inj['modx']->documentOutput);
+            }
+
+            // Insert jscripts & html block into template - template must have a </body> tag
+            if ($js= $this->_inj['modx']->getRegisteredClientScripts()) {
+                $this->_inj['modx']->documentOutput= preg_replace("/(<\/body>)/i", $js . "\n\\1", $this->_inj['modx']->documentOutput);
+            }
+            // End fix by sirlancelot
+
+            // remove all unused placeholders
+            if (strpos($this->_inj['modx']->documentOutput, '[+') > -1) {
+                $matches= array ();
+                preg_match_all('~\[\+(.*?)\+\]~s', $this->_inj['modx']->documentOutput, $matches);
+                if ($matches[0])
+                    $this->_inj['modx']->documentOutput= str_replace($matches[0], '', $this->_inj['modx']->documentOutput);
+            }
+
+            $this->_inj['modx']->documentOutput= $this->_inj['modx']->rewriteUrls($this->_inj['modx']->documentOutput);
+
+            // send out content-type and content-disposition headers
+            if (IN_PARSER_MODE == "true") {
+                $type= !empty ($this->_inj['modx']->contentTypes[$this->_inj['modx']->documentIdentifier]) ? $this->_inj['modx']->contentTypes[$this->_inj['modx']->documentIdentifier] : "text/html";
+                header('Content-Type: ' . $type . '; charset=' . $this->_inj['modx']->getConfig('modx_charset'));
+//            if (($this->documentIdentifier == $this->config['error_page']) || $redirect_error)
+//                header('HTTP/1.0 404 Not Found');
+                if (!$this->_inj['modx']->checkPreview() && $this->_inj['modx']->documentObject['content_dispo'] == 1) {
+                    if ($this->_inj['modx']->documentObject['alias'])
+                        $name= $this->_inj['modx']->documentObject['alias'];
+                    else {
+                        // strip title of special characters
+                        $name= $this->_inj['modx']->documentObject['pagetitle'];
+                        $name= strip_tags($name);
+                        $name= strtolower($name);
+                        $name= preg_replace('/&.+?;/', '', $name); // kill entities
+                        $name= preg_replace('/[^\.%a-z0-9 _-]/', '', $name);
+                        $name= preg_replace('/\s+/', '-', $name);
+                        $name= preg_replace('|-+|', '-', $name);
+                        $name= trim($name, '-');
+                    }
+                    $header= 'Content-Disposition: attachment; filename=' . $name;
+                    header($header);
+                }
+            }
+
+            $stats = $this->_inj['modx']->getTimerStats($this->_inj['modx']->tstart);
+
+            $out =& $this->_inj['modx']->documentOutput;
+            $out= str_replace("[^q^]", $stats['queries'] , $out);
+            $out= str_replace("[^qt^]", $stats['queryTime'] , $out);
+            $out= str_replace("[^p^]", $stats['phpTime'] , $out);
+            $out= str_replace("[^t^]", $stats['totalTime'] , $out);
+            $out= str_replace("[^s^]", $stats['source'] , $out);
+            $out= str_replace("[^m^]", $stats['phpMemory'], $out);
+            //$this->documentOutput= $out;
+
+            // invoke OnWebPagePrerender event
+            if (!$noEvent) {
+                $this->_inj['modx']->invokeEvent('OnWebPagePrerender');
+            }
+            global $sanitize_seed;
+            if(strpos($this->_inj['modx']->documentOutput, $sanitize_seed)!==false) {
+                $this->_inj['modx']->documentOutput = str_replace($sanitize_seed, '', $this->_inj['modx']->documentOutput);
+            }
+
+            echo $this->_inj['modx']->documentOutput;
+            if ($this->_inj['modx']->dumpSQL) echo $this->_inj['modx']->queryCode;
+            if ($this->_inj['modx']->dumpSnippets) {
+                $sc = "";
+                $tt = 0;
+                foreach ($this->_inj['modx']->snippetsTime as $s=>$t) {
+                    $sc .= "$s: ".$this->_inj['modx']->snippetsCount[$s]." (".sprintf("%2.2f ms", $t*1000).")<br>";
+                    $tt += $t;
+                }
+                echo "<fieldset><legend><b>Snippets</b> (".count($this->_inj['modx']->snippetsTime)." / ".sprintf("%2.2f ms", $tt*1000).")</legend>{$sc}</fieldset><br />";
+                echo $this->_inj['modx']->snippetsCode;
+            }
+            if ($this->_inj['modx']->dumpPlugins) {
+                $ps = "";
+                $tc = 0;
+                foreach ($this->_inj['modx']->pluginsTime as $s=>$t) {
+                    $ps .= "$s (".sprintf("%2.2f ms", $t*1000).")<br>";
+                    $tt += $t;
+                }
+                echo "<fieldset><legend><b>Plugins</b> (".count($this->_inj['modx']->pluginsTime)." / ".sprintf("%2.2f ms", $tt*1000).")</legend>{$ps}</fieldset><br />";
+                echo $this->_inj['modx']->pluginsCode;
+            }
+            ob_end_flush();
+        }
+
+        /**
+         * check if site is offline
+         *
+         * @return boolean
+         */
+        function checkSiteStatus() {
+            $siteStatus= $this->_inj['modx']->getConfig('site_status');
+            if ($siteStatus == 1) {
+                // site online
+                return true;
+            }
+            elseif ($siteStatus == 0 && $this->_inj['modx']->checkSession()) {
+                // site offline but launched via the manager
+                return true;
+            } else {
+                // site is offline
+                return false;
+            }
+        }
+
+        /**
+         * Checks the publish state of page
+         */
+        function checkPublishStatus() {
+            $cacheRefreshTime= 0;
+            @include MODX_BASE_PATH . "assets/cache/sitePublishing.idx.php";
+            $timeNow= time() + $this->_inj['modx']->getConfig('server_offset_time');
+            if ($cacheRefreshTime <= $timeNow && $cacheRefreshTime != 0) {
+                // now, check for documents that need publishing
+                $sql = "UPDATE ".$this->_inj['modx']->getFullTableName("site_content")." SET published=1, publishedon=".time()." WHERE ".$this->_inj['modx']->getFullTableName("site_content").".pub_date <= $timeNow AND ".$this->_inj['modx']->getFullTableName("site_content").".pub_date!=0 AND published=0";
+                if (@ !$result= $this->_inj['db']->query($sql)) {
+                    $this->_inj['modx']->messageQuit("Execution of a query to the database failed", $sql);
+                }
+
+                // now, check for documents that need un-publishing
+                $sql= "UPDATE " . $this->_inj['modx']->getFullTableName("site_content") . " SET published=0, publishedon=0 WHERE " . $this->_inj['modx']->getFullTableName("site_content") . ".unpub_date <= $timeNow AND " . $this->_inj['modx']->getFullTableName("site_content") . ".unpub_date!=0 AND published=1";
+                if (@ !$result= $this->_inj['db']->query($sql)) {
+                    $this->_inj['modx']->messageQuit("Execution of a query to the database failed", $sql);
+                }
+
+                // clear the cache
+                $this->_inj['modx']->clearCache();
+
+                // update publish time file
+                $timesArr= array ();
+                $sql= "SELECT MIN(pub_date) AS minpub FROM " . $this->_inj['modx']->getFullTableName("site_content") . " WHERE pub_date>$timeNow";
+                if (@ !$result= $this->_inj['db']->query($sql)) {
+                    $this->_inj['modx']->messageQuit("Failed to find publishing timestamps", $sql);
+                }
+                $tmpRow= $this->_inj['db']->getRow($result);
+                $minpub= $tmpRow['minpub'];
+                if ($minpub != NULL) {
+                    $timesArr[]= $minpub;
+                }
+
+                $sql= "SELECT MIN(unpub_date) AS minunpub FROM " . $this->_inj['modx']->getFullTableName("site_content") . " WHERE unpub_date>$timeNow";
+                if (@ !$result= $this->_inj['db']->query($sql)) {
+                    $this->_inj['modx']->messageQuit("Failed to find publishing timestamps", $sql);
+                }
+                $tmpRow= $this->_inj['db']->getRow($result);
+                $minunpub= $tmpRow['minunpub'];
+                if ($minunpub != NULL) {
+                    $timesArr[]= $minunpub;
+                }
+
+                if (count($timesArr) > 0) {
+                    $nextevent= min($timesArr);
+                } else {
+                    $nextevent= 0;
+                }
+
+                $basepath= MODX_BASE_PATH . "assets/cache";
+                $fp= @ fopen($basepath . "/sitePublishing.idx.php", "wb");
+                if ($fp) {
+                    @ flock($fp, LOCK_EX);
+                    @ fwrite($fp, "<?php \$cacheRefreshTime=$nextevent; ?>");
+                    @ flock($fp, LOCK_UN);
+                    @ fclose($fp);
+                }
+            }
+        }
     }

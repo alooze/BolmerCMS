@@ -291,8 +291,7 @@ class DBAPI{
                     return $ds->fetch(\PDO::FETCH_BOTH);
                 }
                 default:{
-                global $modx;
-                $modx->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
+                modx()->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
                 }
             }
         }
