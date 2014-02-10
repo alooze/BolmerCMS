@@ -7,6 +7,130 @@
  */
 
 class Parser{
+    /** @var \MODxCore\Pimple $_inj */
+    private $_inj = null;
+
+    public function __construct(\Pimple $inj){
+        $this->_inj= $inj;
+    }
+
+    /**
+     * Merge content fields and TVs
+     *
+     * @param string $template
+     * @return string
+     */
+    function mergeDocumentContent($content) {
+        if (strpos($content, '[*') === false)
+            return $content;
+        $replace = array();
+        $matches = self::getTagsFromContent($content, '[*', '*]');
+        if ($matches) {
+            for ($i = 0; $i < count($matches[1]); $i++) {
+                if ($matches[1][$i]) {
+                    $key = $matches[1][$i];
+                    $key = substr($key, 0, 1) == '#' ? substr($key, 1) : $key; // remove # for QuickEdit format
+                    $value = $this->_inj['modx']->documentObject[$key];
+                    if (is_array($value)) {
+                        include_once MODX_MANAGER_PATH . 'includes/tmplvars.format.inc.php';
+                        include_once MODX_MANAGER_PATH . 'includes/tmplvars.commands.inc.php';
+                        $value = getTVDisplayFormat($value[0], $value[1], $value[2], $value[3], $value[4]);
+                    }
+                    $replace[$i] = $value;
+                }
+            }
+            $content = str_replace($matches[0], $replace, $content);
+        }
+        return $content;
+    }
+
+    /**
+     * Merge system settings
+     *
+     * @param string $template
+     * @return string
+     */
+    function mergeSettingsContent($content) {
+        if (strpos($content, '[(') === false)
+            return $content;
+        $replace = array();
+        $matches = self::getTagsFromContent($content, '[(', ')]');
+        if ($matches) {
+            for ($i = 0; $i < count($matches[1]); $i++) {
+                if ($matches[1][$i] && array_key_exists($matches[1][$i], $this->_inj['modx']->config))
+                    $replace[$i] = $this->_inj['modx']->getConfig($matches[1][$i]);
+            }
+
+            $content = str_replace($matches[0], $replace, $content);
+        }
+        return $content;
+    }
+
+    /**
+     * Merge chunks
+     *
+     * @param string $content
+     * @return string
+     */
+    function mergeChunkContent($content) {
+        if (strpos($content, '{{') === false)
+            return $content;
+        $replace = array();
+        $matches = self::getTagsFromContent($content, '{{', '}}');
+        if ($matches) {
+            for ($i = 0; $i < count($matches[1]); $i++) {
+                if ($matches[1][$i]) {
+                    if (isset($this->_inj['modx']->chunkCache[$matches[1][$i]])) {
+                        $replace[$i] = $this->_inj['modx']->chunkCache[$matches[1][$i]];
+                    } else {
+                        $sql = 'SELECT `snippet` FROM ' . $this->getFullTableName('site_htmlsnippets') . ' WHERE ' . $this->_inj['modx']->getFullTableName('site_htmlsnippets') . '.`name`="' . $this->_inj['db']->escape($matches[1][$i]) . '";';
+                        $result = $this->_inj['db']->query($sql);
+                        $limit = $this->_inj['db']->getRecordCount($result);
+                        if ($limit < 1) {
+                            $this->_inj['modx']->chunkCache[$matches[1][$i]] = '';
+                            $replace[$i] = '';
+                        } else {
+                            $row = $this->_inj['db']->getRow($result);
+                            $this->_inj['modx']->chunkCache[$matches[1][$i]] = $row['snippet'];
+                            $replace[$i] = $row['snippet'];
+                        }
+                    }
+                }
+            }
+            $content = str_replace($matches[0], $replace, $content);
+            $content = $this->mergeSettingsContent($content);
+        }
+        return $content;
+    }
+
+    /**
+     * Merge placeholder values
+     *
+     * @param string $content
+     * @return string
+     */
+    public function mergePlaceholderContent($content) {
+        if (strpos($content, '[+') === false)
+            return $content;
+        $replace = array();
+        $content = $this->mergeSettingsContent($content);
+        $matches = self::getTagsFromContent($content, '[+', '+]');
+        if ($matches) {
+            for ($i = 0; $i < count($matches[1]); $i++) {
+                $v = '';
+                $key = $matches[1][$i];
+                if ($key && is_array($this->_inj['modx']->placeholders) && array_key_exists($key, $this->_inj['modx']->placeholders))
+                    $v = $this->_inj['modx']->placeholders[$key];
+                if ($v === '')
+                    unset($matches[0][$i]); // here we'll leave empty placeholders for last.
+                else
+                    $replace[$i] = $v;
+            }
+            $content = str_replace($matches[0], $replace, $content);
+        }
+        return $content;
+    }
+
     /**
      * Parses a resource property string and returns the result as an array
      *
@@ -190,5 +314,69 @@ class Parser{
         } else {
             self::setPlaceholder("{$prefix}{$key}", $value);
         }
+    }
+
+    /**
+     * Parse a source string.
+     *
+     * Handles most MODX tags. Exceptions include:
+     *   - uncached snippet tags [!...!]
+     *   - URL tags [~...~]
+     *
+     * @param string $source
+     * @return string
+     */
+    function parseDocumentSource($source) {
+        // set the number of times we are to parse the document source
+        $this->_inj['modx']->minParserPasses= empty ($this->_inj['modx']->minParserPasses) ? 2 : $this->_inj['modx']->minParserPasses;
+        $this->_inj['modx']->maxParserPasses= empty ($this->_inj['modx']->maxParserPasses) ? 10 : $this->_inj['modx']->maxParserPasses;
+        $passes= $this->_inj['modx']->minParserPasses;
+        for ($i= 0; $i < $passes; $i++) {
+            // get source length if this is the final pass
+            if ($i == ($passes -1))
+                $st= strlen($source);
+            if ($this->_inj['modx']->dumpSnippets == 1) {
+                $this->_inj['modx']->snippetsCode .= "<fieldset><legend><b style='color: #821517;'>PARSE PASS " . ($i +1) . "</b></legend><p>The following snippets (if any) were parsed during this pass.</p>";
+            }
+
+            // invoke OnParseDocument event
+            $this->_inj['modx']->documentOutput= $source; // store source code so plugins can
+            $this->_inj['modx']->invokeEvent("OnParseDocument"); // work on it via $modx->documentOutput
+            $source= $this->_inj['modx']->documentOutput;
+
+            $source = $this->mergeSettingsContent($source);
+
+            // combine template and document variables
+            $source= $this->mergeDocumentContent($source);
+            // replace settings referenced in document
+            $source= $this->mergeSettingsContent($source);
+            // replace HTMLSnippets in document
+            $source= $this->mergeChunkContent($source);
+            // insert META tags & keywords
+            if($this->_inj['modx']->getConfig('show_meta')==1) {
+                $source= $this->_inj['modx']->mergeDocumentMETATags($source);
+            }
+            // find and merge snippets
+            $source= $this->mergeSnippetsContent($source);
+            // find and replace Placeholders (must be parsed last) - Added by Raymond
+            $source= $this->mergePlaceholderContent($source);
+
+            $source = $this->mergeSettingsContent($source);
+
+            if ($this->_inj['modx']->dumpSnippets == 1) {
+                $this->_inj['modx']->snippetsCode .= "</fieldset><br />";
+            }
+            if ($i == ($passes -1) && $i < ($this->maxParserPasses - 1)) {
+                // check if source length was changed
+                $et= strlen($source);
+                if ($st != $et)
+                    $passes++; // if content change then increase passes because
+            } // we have not yet reached maxParserPasses
+        }
+        return $source;
+    }
+
+    public function mergeSnippetsContent($content){
+        return $this->_inj['snippet']->evalSnippets($content);
     }
 }

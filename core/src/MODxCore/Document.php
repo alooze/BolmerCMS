@@ -360,7 +360,6 @@ class Document{
     public function getDocumentObject($method, $identifier, $isPrepareResponse=false) {
         $tblsc= $this->_inj['modx']->getFullTableName("site_content");
         $tbldg= $this->_inj['modx']->getFullTableName("document_groups");
-
         // allow alias to be full path
         if($method == 'alias') {
             $identifier = $this->_inj['modx']->cleanDocumentIdentifier($identifier);
@@ -434,5 +433,304 @@ class Document{
             }
         }
         return $documentObject;
+    }
+
+    /**
+     * Modified by Raymond for TV - Orig Modified by Apodigm - DocVars
+     * Returns a single site_content field or TV record from the db.
+     *
+     * If a site content field the result is an associative array of 'name' and 'value'.
+     *
+     * If a TV the result is an array representing a db row including the fields specified in $fields.
+     *
+     * @param string $idname Can be a TV id or name
+     * @param string $fields Fields to fetch from site_tmplvars. Default: *
+     * @param type $docid Docid. Defaults to empty string which indicates the current document.
+     * @param int $published Whether published or unpublished documents are in the result
+     *                        Default: 1
+     * @return boolean
+     */
+    public function getTemplateVar($idname= "", $fields= "*", $docid= "", $published= 1) {
+        if ($idname == "") {
+            return false;
+        } else {
+            $result= $this->getTemplateVars(array ($idname), $fields, $docid, $published, "", ""); //remove sorting for speed
+            return ($result != false) ? $result[0] : false;
+        }
+    }
+
+    /**
+     * Returns an array of site_content field fields and/or TV records from the db
+     *
+     * Elements representing a site content field consist of an associative array of 'name' and 'value'.
+     *
+     * Elements representing a TV consist of an array representing a db row including the fields specified in $fields.
+     *
+     * @param array $idnames Which TVs to fetch - Can relate to the TV ids in the db (array elements should be numeric only)
+     *                                               or the TV names (array elements should be names only)
+     *                        Default: Empty array
+     * @param string $fields Fields to fetch from site_tmplvars.
+     *                        Default: *
+     * @param string $docid Docid. Defaults to empty string which indicates the current document.
+     * @param int $published Whether published or unpublished documents are in the result
+     *                        Default: 1
+     * @param string $sort How to sort the result array (field)
+     *                        Default: rank
+     * @param string $dir How to sort the result array (direction)
+     *                        Default: ASC
+     * @return boolean|array
+     */
+    function getTemplateVars($idnames= array (), $fields= "*", $docid= "", $published= 1, $sort= "rank", $dir= "ASC") {
+        if (($idnames != '*' && !is_array($idnames)) || count($idnames) == 0) {
+            return false;
+        } else {
+            $result= array ();
+
+            // get document record
+            if ($docid == "") {
+                $docid= $this->_inj['modx']->documentIdentifier;
+                $docRow= $this->_inj['modx']->documentObject;
+            } else {
+                $docRow= $this->getDocument($docid, '*', $published);
+                if (!$docRow)
+                    return false;
+            }
+
+            // get user defined template variables
+            $fields= ($fields == "") ? "tv.*" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $fields)));
+            $sort= ($sort == "") ? "" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $sort)));
+            if ($idnames == "*")
+                $query= "tv.id<>0";
+            else
+                $query= (is_numeric($idnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $idnames) . "')";
+            $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
+            $sql .= "FROM " . $this->_inj['modx']->getFullTableName('site_tmplvars')." tv ";
+            $sql .= "INNER JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
+            $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id AND tvc.contentid = '" . $docid . "' ";
+            $sql .= "WHERE " . $query . " AND tvtpl.templateid = " . $docRow['template'];
+            if ($sort)
+                $sql .= " ORDER BY $sort $dir ";
+            $rs= $this->_inj['db']->query($sql);
+            for ($i= 0; $i < @ $this->_inj['db']->getRecordCount($rs); $i++) {
+                array_push($result, @ $this->_inj['db']->getRow($rs));
+            }
+
+            // get default/built-in template variables
+            ksort($docRow);
+            foreach ($docRow as $key => $value) {
+                if ($idnames == "*" || in_array($key, $idnames))
+                    array_push($result, array (
+                        "name" => $key,
+                        "value" => $value
+                    ));
+            }
+
+            return $result;
+        }
+    }
+
+    /**
+     * Get the TVs of a document's children. Returns an array where each element represents one child doc.
+     *
+     * Ignores deleted children. Gets all children - there is no where clause available.
+     *
+     * @param int $parentid The parent docid
+     *                 Default: 0 (site root)
+     * @param array $tvidnames. Which TVs to fetch - Can relate to the TV ids in the db (array elements should be numeric only)
+     *                                               or the TV names (array elements should be names only)
+     *                      Default: Empty array
+     * @param int $published Whether published or unpublished documents are in the result
+     *                      Default: 1
+     * @param string $docsort How to sort the result array (field)
+     *                      Default: menuindex
+     * @param ASC $docsortdir How to sort the result array (direction)
+     *                      Default: ASC
+     * @param string $tvfields Fields to fetch from site_tmplvars, default '*'
+     *                      Default: *
+     * @param string $tvsort How to sort each element of the result array i.e. how to sort the TVs (field)
+     *                      Default: rank
+     * @param string  $tvsortdir How to sort each element of the result array i.e. how to sort the TVs (direction)
+     *                      Default: ASC
+     * @return boolean|array
+     */
+    function getDocumentChildrenTVars($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC", $tvfields= "*", $tvsort= "rank", $tvsortdir= "ASC") {
+        $docs= $this->getDocumentChildren($parentid, $published, 0, '*', '', $docsort, $docsortdir);
+        if (!$docs)
+            return false;
+        else {
+            $result= array ();
+            // get user defined template variables
+            $fields= ($tvfields == "") ? "tv.*" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $tvfields)));
+            $tvsort= ($tvsort == "") ? "" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $tvsort)));
+            if ($tvidnames == "*")
+                $query= "tv.id<>0";
+            else
+                $query= (is_numeric($tvidnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $tvidnames) . "')";
+            if ($docgrp= $this->_inj['modx']->getUserDocGroups())
+                $docgrp= implode(",", $docgrp);
+
+            $docCount= count($docs);
+            for ($i= 0; $i < $docCount; $i++) {
+
+                $tvs= array ();
+                $docRow= $docs[$i];
+                $docid= $docRow['id'];
+
+                $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
+                $sql .= "FROM " . $this->_inj['modx']->getFullTableName('site_tmplvars') . " tv ";
+                $sql .= "INNER JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
+                $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id AND tvc.contentid = '" . $docid . "' ";
+                $sql .= "WHERE " . $query . " AND tvtpl.templateid = " . $docRow['template'];
+                if ($tvsort)
+                    $sql .= " ORDER BY $tvsort $tvsortdir ";
+                $rs= $this->_inj['db']->query($sql);
+                $limit= @ $this->_inj['db']->getRecordCount($rs);
+                for ($x= 0; $x < $limit; $x++) {
+                    array_push($tvs, @ $this->_inj['db']->getRow($rs));
+                }
+
+                // get default/built-in template variables
+                ksort($docRow);
+                foreach ($docRow as $key => $value) {
+                    if ($tvidnames == "*" || in_array($key, $tvidnames))
+                        array_push($tvs, array (
+                            "name" => $key,
+                            "value" => $value
+                        ));
+                }
+
+                if (count($tvs))
+                    array_push($result, $tvs);
+            }
+            return $result;
+        }
+    }
+
+    /**
+     * Get the TV outputs of a document's children.
+     *
+     * Returns an array where each element represents one child doc and contains the result from getTemplateVarOutput()
+     *
+     * Ignores deleted children. Gets all children - there is no where clause available.
+     *
+     * @param int $parentid The parent docid
+     *                        Default: 0 (site root)
+     * @param array $tvidnames. Which TVs to fetch. In the form expected by getTemplateVarOutput().
+     *                        Default: Empty array
+     * @param int $published Whether published or unpublished documents are in the result
+     *                        Default: 1
+     * @param string $docsort How to sort the result array (field)
+     *                        Default: menuindex
+     * @param ASC $docsortdir How to sort the result array (direction)
+     *                        Default: ASC
+     * @return boolean|array
+     */
+    function getDocumentChildrenTVarOutput($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC") {
+        $docs= $this->getDocumentChildren($parentid, $published, 0, '*', '', $docsort, $docsortdir);
+        if (!$docs)
+            return false;
+        else {
+            $result= array ();
+            for ($i= 0; $i < count($docs); $i++) {
+                $tvs= $this->getTemplateVarOutput($tvidnames, $docs[$i]["id"], $published);
+                if ($tvs)
+                    $result[$docs[$i]['id']]= $tvs; // Use docid as key - netnoise 2006/08/14
+            }
+            return $result;
+        }
+    }
+
+    /**
+     * Returns an associative array containing TV rendered output values.
+     *
+     * @param type $idnames Which TVs to fetch - Can relate to the TV ids in the db (array elements should be numeric only)
+     *                                               or the TV names (array elements should be names only)
+     *                        Default: Empty array
+     * @param string $docid Docid. Defaults to empty string which indicates the current document.
+     * @param int $published Whether published or unpublished documents are in the result
+     *                        Default: 1
+     * @param string $sep
+     * @return boolean|array
+     */
+    function getTemplateVarOutput($idnames= array (), $docid= "", $published= 1, $sep='') {
+        if (count($idnames) == 0) {
+            return false;
+        } else {
+            $output= array ();
+            $vars= ($idnames == '*' || is_array($idnames)) ? $idnames : array ($idnames);
+            $docid= intval($docid) ? intval($docid) : $this->documentIdentifier;
+            $result= $this->getTemplateVars($vars, "*", $docid, $published, "", "", $sep); // remove sort for speed
+            if ($result == false)
+                return false;
+            else {
+                $baspath= MODX_MANAGER_PATH . "includes";
+                include_once $baspath . "/tmplvars.format.inc.php";
+                include_once $baspath . "/tmplvars.commands.inc.php";
+                for ($i= 0; $i < count($result); $i++) {
+                    $row= $result[$i];
+                    if (!$row['id'])
+                        $output[$row['name']]= $row['value'];
+                    else	$output[$row['name']]= getTVDisplayFormat($row['name'], $row['value'], $row['display'], $row['display_params'], $row['type'], $docid, $sep);
+                }
+                return $output;
+            }
+        }
+    }
+
+    /**
+     * Format alias to be URL-safe. Strip invalid characters.
+     *
+     * @param string Alias to be formatted
+     * @return string Safe alias
+     */
+    public function stripAlias($alias) {
+        // let add-ons overwrite the default behavior
+        $results = $this->_inj['modx']->invokeEvent('OnStripAlias', array ('alias'=>$alias));
+        if (!empty($results)) {
+            // if multiple plugins are registered, only the last one is used
+            return end($results);
+        } else {
+            // default behavior: strip invalid characters and replace spaces with dashes.
+            $alias = strip_tags($alias); // strip HTML
+            $alias = preg_replace('/[^\.A-Za-z0-9 _-]/', '', $alias); // strip non-alphanumeric characters
+            $alias = preg_replace('/\s+/', '-', $alias); // convert white-space to dash
+            $alias = preg_replace('/-+/', '-', $alias);  // convert multiple dashes to one
+            $alias = trim($alias, '-'); // trim excess
+            return $alias;
+        }
+    }
+
+    public function getIdFromAlias($alias)
+    {
+        $children = array();
+
+        $tbl_site_content = $this->_inj['modx']->getFullTableName('site_content');
+        if($this->_inj['modx']->getConfig('use_alias_path')==1)
+        {
+            if(strpos($alias,'/')!==false) $_a = explode('/', $alias);
+            else                           $_a[] = $alias;
+            $id= 0;
+
+            foreach($_a as $alias)
+            {
+                if($id===false) break;
+                $alias = $this->_inj['db']->escape($alias);
+                $rs  = $this->_inj['db']->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and alias='{$alias}'");
+                if($this->_inj['db']->getRecordCount($rs)==0) $rs  = $this->_inj['db']->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and id='{$alias}'");
+                $row = $this->_inj['db']->getRow($rs);
+
+                if($row) $id = $row['id'];
+                else     $id = false;
+            }
+        }
+        else
+        {
+            $rs = $this->_inj['db']->select('id', $tbl_site_content, "deleted=0 and alias='{$alias}'", 'parent, menuindex');
+            $row = $this->_inj['db']->getRow($rs);
+
+            if($row) $id = $row['id'];
+            else     $id = false;
+        }
+        return $id;
     }
 }

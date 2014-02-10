@@ -155,4 +155,11 @@ class HTML{
     function regClientHTMLBlock($html) {
         $this->regClientScript($html, true);
     }
+
+    function getRegisteredClientScripts() {
+        return implode("\n", $this->_inj['modx']->jscripts);
+    }
+    function getRegisteredClientStartupScripts() {
+        return implode("\n", $this->_inj['modx']->sjscripts);
+    }
 }

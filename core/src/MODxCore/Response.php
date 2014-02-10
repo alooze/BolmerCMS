@@ -119,4 +119,154 @@
             $this->_inj['modx']->sendForward($unauthorizedPage, 'HTTP/1.1 401 Unauthorized');
             exit();
         }
+
+        /**
+         * The next step called at the end of executeParser()
+         *
+         * - checks cache
+         * - checks if document/resource is deleted/unpublished
+         * - checks if resource is a weblink and redirects if so
+         * - gets template and parses it
+         * - ensures that postProcess is called when PHP is finished
+         */
+        function prepareResponse() {
+            // we now know the method and identifier, let's check the cache
+            $this->_inj['modx']->documentContent= $this->_inj['modx']->checkCache($this->_inj['modx']->documentIdentifier);
+
+            if ($this->_inj['modx']->documentContent != "") {
+                // invoke OnLoadWebPageCache  event
+                $this->_inj['modx']->invokeEvent("OnLoadWebPageCache");
+            } else {
+
+                // get document object
+                $this->_inj['modx']->documentObject= $this->_inj['modx']->getDocumentObject($this->_inj['modx']->documentMethod, $this->_inj['modx']->documentIdentifier, 'prepareResponse');
+                // write the documentName to the object
+                $this->_inj['modx']->documentName= $this->_inj['modx']->documentObject['pagetitle'];
+
+                // validation routines
+                if ($this->_inj['modx']->documentObject['deleted'] == 1) {
+                    $this->_inj['modx']->sendErrorPage();
+                }
+
+                //  && !$this->checkPreview()
+                if ($this->_inj['modx']->documentObject['published'] == 0) {
+
+                    // Can't view unpublished pages
+                    if (!$this->_inj['modx']->hasPermission('view_unpublished')) {
+                        $this->_inj['modx']->sendErrorPage();
+                    } else {
+                        // Inculde the necessary files to check document permissions
+                        include_once (MODX_MANAGER_PATH . 'processors/user_documents_permissions.class.php');
+                        $udperms= new \udperms();
+                        $udperms->user= $this->_inj['modx']->getLoginUserID();
+                        $udperms->document= $this->_inj['modx']->documentIdentifier;
+                        $udperms->role= $_SESSION['mgrRole'];
+                        // Doesn't have access to this document
+                        if (!$udperms->checkPermissions()) {
+                            $this->_inj['modx']->sendErrorPage();
+                        }
+
+                    }
+
+                }
+
+                // check whether it's a reference
+                if ($this->_inj['modx']->documentObject['type'] == "reference") {
+                    if (is_numeric($this->_inj['modx']->documentObject['content'])) {
+                        // if it's a bare document id
+                        $this->_inj['modx']->documentObject['content']= $this->_inj['modx']->makeUrl($this->_inj['modx']->documentObject['content']);
+                    }
+                    elseif (strpos($this->_inj['modx']->documentObject['content'], '[~') !== false) {
+                        // if it's an internal docid tag, process it
+                        $this->_inj['modx']->documentObject['content']= $this->_inj['modx']->rewriteUrls($this->_inj['modx']->documentObject['content']);
+                    }
+                    $this->_inj['modx']->sendRedirect($this->_inj['modx']->documentObject['content'], 0, '', 'HTTP/1.0 301 Moved Permanently');
+                }
+
+                // check if we should not hit this document
+                if ($this->_inj['modx']->documentObject['donthit'] == 1) {
+                    $this->_inj['modx']->config['track_visitors'] = 0;
+                }
+
+                // get the template and start parsing!
+                if (!$this->_inj['modx']->documentObject['template'])
+                    $this->_inj['modx']->documentContent= "[*content*]"; // use blank template
+                else {
+                    $sql= "SELECT `content` FROM " . $this->_inj['modx']->getFullTableName("site_templates") . " WHERE " . $this->_inj['modx']->getFullTableName("site_templates") . ".`id` = '" . $this->_inj['modx']->documentObject['template'] . "';";
+                    $result= $this->_inj['db']->query($sql);
+                    $rowCount= $this->_inj['db']->getRecordCount($result);
+
+                    if ($rowCount > 1) {
+
+                        $this->_inj['modx']->messageQuit("Incorrect number of templates returned from database", $sql);
+                    }
+                    elseif ($rowCount == 1) {
+
+                        $row= $this->_inj['db']->getRow($result);
+                        $this->_inj['modx']->documentContent= $row['content'];
+                    }
+                }
+
+                // invoke OnLoadWebDocument event
+                $this->_inj['modx']->invokeEvent("OnLoadWebDocument");
+
+                // Parse document source
+                $this->_inj['modx']->documentContent = $this->_inj['modx']->parseDocumentSource($this->_inj['modx']->documentContent);
+
+                // setup <base> tag for friendly urls
+                //			if($this->config['friendly_urls']==1 && $this->config['use_alias_path']==1) {
+                //				$this->regClientStartupHTMLBlock('<base href="'.$this->config['site_url'].'" />');
+                //			}
+            }
+            if($this->_inj['modx']->documentIdentifier==$this->_inj['modx']->getConfig('error_page') &&  $this->_inj['modx']->getConfig('error_page')!=$this->_inj['modx']->getConfig('site_start')){
+                header('HTTP/1.0 404 Not Found');
+            }
+
+            register_shutdown_function(array (
+                & $this,
+                "postProcess"
+            )); // tell PHP to call postProcess when it shuts down
+
+            $this->_inj['modx']->outputContent();
+        }
+
+        /**
+         * Final jobs.
+         *
+         * - cache page
+         */
+        function postProcess() {
+            // if the current document was generated, cache it!
+            if ($this->_inj['modx']->documentGenerated == 1 && $this->_inj['modx']->documentObject['cacheable'] == 1 && $this->_inj['modx']->documentObject['type'] == 'document' && $this->_inj['modx']->documentObject['published'] == 1) {
+                $basepath= MODX_BASE_PATH . "assets/cache";
+                // invoke OnBeforeSaveWebPageCache event
+                $this->_inj['modx']->invokeEvent("OnBeforeSaveWebPageCache");
+                if ($this->_inj['modx']->getConfig('cache_type') == 2) {
+                    $md5_hash = '';
+                    if(!empty($_GET)) $md5_hash = '_' . md5(http_build_query($_GET));
+                    $pageCache = $md5_hash .".pageCache.php";
+                }else{
+                    $pageCache = ".pageCache.php";
+                }
+
+                if ($fp= @ fopen($basepath . "/docid_" . $this->_inj['modx']->documentIdentifier . $pageCache, "w")) {
+                    // get and store document groups inside document object. Document groups will be used to check security on cache pages
+                    $sql= "SELECT document_group FROM " . $this->_inj['modx']->getFullTableName("document_groups") . " WHERE document='" . $this->_inj['modx']->documentIdentifier . "'";
+                    $docGroups= $this->_inj['db']->getColumn("document_group", $sql);
+
+                    // Attach Document Groups and Scripts
+                    if (is_array($docGroups)) $this->_inj['modx']->documentObject['__MODxDocGroups__'] = implode(",", $docGroups);
+
+                    $docObjSerial= serialize($this->_inj['modx']->documentObject);
+                    $cacheContent= $docObjSerial . "<!--__MODxCacheSpliter__-->" . $this->_inj['modx']->documentContent;
+                    fputs($fp, "<?php die('Unauthorized access.'); ?>$cacheContent");
+                    fclose($fp);
+                }
+            }
+
+            // Useful for example to external page counters/stats packages
+            $this->_inj['modx']->invokeEvent('OnWebPageComplete');
+
+            // end post processing
+        }
     }

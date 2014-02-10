@@ -86,12 +86,13 @@ class Snippet{
         $snip = eval($snippet);
         $msg = ob_get_contents();
         ob_end_clean();
-        if ((0 < $this->_inj['modx']->getConfig('error_reporting')) && isset($php_errormsg)) {
+
+        if (0 < $this->_inj['modx']->getConfig('error_reporting')) {
             $error_info = error_get_last();
-            if ($this->_inj['modx']->detectError($error_info['type'])) {
+            if (!empty($error_info) && $this->_inj['debug']->detectError($error_info['type'])) {
                 extract($error_info);
                 $msg = ($msg === false) ? 'ob_get_contents() error' : $msg;
-                $result = $this->_inj['modx']->messageQuit('PHP Parse Error', '', true, $type, $file, 'Snippet', $text, $line, $msg);
+                $result = $this->_inj['debug']->messageQuit('PHP Parse Error', '', true, $error_info['type'], $error_info['file'], 'Snippet', $error_info['message'], $error_info['line'], $msg);
                 if ($this->_inj['modx']->isBackend()) {
                     $this->_inj['modx']->event->alert('An error occurred while loading. Please see the event log for more information<p>' . $msg . $snip . '</p>');
                 }
