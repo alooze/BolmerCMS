@@ -85,6 +85,9 @@ class DocumentParser {
         $pimple['snippet'] = $pimple->share(function($inj){
             return new \MODxCore\Parser\Snippet($inj);
         });
+        $pimple['document'] = $pimple->share(function($inj){
+            return new \MODxCore\Document($inj);
+        });
 
         if(substr(PHP_OS,0,3) === 'WIN' && $pimple['global_config']['database_server']==='localhost'){
             $pimple['global_config']['database_server'] = '127.0.0.1';
@@ -163,20 +166,35 @@ class DocumentParser {
         }
     }
 
-    function getMicroTime() {
-        return \MODxCore\Helper::getMicroTime();
+    /**
+     * Returns the manager relative URL/path with respect to the site root.
+     *
+     * @global string $base_url
+     * @return string The complete URL to the manager folder
+     */
+    function getManagerPath() {
+        return MODX_MANAGER_URL;
     }
-    function sendRedirect($url, $count_attempts= 0, $type= '', $responseCode= '') {
-        return $this->_pimple['Response']->sendRedirect($url, $count_attempts, $type, $responseCode);
+
+    /**
+     * Returns the cache relative URL/path with respect to the site root.
+     *
+     * @global string $base_url
+     * @return string The complete URL to the cache folder
+     */
+    function getCachePath() {
+        return MODX_BASE_URL . 'assets/cache/';
     }
-    function sendForward($id, $responseCode= '') {
-        return $this->_pimple['Response']->sendForward($id, $responseCode);
-    }
-    function sendErrorPage() {
-        return $this->_pimple['Response']->sendErrorPage();
-    }
-    function sendUnauthorizedPage() {
-        $this->_pimple['Response']->sendUnauthorizedPage();
+
+    /**
+     * Returns an entry from the config
+     *
+     * Note: most code accesses the config array directly and we will continue to support this.
+     *
+     * @return boolean|string
+     */
+    function getConfig($name= '', $default = false) {
+        return getkey($this->config, $name, $default);
     }
 
     /**
@@ -313,13 +331,6 @@ class DocumentParser {
                 break;
         }
         return $docIdentifier;
-    }
-
-    function checkSession() {
-        return \MODxCore\User\Manager::checkSession();
-    }
-    function checkPreview() {
-        return \MODxCore\Helper::checkPreview();
     }
 
     /**
@@ -704,10 +715,6 @@ class DocumentParser {
         // end post processing
     }
 
-    function getTagsFromContent($content,$left='[+',$right='+]') {
-        return \MODxCore\Parser::getTagsFromContent($content,$left,$right);
-    }
-
     /**
      * Merge content fields and TVs
      *
@@ -875,19 +882,10 @@ class DocumentParser {
         unset($modx->event->params);
     }
 
-    function evalSnippet($snippet, $params) {
-        return $this->_pimple['snippet']->evalSnippet($snippet, $params);
-    }
-
-    function evalSnippets($documentSource) {
-       return $this->_pimple['snippet']->evalSnippets($documentSource);
-    }
-
     function toAlias($text) {
         $suff= $this->getConfig('friendly_url_suffix');
         return str_replace(array('.xml'.$suff,'.rss'.$suff,'.js'.$suff,'.css'.$suff),array('.xml','.rss','.js','.css'),$text);
     }
-
 
     /**
      * Convert URL tags [~...~] to URLs
@@ -986,92 +984,6 @@ class DocumentParser {
             exit(0);
         }
         return;
-    }
-
-    /**
-     * Get all db fields and TVs for a document/resource
-     *
-     * @param type $method
-     * @param type $identifier
-     * @return array
-     */
-    function getDocumentObject($method, $identifier, $isPrepareResponse=false) {
-        $tblsc= $this->getFullTableName("site_content");
-        $tbldg= $this->getFullTableName("document_groups");
-
-        // allow alias to be full path
-        if($method == 'alias') {
-            $identifier = $this->cleanDocumentIdentifier($identifier);
-            $method = $this->documentMethod;
-        }
-        if($method == 'alias' && $this->getConfig('use_alias_path') && array_key_exists($identifier, $this->documentListing)) {
-            $method = 'id';
-            $identifier = $this->documentListing[$identifier];
-        }
-        // get document groups for current user
-        if ($docgrp= $this->getUserDocGroups())
-            $docgrp= implode(",", $docgrp);
-        // get document
-        $access=  "1='" . $_SESSION['mgrRole'] . "'" . ($this->isFrontend() ? " OR sc.privateweb=0" : " OR sc.privatemgr=0") .
-            (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-        $sql= "SELECT sc.*
-              FROM $tblsc sc
-              LEFT JOIN $tbldg dg ON dg.document = sc.id
-              WHERE sc." . $method . " = '" . $identifier . "'
-              AND ($access) LIMIT 1;";
-        $result= $this->db->query($sql);
-        $rowCount= $this->db->getRecordCount($result);
-        if ($rowCount < 1) {
-            if ($this->getConfig('unauthorized_page')) {
-                // method may still be alias, while identifier is not full path alias, e.g. id not found above
-                if ($method === 'alias') {
-                    $q = "SELECT dg.id FROM $tbldg dg, $tblsc sc WHERE dg.document = sc.id AND sc.alias = '{$identifier}' LIMIT 1;";
-                } else {
-                    $q = "SELECT id FROM $tbldg WHERE document = '{$identifier}' LIMIT 1;";
-                }
-                // check if file is not public
-                $secrs= $this->db->query($q);
-                if ($secrs)
-                    $seclimit= $this->db->getRecordCount($secrs);
-            }
-            if ($seclimit > 0) {
-                // match found but not publicly accessible, send the visitor to the unauthorized_page
-                $this->sendUnauthorizedPage();
-                exit; // stop here
-            } else {
-                $this->sendErrorPage();
-                exit;
-            }
-        }
-
-        # this is now the document :) #
-        $documentObject= $this->db->getRow($result);
-        if($isPrepareResponse==='prepareResponse') $this->documentObject = & $documentObject;
-        $this->invokeEvent('OnLoadDocumentObject');
-        if ($documentObject['template']) {
-            // load TVs and merge with document - Orig by Apodigm - Docvars
-            $sql= "SELECT tv.*, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
-            $sql .= "FROM " . $this->getFullTableName("site_tmplvars") . " tv ";
-            $sql .= "INNER JOIN " . $this->getFullTableName("site_tmplvar_templates")." tvtpl ON tvtpl.tmplvarid = tv.id ";
-            $sql .= "LEFT JOIN " . $this->getFullTableName("site_tmplvar_contentvalues")." tvc ON tvc.tmplvarid=tv.id AND tvc.contentid = '" . $documentObject['id'] . "' ";
-            $sql .= "WHERE tvtpl.templateid = '" . $documentObject['template'] . "'";
-            $rs= $this->db->query($sql);
-            $rowCount= $this->db->getRecordCount($rs);
-            if ($rowCount > 0) {
-                for ($i= 0; $i < $rowCount; $i++) {
-                    $row= $this->db->getRow($rs);
-                    $tmplvars[$row['name']]= array (
-                        $row['name'],
-                        $row['value'],
-                        $row['display'],
-                        $row['display_params'],
-                        $row['type']
-                    );
-                }
-                $documentObject= array_merge($documentObject, $tmplvars);
-            }
-        }
-        return $documentObject;
     }
 
     /**
@@ -1343,69 +1255,6 @@ class DocumentParser {
     }
 
     /**
-     * Returns an array of all parent record IDs for the id passed.
-     *
-     * @param int $id Docid to get parents for.
-     * @param int $height The maximum number of levels to go up, default 10.
-     * @return array
-     */
-    function getParentIds($id, $height= 10) {
-        $parents= array ();
-        while ( $id && $height-- ) {
-            $thisid = $id;
-            $id = $this->aliasListing[$id]['parent'];
-            if (!$id) break;
-            $parents[$thisid] = $id;
-        }
-        return $parents;
-    }
-
-    /**
-     * Returns an array of child IDs belonging to the specified parent.
-     *
-     * @param int $id The parent resource/document to start from
-     * @param int $depth How many levels deep to search for children, default: 10
-     * @param array $children Optional array of docids to merge with the result.
-     * @return array Contains the document Listing (tree) like the sitemap
-     */
-    function getChildIds($id, $depth= 10, $children= array ()) {
-
-        // Initialise a static array to index parents->children
-        static $documentMap_cache = array();
-        if (!count($documentMap_cache)) {
-            foreach ($this->documentMap as $document) {
-                foreach ($document as $p => $c) {
-                    $documentMap_cache[$p][] = $c;
-                }
-            }
-        }
-
-        // Get all the children for this parent node
-        if (isset($documentMap_cache[$id])) {
-            $depth--;
-
-            foreach ($documentMap_cache[$id] as $childId) {
-                $pkey = (strlen($this->aliasListing[$childId]['path']) ? "{$this->aliasListing[$childId]['path']}/" : '') . $this->aliasListing[$childId]['alias'];
-                if (!strlen($pkey)) $pkey = "{$childId}";
-                $children[$pkey] = $childId;
-
-                if ($depth) {
-                    $children += $this->getChildIds($childId, $depth);
-                }
-            }
-        }
-        return $children;
-    }
-
-    function webAlert($msg, $url= "") {
-        return $this->_pimple['HTML']->webAlert($msg, $url);
-    }
-
-    function hasPermission($pm) {
-        return \MODxCore\User\Manager::hasPermission($pm);
-    }
-
-    /**
      * Add an a alert message to the system event log
      *
      * @param int $evtid Event ID
@@ -1559,296 +1408,6 @@ class DocumentParser {
     }
 
     /**
-     * Gets all child documents of the specified document, including those which are unpublished or deleted.
-     *
-     * @param int $id The Document identifier to start with
-     * @param string $sort Sort field
-     *                     Default: menuindex
-     * @param string $dir Sort direction, ASC and DESC is possible
-     *                    Default: ASC
-     * @param string $fields Default: id, pagetitle, description, parent, alias, menutitle
-     * @return array
-     */
-    function getAllChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        $tblsc= $this->getFullTableName("site_content");
-        $tbldg= $this->getFullTableName("document_groups");
-        // modify field names to use sc. table reference
-        $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
-        $sort= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
-        // get document groups for current user
-        if ($docgrp= $this->getUserDocGroups())
-            $docgrp= implode(",", $docgrp);
-        // build query
-        $access= ($this->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
-            (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-        $sql= "SELECT DISTINCT $fields FROM $tblsc sc
-              LEFT JOIN $tbldg dg on dg.document = sc.id
-              WHERE sc.parent = '$id'
-              AND ($access)
-              GROUP BY sc.id
-              ORDER BY $sort $dir;";
-        $result= $this->db->query($sql);
-        $resourceArray= array ();
-        for ($i= 0; $i < @ $this->db->getRecordCount($result); $i++) {
-            array_push($resourceArray, @ $this->db->getRow($result));
-        }
-        return $resourceArray;
-    }
-
-    /**
-     * Gets all active child documents of the specified document, i.e. those which published and not deleted.
-     *
-     * @param int $id The Document identifier to start with
-     * @param string $sort Sort field
-     *                     Default: menuindex
-     * @param string $dir Sort direction, ASC and DESC is possible
-     *                    Default: ASC
-     * @param string $fields Default: id, pagetitle, description, parent, alias, menutitle
-     * @return array
-     */
-    function getActiveChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        $tblsc= $this->getFullTableName("site_content");
-        $tbldg= $this->getFullTableName("document_groups");
-
-        // modify field names to use sc. table reference
-        $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
-        $sort= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
-        // get document groups for current user
-        if ($docgrp= $this->getUserDocGroups())
-            $docgrp= implode(",", $docgrp);
-        // build query
-        $access= ($this->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
-            (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-        $sql= "SELECT DISTINCT $fields FROM $tblsc sc
-              LEFT JOIN $tbldg dg on dg.document = sc.id
-              WHERE sc.parent = '$id' AND sc.published=1 AND sc.deleted=0
-              AND ($access)
-              GROUP BY sc.id
-              ORDER BY $sort $dir;";
-        $result= $this->db->query($sql);
-        $resourceArray= array ();
-        for ($i= 0; $i < @ $this->db->getRecordCount($result); $i++) {
-            array_push($resourceArray, @ $this->db->getRow($result));
-        }
-        return $resourceArray;
-    }
-
-    /**
-     * Returns the children of the selected document/folder.
-     *
-     * @param int $parentid The parent document identifier
-     *                      Default: 0 (site root)
-     * @param int $published Whether published or unpublished documents are in the result
-     *                      Default: 1
-     * @param int $deleted Whether deleted or undeleted documents are in the result
-     *                      Default: 0 (undeleted)
-     * @param string $fields List of fields
-     *                       Default: * (all fields)
-     * @param string $where Where condition in SQL style. Should include a leading 'AND '
-     *                      Default: Empty string
-     * @param type $sort Should be a comma-separated list of field names on which to sort
-     *                    Default: menuindex
-     * @param string $dir Sort direction, ASC and DESC is possible
-     *                    Default: ASC
-     * @param string|int $limit Should be a valid SQL LIMIT clause without the 'LIMIT' i.e. just include the numbers as a string.
-     *                          Default: Empty string (no limit)
-     * @return array
-     */
-    function getDocumentChildren($parentid= 0, $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
-        $limit= ($limit != "") ? "LIMIT $limit" : "";
-        $tblsc= $this->getFullTableName("site_content");
-        $tbldg= $this->getFullTableName("document_groups");
-        // modify field names to use sc. table reference
-        $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
-        $sort= ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
-        if ($where != '')
-            $where= 'AND ' . $where;
-        // get document groups for current user
-        if ($docgrp= $this->getUserDocGroups())
-            $docgrp= implode(",", $docgrp);
-        // build query
-        $access= ($this->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
-            (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-        $sql= "SELECT DISTINCT $fields
-              FROM $tblsc sc
-              LEFT JOIN $tbldg dg on dg.document = sc.id
-              WHERE sc.parent = '$parentid' AND sc.published=$published AND sc.deleted=$deleted $where
-              AND ($access)
-              GROUP BY sc.id " .
-            ($sort ? " ORDER BY $sort $dir " : "") . " $limit ";
-        $result= $this->db->query($sql);
-        $resourceArray= array ();
-        for ($i= 0; $i < @ $this->db->getRecordCount($result); $i++) {
-            array_push($resourceArray, @ $this->db->getRow($result));
-        }
-        return $resourceArray;
-    }
-
-    /**
-     * Returns multiple documents/resources
-     *
-     * @category API-Function
-     * @param array $ids Documents to fetch by docid
-     *                   Default: Empty array
-     * @param int $published Whether published or unpublished documents are in the result
-     *                      Default: 1
-     * @param int $deleted Whether deleted or undeleted documents are in the result
-     *                      Default: 0 (undeleted)
-     * @param string $fields List of fields
-     *                       Default: * (all fields)
-     * @param string $where Where condition in SQL style. Should include a leading 'AND '.
-     *                      Default: Empty string
-     * @param type $sort Should be a comma-separated list of field names on which to sort
-     *                    Default: menuindex
-     * @param string $dir Sort direction, ASC and DESC is possible
-     *                    Default: ASC
-     * @param string|int $limit Should be a valid SQL LIMIT clause without the 'LIMIT' i.e. just include the numbers as a string.
-     *                          Default: Empty string (no limit)
-     * @return array|boolean Result array with documents, or false
-     */
-    function getDocuments($ids= array (), $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
-        if(is_string($ids))
-        {
-            if(strpos($ids,',')!==false)
-                $ids = explode(',', $ids);
-            else
-                $ids = array($ids);
-        }
-        if (count($ids) == 0) {
-            return false;
-        } else {
-            $limit= ($limit != "") ? "LIMIT $limit" : ""; // LIMIT capabilities - rad14701
-            $tblsc= $this->getFullTableName("site_content");
-            $tbldg= $this->getFullTableName("document_groups");
-            // modify field names to use sc. table reference
-            $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
-            $sort= ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
-            if ($where != '')
-                $where= 'AND ' . $where;
-            // get document groups for current user
-            if ($docgrp= $this->getUserDocGroups())
-                $docgrp= implode(",", $docgrp);
-            $access= ($this->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
-                (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-            $sql= "SELECT DISTINCT $fields FROM $tblsc sc
-                    LEFT JOIN $tbldg dg on dg.document = sc.id
-                    WHERE (sc.id IN (" . implode(",",$ids) . ") AND sc.published=$published AND sc.deleted=$deleted $where)
-                    AND ($access)
-                    GROUP BY sc.id " .
-                ($sort ? " ORDER BY $sort $dir" : "") . " $limit ";
-            $result= $this->db->query($sql);
-            $resourceArray= array ();
-            for ($i= 0; $i < @ $this->db->getRecordCount($result); $i++) {
-                array_push($resourceArray, @ $this->db->getRow($result));
-            }
-            return $resourceArray;
-        }
-    }
-
-    /**
-     * Returns one document/resource
-     *
-     * @category API-Function
-     * @param int $id docid
-     *                Default: 0 (no documents)
-     * @param string $fields List of fields
-     *                       Default: * (all fields)
-     * @param int $published Whether published or unpublished documents are in the result
-     *                      Default: 1
-     * @param int $deleted Whether deleted or undeleted documents are in the result
-     *                      Default: 0 (undeleted)
-     * @return boolean|string
-     */
-    function getDocument($id= 0, $fields= "*", $published= 1, $deleted= 0) {
-        if ($id == 0) {
-            return false;
-        } else {
-            $tmpArr[]= $id;
-            $docs= $this->getDocuments($tmpArr, $published, $deleted, $fields, "", "", "", 1);
-            if ($docs != false) {
-                return $docs[0];
-            } else {
-                return false;
-            }
-        }
-    }
-
-    /**
-     * Returns the page information as database row, the type of result is
-     * defined with the parameter $rowMode
-     *
-     * @param int $pageid The parent document identifier
-     *                    Default: -1 (no result)
-     * @param int $active Should we fetch only published and undeleted documents/resources?
-     *                     1 = yes, 0 = no
-     *                     Default: 1
-     * @param string $fields List of fields
-     *                       Default: id, pagetitle, description, alias
-     * @return boolean|array
-     */
-    function getPageInfo($pageid= -1, $active= 1, $fields= 'id, pagetitle, description, alias') {
-        if ($pageid == 0) {
-            return false;
-        } else {
-            $tblsc= $this->getFullTableName("site_content");
-            $tbldg= $this->getFullTableName("document_groups");
-            $activeSql= $active == 1 ? "AND sc.published=1 AND sc.deleted=0" : "";
-            // modify field names to use sc. table reference
-            $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
-            // get document groups for current user
-            if ($docgrp= $this->getUserDocGroups())
-                $docgrp= implode(",", $docgrp);
-            $access= ($this->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
-                (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-            $sql= "SELECT $fields
-                    FROM $tblsc sc
-                    LEFT JOIN $tbldg dg on dg.document = sc.id
-                    WHERE (sc.id=$pageid $activeSql)
-                    AND ($access)
-                    LIMIT 1 ";
-            $result= $this->db->query($sql);
-            $pageInfo= @ $this->db->getRow($result);
-            return $pageInfo;
-        }
-    }
-
-    /**
-     * Returns the parent document/resource of the given docid
-     *
-     * @param int $pid The parent docid. If -1, then fetch the current document/resource's parent
-     *                 Default: -1
-     * @param int $active Should we fetch only published and undeleted documents/resources?
-     *                     1 = yes, 0 = no
-     *                     Default: 1
-     * @param string $fields List of fields
-     *                       Default: id, pagetitle, description, alias
-     * @return boolean|array
-     */
-    function getParent($pid= -1, $active= 1, $fields= 'id, pagetitle, description, alias, parent') {
-        if ($pid == -1) {
-            $pid= $this->documentObject['parent'];
-            return ($pid == 0) ? false : $this->getPageInfo($pid, $active, $fields);
-        } else
-            if ($pid == 0) {
-                return false;
-            } else {
-                // first get the child document
-                $child= $this->getPageInfo($pid, $active, "parent");
-                // now return the child's parent
-                $pid= ($child['parent']) ? $child['parent'] : 0;
-                return ($pid == 0) ? false : $this->getPageInfo($pid, $active, $fields);
-            }
-    }
-
-    function getSnippetId() {
-        return $this->_pimple['snippet']->getSnippetId();
-    }
-
-    function getSnippetName() {
-        return $this->_pimple['snippet']->getSnippetName();
-    }
-
-    /**
      * Clear the cache of MODX.
      *
      * @return boolean
@@ -1958,22 +1517,10 @@ class DocumentParser {
     }
 
     /**
-     * Returns an entry from the config
-     *
-     * Note: most code accesses the config array directly and we will continue to support this.
-     *
-     * @return boolean|string
-     */
-    function getConfig($name= '', $default = false) {
-        return getkey($this->config, $name, $default);
-    }
-
-    /**
      * Returns the MODX version information as version, branch, release date and full application name.
      *
      * @return array
      */
-
     function getVersionData($data=null) {
         $out=array();
         if(empty($this->version) || !is_array($this->version)){
@@ -1987,95 +1534,6 @@ class DocumentParser {
             $this->version['new_version'] = $this->getConfig('newversiontext');
         }
         return (!is_null($data) && is_array($this->version) && isset($this->version[$data])) ? $this->version[$data] : $this->version;
-    }
-
-    function runSnippet($snippetName, $params= array ()) {
-        return $this->_pimple['snippet']->runSnippet($snippetName, $params);
-    }
-
-    function getChunk($chunkName) {
-        return \MODxCore\Parser::getChunk($chunkName);
-    }
-    function parseText($chunk, $chunkArr, $prefix = '[+', $suffix = '+]'){
-        return \MODxCore\Parser::parseText($chunk, $chunkArr, $prefix, $suffix);
-    }
-    function parseChunk($chunkName, $chunkArr, $prefix = '{', $suffix = '}'){
-        return \MODxCore\Parser::parseChunk($chunkName, $chunkArr, $prefix, $suffix);
-    }
-
-    /**
-     * Returns the timestamp in the date format defined in $this->config['datetime_format']
-     *
-     * @param int $timestamp Default: 0
-     * @param string $mode Default: Empty string (adds the time as below). Can also be 'dateOnly' for no time or 'formatOnly' to get the datetime_format string.
-     * @return string
-     */
-    function toDateFormat($timestamp = 0, $mode = '') {
-        $timestamp = trim($timestamp);
-        if($mode !== 'formatOnly' && empty($timestamp)) return '-';
-        $timestamp = intval($timestamp);
-
-        switch($this->getConfig('datetime_format')) {
-            case 'YYYY/mm/dd':
-                $dateFormat = '%Y/%m/%d';
-                break;
-            case 'dd-mm-YYYY':
-                $dateFormat = '%d-%m-%Y';
-                break;
-            case 'mm/dd/YYYY':
-                $dateFormat = '%m/%d/%Y';
-                break;
-            /*
-            case 'dd-mmm-YYYY':
-                $dateFormat = '%e-%b-%Y';
-                break;
-            */
-        }
-
-        if (empty($mode)) {
-            $strTime = strftime($dateFormat . " %H:%M:%S", $timestamp);
-        } elseif ($mode == 'dateOnly') {
-            $strTime = strftime($dateFormat, $timestamp);
-        } elseif ($mode == 'formatOnly') {
-            $strTime = $dateFormat;
-        }
-        return $strTime;
-    }
-
-    /**
-     * Make a timestamp from a string corresponding to the format in $this->config['datetime_format']
-     *
-     * @param string $str
-     * @return string
-     */
-    function toTimeStamp($str) {
-        $str = trim($str);
-        if (empty($str)) {return '';}
-
-        switch($this->getConfig('datetime_format')) {
-            case 'YYYY/mm/dd':
-                if (!preg_match('/^[0-9]{4}\/[0-9]{2}\/[0-9]{2}[0-9 :]*$/', $str)) {return '';}
-                list ($Y, $m, $d, $H, $M, $S) = sscanf($str, '%4d/%2d/%2d %2d:%2d:%2d');
-                break;
-            case 'dd-mm-YYYY':
-                if (!preg_match('/^[0-9]{2}-[0-9]{2}-[0-9]{4}[0-9 :]*$/', $str)) {return '';}
-                list ($d, $m, $Y, $H, $M, $S) = sscanf($str, '%2d-%2d-%4d %2d:%2d:%2d');
-                break;
-            case 'mm/dd/YYYY':
-                if (!preg_match('/^[0-9]{2}\/[0-9]{2}\/[0-9]{4}[0-9 :]*$/', $str)) {return '';}
-                list ($m, $d, $Y, $H, $M, $S) = sscanf($str, '%2d/%2d/%4d %2d:%2d:%2d');
-                break;
-            /*
-            case 'dd-mmm-YYYY':
-            	if (!preg_match('/^[0-9]{2}-[0-9a-z]+-[0-9]{4}[0-9 :]*$/i', $str)) {return '';}
-            	list ($m, $d, $Y, $H, $M, $S) = sscanf($str, '%2d-%3s-%4d %2d:%2d:%2d');
-                break;
-            */
-        }
-        if (!$H && !$M && !$S) {$H = 0; $M = 0; $S = 0;}
-        $timeStamp = mktime($H, $M, $S, $m, $d, $Y);
-        $timeStamp = intval($timeStamp);
-        return $timeStamp;
     }
 
     /**
@@ -2330,40 +1788,6 @@ class DocumentParser {
         return $this->db->config['dbase'] . ".`" . $this->db->config['table_prefix'] . $tbl . "`";
     }
 
-
-    function getPlaceholder($name) {
-        return \MODxCore\Parser::getPlaceholder($name);
-    }
-    function setPlaceholder($name, $value) {
-        return \MODxCore\Parser::setPlaceholder($name, $value);
-    }
-    function toPlaceholders($subject, $prefix= '') {
-        return \MODxCore\Parser::toPlaceholders($subject, $prefix);
-    }
-    function toPlaceholder($key, $value, $prefix= '') {
-        return \MODxCore\Parser::toPlaceholder($key, $value, $prefix);
-    }
-
-    /**
-     * Returns the manager relative URL/path with respect to the site root.
-     *
-     * @global string $base_url
-     * @return string The complete URL to the manager folder
-     */
-    function getManagerPath() {
-        return MODX_MANAGER_URL;
-    }
-
-    /**
-     * Returns the cache relative URL/path with respect to the site root.
-     *
-     * @global string $base_url
-     * @return string The complete URL to the cache folder
-     */
-    function getCachePath() {
-        return MODX_BASE_URL . 'assets/cache/';
-    }
-
     /**
      * Sends a message to a user's message box.
      *
@@ -2398,158 +1822,6 @@ class DocumentParser {
         // insert a new message into user_messages
         $sql= "INSERT INTO " . $this->getFullTableName("user_messages") . " ( id , type , subject , message , sender , recipient , private , postdate , messageread ) VALUES ( '', '$type', '$subject', '$msg', '$from', '$to', '$private', '" . time() . "', '0' );";
         $rs= $this->db->query($sql);
-    }
-
-    function getLoginUserID($context= '') {
-        return \MODxCore\User::getLoginUserID($context);
-    }
-    function getLoginUserName($context= '') {
-        return \MODxCore\User::getLoginUserName($context);
-    }
-    function getLoginUserType() {
-        return \MODxCore\User::getLoginUserType();
-    }
-    function getUserInfo($uid) {
-        return \MODxCore\User::getUserInfo($uid);
-    }
-    function getWebUserInfo($uid) {
-        return \MODxCore\User::getUserInfo($uid);
-    }
-    function getUserDocGroups($resolveIds= false) {
-        return \MODxCore\User::getUserInfo($resolveIds);
-    }
-    function changeWebUserPassword($oldPwd, $newPwd) {
-        return \MODxCore\User::changeWebUserPassword($oldPwd, $newPwd);
-    }
-    function isMemberOfWebGroup($groupNames= array ()) {
-        return \MODxCore\User::isMemberOfWebGroup($groupNames);
-    }
-
-    /**
-     * Registers Client-side CSS scripts - these scripts are loaded at inside
-     * the <head> tag
-     *
-     * @param string $src
-     * @param string $media Default: Empty string
-     */
-    function regClientCSS($src, $media='') {
-        if (empty($src) || isset ($this->loadedjscripts[$src]))
-            return '';
-        $nextpos= max(array_merge(array(0),array_keys($this->sjscripts)))+1;
-        $this->loadedjscripts[$src]['startup']= true;
-        $this->loadedjscripts[$src]['version']= '0';
-        $this->loadedjscripts[$src]['pos']= $nextpos;
-        if (strpos(strtolower($src), "<style") !== false || strpos(strtolower($src), "<link") !== false) {
-            $this->sjscripts[$nextpos]= $src;
-        } else {
-            $this->sjscripts[$nextpos]= "\t" . '<link rel="stylesheet" type="text/css" href="'.$src.'" '.($media ? 'media="'.$media.'" ' : '').'/>';
-        }
-    }
-
-    /**
-     * Registers Startup Client-side JavaScript - these scripts are loaded at inside the <head> tag
-     *
-     * @param string $src
-     * @param array $options Default: 'name'=>'', 'version'=>'0', 'plaintext'=>false
-     */
-    function regClientStartupScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false)) {
-        $this->regClientScript($src, $options, true);
-    }
-
-    /**
-     * Registers Client-side JavaScript these scripts are loaded at the end of the page unless $startup is true
-     *
-     * @param string $src
-     * @param array $options Default: 'name'=>'', 'version'=>'0', 'plaintext'=>false
-     * @param boolean $startup Default: false
-     * @return string
-     */
-    function regClientScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false), $startup= false) {
-        if (empty($src))
-            return ''; // nothing to register
-        if (!is_array($options)) {
-            if (is_bool($options))  // backward compatibility with old plaintext parameter
-                $options=array('plaintext'=>$options);
-            elseif (is_string($options)) // Also allow script name as 2nd param
-                $options=array('name'=>$options);
-            else
-                $options=array();
-        }
-        $name= isset($options['name']) ? strtolower($options['name']) : '';
-        $version= isset($options['version']) ? $options['version'] : '0';
-        $plaintext= isset($options['plaintext']) ? $options['plaintext'] : false;
-        $key= !empty($name) ? $name : $src;
-        unset($overwritepos); // probably unnecessary--just making sure
-
-        $useThisVer= true;
-        if (isset($this->loadedjscripts[$key])) { // a matching script was found
-            // if existing script is a startup script, make sure the candidate is also a startup script
-            if ($this->loadedjscripts[$key]['startup'])
-                $startup= true;
-
-            if (empty($name)) {
-                $useThisVer= false; // if the match was based on identical source code, no need to replace the old one
-            } else {
-                $useThisVer = version_compare($this->loadedjscripts[$key]['version'], $version, '<');
-            }
-
-            if ($useThisVer) {
-                if ($startup==true && $this->loadedjscripts[$key]['startup']==false) {
-                    // remove old script from the bottom of the page (new one will be at the top)
-                    unset($this->jscripts[$this->loadedjscripts[$key]['pos']]);
-                } else {
-                    // overwrite the old script (the position may be important for dependent scripts)
-                    $overwritepos= $this->loadedjscripts[$key]['pos'];
-                }
-            } else { // Use the original version
-                if ($startup==true && $this->loadedjscripts[$key]['startup']==false) {
-                    // need to move the exisiting script to the head
-                    $version= $this->loadedjscripts[$key][$version];
-                    $src= $this->jscripts[$this->loadedjscripts[$key]['pos']];
-                    unset($this->jscripts[$this->loadedjscripts[$key]['pos']]);
-                } else {
-                    return ''; // the script is already in the right place
-                }
-            }
-        }
-
-        if ($useThisVer && $plaintext!=true && (strpos(strtolower($src), "<script") === false))
-            $src= "\t" . '<script type="text/javascript" src="' . $src . '"></script>';
-        if ($startup) {
-            $pos= isset($overwritepos) ? $overwritepos : max(array_merge(array(0),array_keys($this->sjscripts)))+1;
-            $this->sjscripts[$pos]= $src;
-        } else {
-            $pos= isset($overwritepos) ? $overwritepos : max(array_merge(array(0),array_keys($this->jscripts)))+1;
-            $this->jscripts[$pos]= $src;
-        }
-        $this->loadedjscripts[$key]['version']= $version;
-        $this->loadedjscripts[$key]['startup']= $startup;
-        $this->loadedjscripts[$key]['pos']= $pos;
-    }
-
-    /**
-     * Returns all registered JavaScripts
-     *
-     * @return string
-     */
-    function regClientStartupHTMLBlock($html) {
-        $this->regClientScript($html, true, true);
-    }
-
-    /**
-     * Returns all registered startup scripts
-     *
-     * @return string
-     */
-    function regClientHTMLBlock($html) {
-        $this->regClientScript($html, true);
-    }
-
-    function stripTags($html, $allowed= "") {
-        return \MODxCore\Helper::stripTags($html, $allowed);
-    }
-    function jsonDecode($json, $assoc = false) {
-        return \MODxCore\Lib\json::jsonDecode($json, array('assoc' => $assoc));
     }
 
     /**
@@ -2651,10 +1923,6 @@ class DocumentParser {
             }
         $e->activePlugin= "";
         return $results;
-    }
-
-    function parseProperties($propertyString) {
-        return \MODxCore\Parser::parseProperties($propertyString);
     }
 
     /***************************************************************************************/
@@ -2960,10 +2228,6 @@ class DocumentParser {
         }
     }
 
-    function nicesize($size) {
-        return \MODxCore\Helper::nicesize($size);
-    }
-
     function getIdFromAlias($alias)
     {
         $children = array();
@@ -3006,4 +2270,158 @@ class DocumentParser {
     }
     // End of class.
 
+
+    function getDocumentObject($method, $identifier, $isPrepareResponse=false) {
+        return $this->_pimple['document']->getDocumentObject($method, $identifier, $isPrepareResponse);
+    }
+    function toDateFormat($timestamp = 0, $mode = '') {
+        return \MODxCore\Helper::toDateFormat($timestamp, $mode);
+    }
+    function toTimeStamp($str) {
+        return \MODxCore\Helper::toTimeStamp($str);
+    }
+    function regClientCSS($src, $media='') {
+        return $this->_pimple['HTML']->regClientCSS($src, $media);
+    }
+    function regClientStartupScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false)) {
+        return $this->_pimple['HTML']->regClientCSS($src, $options);
+    }
+    function regClientScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false), $startup= false) {
+        return $this->_pimple['HTML']->regClientScript($src, $options, $startup);
+    }
+    function regClientStartupHTMLBlock($html) {
+        return $this->_pimple['HTML']->regClientStartupHTMLBlock($html);
+    }
+    function regClientHTMLBlock($html) {
+        return $this->_pimple['HTML']->regClientHTMLBlock($html);
+    }
+    function getAllChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
+        return $this->_pimple['document']->getAllChildren($id, $sort, $dir, $fields);
+    }
+    function getActiveChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
+        return $this->_pimple['document']->getActiveChildren($id, $sort, $dir, $fields);
+    }
+    function getDocumentChildren($parentid= 0, $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
+        return $this->_pimple['document']->getDocumentChildren($parentid, $published, $deleted, $fields, $where, $sort, $dir, $limit);
+    }
+    function getDocuments($ids= array (), $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
+        return $this->_pimple['document']->getDocuments($ids, $published, $deleted, $fields, $where, $sort, $dir, $limit);
+    }
+    function getDocument($id= 0, $fields= "*", $published= 1, $deleted= 0) {
+        return $this->_pimple['document']->getDocument($id, $fields, $published, $deleted);
+    }
+    function getPageInfo($pageid= -1, $active= 1, $fields= 'id, pagetitle, description, alias') {
+        return $this->_pimple['document']->getPageInfo($pageid, $active, $fields);
+    }
+    function getParent($pid= -1, $active= 1, $fields= 'id, pagetitle, description, alias, parent') {
+        return $this->_pimple['document']->getParent($pid, $active, $fields);
+    }
+    function getSnippetId() {
+        return $this->_pimple['snippet']->getSnippetId();
+    }
+    function getSnippetName() {
+        return $this->_pimple['snippet']->getSnippetName();
+    }
+    function runSnippet($snippetName, $params= array ()) {
+        return $this->_pimple['snippet']->runSnippet($snippetName, $params);
+    }
+    function getChunk($chunkName) {
+        return \MODxCore\Parser::getChunk($chunkName);
+    }
+    function parseText($chunk, $chunkArr, $prefix = '[+', $suffix = '+]'){
+        return \MODxCore\Parser::parseText($chunk, $chunkArr, $prefix, $suffix);
+    }
+    function parseChunk($chunkName, $chunkArr, $prefix = '{', $suffix = '}'){
+        return \MODxCore\Parser::parseChunk($chunkName, $chunkArr, $prefix, $suffix);
+    }
+    function nicesize($size) {
+        return \MODxCore\Helper::nicesize($size);
+    }
+    function getTagsFromContent($content,$left='[+',$right='+]') {
+        return \MODxCore\Parser::getTagsFromContent($content,$left,$right);
+    }
+    function getPlaceholder($name) {
+        return \MODxCore\Parser::getPlaceholder($name);
+    }
+    function setPlaceholder($name, $value) {
+        return \MODxCore\Parser::setPlaceholder($name, $value);
+    }
+    function toPlaceholders($subject, $prefix= '') {
+        \MODxCore\Parser::toPlaceholders($subject, $prefix);
+    }
+    function toPlaceholder($key, $value, $prefix= '') {
+        \MODxCore\Parser::toPlaceholder($key, $value, $prefix);
+    }
+    function getLoginUserID($context= '') {
+        return \MODxCore\User::getLoginUserID($context);
+    }
+    function getLoginUserName($context= '') {
+        return \MODxCore\User::getLoginUserName($context);
+    }
+    function getLoginUserType() {
+        return \MODxCore\User::getLoginUserType();
+    }
+    function getUserInfo($uid) {
+        return \MODxCore\User::getUserInfo($uid);
+    }
+    function getWebUserInfo($uid) {
+        return \MODxCore\User::getUserInfo($uid);
+    }
+    function getUserDocGroups($resolveIds= false) {
+        return \MODxCore\User::getUserInfo($resolveIds);
+    }
+    function changeWebUserPassword($oldPwd, $newPwd) {
+        return \MODxCore\User::changeWebUserPassword($oldPwd, $newPwd);
+    }
+    function isMemberOfWebGroup($groupNames= array ()) {
+        return \MODxCore\User::isMemberOfWebGroup($groupNames);
+    }
+    function stripTags($html, $allowed= "") {
+        return \MODxCore\Helper::stripTags($html, $allowed);
+    }
+    function jsonDecode($json, $assoc = false) {
+        return \MODxCore\Lib\json::jsonDecode($json, array('assoc' => $assoc));
+    }
+    function parseProperties($propertyString) {
+        return \MODxCore\Parser::parseProperties($propertyString);
+    }
+    function getParentIds($id, $height= 10) {
+        return $this->_pimple['document']->getParentIds($id, $height);
+    }
+    function getChildIds($id, $depth= 10, $children= array ()) {
+        return $this->_pimple['document']->getChildIds($id, $depth, $children);
+    }
+    function webAlert($msg, $url= "") {
+        return $this->_pimple['HTML']->webAlert($msg, $url);
+    }
+    function hasPermission($pm) {
+        return \MODxCore\User\Manager::hasPermission($pm);
+    }
+    function evalSnippet($snippet, $params) {
+        return $this->_pimple['snippet']->evalSnippet($snippet, $params);
+    }
+    function evalSnippets($documentSource) {
+        return $this->_pimple['snippet']->evalSnippets($documentSource);
+    }
+    function checkSession() {
+        return \MODxCore\User\Manager::checkSession();
+    }
+    function checkPreview() {
+        return \MODxCore\Helper::checkPreview();
+    }
+    function getMicroTime() {
+        return \MODxCore\Helper::getMicroTime();
+    }
+    function sendRedirect($url, $count_attempts= 0, $type= '', $responseCode= '') {
+        return $this->_pimple['Response']->sendRedirect($url, $count_attempts, $type, $responseCode);
+    }
+    function sendForward($id, $responseCode= '') {
+        return $this->_pimple['Response']->sendForward($id, $responseCode);
+    }
+    function sendErrorPage() {
+        return $this->_pimple['Response']->sendErrorPage();
+    }
+    function sendUnauthorizedPage() {
+        $this->_pimple['Response']->sendUnauthorizedPage();
+    }
 }

@@ -145,7 +145,7 @@ class Parser{
      * @param string $name Placeholder name
      * @return string Placeholder value
      */
-    function getPlaceholder($name) {
+    public static function getPlaceholder($name) {
         $modx = modx();
         return isset($modx->placeholders[$name]) ? $modx->placeholders[$name] : null;
     }
@@ -156,7 +156,7 @@ class Parser{
      * @param string $name The name of the placeholder
      * @param string $value The value of the placeholder
      */
-    function setPlaceholder($name, $value) {
+    public static function setPlaceholder($name, $value) {
         return with(modx())->placeholders[$name]= $value;
     }
 
@@ -166,7 +166,7 @@ class Parser{
      * @param object|array $subject
      * @param string $prefix
      */
-    function toPlaceholders($subject, $prefix= '') {
+    public static function toPlaceholders($subject, $prefix= '') {
         if (is_object($subject)) {
             $subject= get_object_vars($subject);
         }
@@ -184,7 +184,7 @@ class Parser{
      * @param object|array $value
      * @param string $prefix
      */
-    function toPlaceholder($key, $value, $prefix= '') {
+    public static function toPlaceholder($key, $value, $prefix= '') {
         if (is_array($value) || is_object($value)) {
             self::toPlaceholders($value, "{$prefix}{$key}.");
         } else {

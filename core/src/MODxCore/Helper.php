@@ -67,4 +67,79 @@ class Helper{
         $t= preg_replace('~&#x007B;&#x007B;(.*?)&#x007D;&#x007D;~', "", $t); //encoded chunks
         return $t;
     }
+
+    /**
+     * Make a timestamp from a string corresponding to the format in $this->config['datetime_format']
+     *
+     * @param string $str
+     * @return string
+     */
+    public static function toTimeStamp($str) {
+        $str = trim($str);
+        if (empty($str)) {return '';}
+
+        switch(with(modx())->getConfig('datetime_format')) {
+            case 'YYYY/mm/dd':
+                if (!preg_match('/^[0-9]{4}\/[0-9]{2}\/[0-9]{2}[0-9 :]*$/', $str)) {return '';}
+                list ($Y, $m, $d, $H, $M, $S) = sscanf($str, '%4d/%2d/%2d %2d:%2d:%2d');
+                break;
+            case 'dd-mm-YYYY':
+                if (!preg_match('/^[0-9]{2}-[0-9]{2}-[0-9]{4}[0-9 :]*$/', $str)) {return '';}
+                list ($d, $m, $Y, $H, $M, $S) = sscanf($str, '%2d-%2d-%4d %2d:%2d:%2d');
+                break;
+            case 'mm/dd/YYYY':
+                if (!preg_match('/^[0-9]{2}\/[0-9]{2}\/[0-9]{4}[0-9 :]*$/', $str)) {return '';}
+                list ($m, $d, $Y, $H, $M, $S) = sscanf($str, '%2d/%2d/%4d %2d:%2d:%2d');
+                break;
+            /*
+            case 'dd-mmm-YYYY':
+            	if (!preg_match('/^[0-9]{2}-[0-9a-z]+-[0-9]{4}[0-9 :]*$/i', $str)) {return '';}
+            	list ($m, $d, $Y, $H, $M, $S) = sscanf($str, '%2d-%3s-%4d %2d:%2d:%2d');
+                break;
+            */
+        }
+        if (!$H && !$M && !$S) {$H = 0; $M = 0; $S = 0;}
+        $timeStamp = mktime($H, $M, $S, $m, $d, $Y);
+        $timeStamp = intval($timeStamp);
+        return $timeStamp;
+    }
+
+    /**
+     * Returns the timestamp in the date format defined in $this->config['datetime_format']
+     *
+     * @param int $timestamp Default: 0
+     * @param string $mode Default: Empty string (adds the time as below). Can also be 'dateOnly' for no time or 'formatOnly' to get the datetime_format string.
+     * @return string
+     */
+    public static function toDateFormat($timestamp = 0, $mode = '') {
+        $timestamp = trim($timestamp);
+        if($mode !== 'formatOnly' && empty($timestamp)) return '-';
+        $timestamp = intval($timestamp);
+
+        switch(with(modx())->getConfig('datetime_format')) {
+            case 'YYYY/mm/dd':
+                $dateFormat = '%Y/%m/%d';
+                break;
+            case 'dd-mm-YYYY':
+                $dateFormat = '%d-%m-%Y';
+                break;
+            case 'mm/dd/YYYY':
+                $dateFormat = '%m/%d/%Y';
+                break;
+            /*
+            case 'dd-mmm-YYYY':
+                $dateFormat = '%e-%b-%Y';
+                break;
+            */
+        }
+
+        if (empty($mode)) {
+            $strTime = strftime($dateFormat . " %H:%M:%S", $timestamp);
+        } elseif ($mode == 'dateOnly') {
+            $strTime = strftime($dateFormat, $timestamp);
+        } elseif ($mode == 'formatOnly') {
+            $strTime = $dateFormat;
+        }
+        return $strTime;
+    }
 }
