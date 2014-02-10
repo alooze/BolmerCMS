@@ -65,19 +65,23 @@ class DocumentParser {
      * @return DocumentParser
      */
     public function __construct() {
-        global $database_server;
-        if(substr(PHP_OS,0,3) === 'WIN' && $database_server==='localhost') $database_server = '127.0.0.1';
+        $pimple = \MODxCore\Pimple::getInstance();
+        $pimple['modx'] = $this;
+
+        if(substr(PHP_OS,0,3) === 'WIN' && $pimple['global_config']['database_server']==='localhost'){
+            $pimple['global_config']['database_server'] = '127.0.0.1';
+        }
         $this->loadExtension('DBAPI') or die('Could not load DBAPI class.'); // load DBAPI class
-        $this->dbConfig= & $this->db->config; // alias for backward compatibility
-        $this->jscripts= array ();
-        $this->sjscripts= array ();
-        $this->loadedjscripts= array ();
+        $this->dbConfig = &$this->db->config; // alias for backward compatibility
+        $this->jscripts = array ();
+        $this->sjscripts = array ();
+        $this->loadedjscripts = array ();
         // events
         $this->event= new \SystemEvent();
-        $this->Event= & $this->event; //alias for backward compatibility
+        $this->Event = &$this->event; //alias for backward compatibility
         $this->pluginEvent= array ();
         // set track_errors ini variable
-        @ ini_set("track_errors", "1"); // enable error tracking in $php_errormsg
+        @ini_set("track_errors", "1"); // enable error tracking in $php_errormsg
         $this->error_reporting = 1;
     }
 
@@ -100,9 +104,7 @@ class DocumentParser {
         switch ($extname) {
             // Database API
             case 'DBAPI' :
-                if (!include_once MODX_MANAGER_PATH . 'includes/extenders/dbapi.' . $database_type . '.class.inc.php')
-                    return false;
-                $this->db= new \DBAPI;
+                $this->db = new \MODxCore\Db\DBAPI;
                 return true;
                 break;
 
@@ -141,14 +143,8 @@ class DocumentParser {
         }
     }
 
-    /**
-     * Returns the current micro time
-     *
-     * @return float
-     */
     function getMicroTime() {
-        list ($usec, $sec)= explode(' ', microtime());
-        return ((float) $usec + (float) $sec);
+        return \MODxCore\Helper::getMicroTime();
     }
 
     /**
@@ -238,7 +234,7 @@ class DocumentParser {
     function sendErrorPage() {
         // invoke OnPageNotFound event
         $this->invokeEvent('OnPageNotFound');
-        $url = $this->config['error_page'] ? $this->config['error_page'] : $this->config['site_start'];
+        $url = $this->getConfig('error_page', $this->getConfig('site_start'));
         $this->sendForward($url, 'HTTP/1.0 404 Not Found');
         exit();
     }
@@ -247,12 +243,12 @@ class DocumentParser {
         // invoke OnPageUnauthorized event
         $_REQUEST['refurl'] = $this->documentIdentifier;
         $this->invokeEvent('OnPageUnauthorized');
-        if ($this->config['unauthorized_page']) {
-            $unauthorizedPage= $this->config['unauthorized_page'];
-        } elseif ($this->config['error_page']) {
-            $unauthorizedPage= $this->config['error_page'];
+        if ($this->getConfig('unauthorized_page')) {
+            $unauthorizedPage= $this->getConfig('unauthorized_page');
+        } elseif ($this->getConfig('error_page')) {
+            $unauthorizedPage= $this->getConfig('error_page');
         } else {
-            $unauthorizedPage= $this->config['site_start'];
+            $unauthorizedPage= $this->getConfig('site_start');
         }
         $this->sendForward($unauthorizedPage, 'HTTP/1.1 401 Unauthorized');
         exit();
@@ -291,12 +287,12 @@ class DocumentParser {
             $this->config['etomite_charset'] = & $this->config['modx_charset'];
 
             // store base_url and base_path inside config array
-            $this->config['base_url']= MODX_BASE_URL;
-            $this->config['base_path']= MODX_BASE_PATH;
-            $this->config['site_url']= MODX_SITE_URL;
-            $this->config['valid_hostnames']= MODX_SITE_HOSTNAMES;
-            $this->config['site_manager_url']=MODX_MANAGER_URL;
-            $this->config['site_manager_path']=MODX_MANAGER_PATH;
+            $this->config['base_url'] = MODX_BASE_URL;
+            $this->config['base_path'] = MODX_BASE_PATH;
+            $this->config['site_url'] = MODX_SITE_URL;
+            $this->config['valid_hostnames'] = MODX_SITE_HOSTNAMES;
+            $this->config['site_manager_url'] = MODX_MANAGER_URL;
+            $this->config['site_manager_path'] = MODX_MANAGER_PATH;
 
             // load user setting if user is logged in
             $usrSettings= array ();
@@ -346,9 +342,9 @@ class DocumentParser {
                     $usrSettings= array_merge($musrSettings, $usrSettings);
                 }
             }
-            $this->error_reporting = $this->config['error_reporting'];
-            $this->config['filemanager_path'] = str_replace('[(base_path)]',MODX_BASE_PATH,$this->config['filemanager_path']);
-            $this->config['rb_base_dir']      = str_replace('[(base_path)]',MODX_BASE_PATH,$this->config['rb_base_dir']);
+            $this->error_reporting = $this->getConfig('error_reporting');
+            $this->config['filemanager_path'] = str_replace('[(base_path)]',MODX_BASE_PATH, $this->getConfig('filemanager_path'));
+            $this->config['rb_base_dir']      = str_replace('[(base_path)]',MODX_BASE_PATH, $this->getConfig('rb_base_dir'));
             $this->config= array_merge($this->config, $usrSettings);
         }
     }
@@ -378,7 +374,7 @@ class DocumentParser {
      */
     function getDocumentIdentifier($method) {
         // function to test the query and find the retrieval method
-        $docIdentifier= $this->config['site_start'];
+        $docIdentifier= $this->getConfig('site_start');
         switch ($method) {
             case 'alias' :
                 $docIdentifier= $this->db->escape($_REQUEST['q']);
@@ -394,34 +390,11 @@ class DocumentParser {
         return $docIdentifier;
     }
 
-    /**
-     * Check for manager login session
-     *
-     * @return boolean
-     */
     function checkSession() {
-        if (isset ($_SESSION['mgrValidated'])) {
-            return true;
-        } else {
-            return false;
-        }
+        return \MODxCore\User\Manager::checkSession();
     }
-
-    /**
-     * Checks, if a the result is a preview
-     *
-     * @return boolean
-     */
     function checkPreview() {
-        if ($this->checkSession() == true) {
-            if (isset ($_REQUEST['z']) && $_REQUEST['z'] == 'manprev') {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
+        return \MODxCore\Helper::checkPreview();
     }
 
     /**
@@ -430,7 +403,7 @@ class DocumentParser {
      * @return boolean
      */
     function checkSiteStatus() {
-        $siteStatus= $this->config['site_status'];
+        $siteStatus= $this->getConfig('site_status');
         if ($siteStatus == 1) {
             // site online
             return true;
@@ -451,7 +424,7 @@ class DocumentParser {
      * @return string
      */
     function cleanDocumentIdentifier($qOrig) {
-        (!empty($qOrig)) or $qOrig = $this->config['site_start'];
+        (!empty($qOrig)) or $qOrig = $this->getConfig('site_start');
         $q= $qOrig;
         /* First remove any / before or after */
         if ($q[strlen($q) - 1] == '/')
@@ -460,18 +433,18 @@ class DocumentParser {
             $q= substr($q, 1);
         /* Save path if any */
         /* FS#476 and FS#308: only return virtualDir if friendly paths are enabled */
-        if ($this->config['use_alias_path'] == 1) {
+        if ($this->getConfig('use_alias_path') == 1) {
             $this->virtualDir= dirname($q);
             $this->virtualDir= ($this->virtualDir == '.' ? '' : $this->virtualDir);
             $q= basename($q);
         } else {
             $this->virtualDir= '';
         }
-        $q= str_replace($this->config['friendly_url_prefix'], "", $q);
-        $q= str_replace($this->config['friendly_url_suffix'], "", $q);
+        $q= str_replace($this->getConfig('friendly_url_prefix'), "", $q);
+        $q= str_replace($this->getConfig('friendly_url_suffix'), "", $q);
         if (is_numeric($q) && !isset($this->documentListing[$q])) { /* we got an ID returned, check to make sure it's not an alias */
             /* FS#476 and FS#308: check that id is valid in terms of virtualDir structure */
-            if ($this->config['use_alias_path'] == 1) {
+            if ($this->getConfig('use_alias_path') == 1) {
                 if ((($this->virtualDir != '' && !isset($this->documentListing[$this->virtualDir . '/' . $q])) || ($this->virtualDir == '' && !isset($this->documentListing[$q]))) && (($this->virtualDir != '' && isset($this->documentListing[$this->virtualDir]) && in_array($q, $this->getChildIds($this->documentListing[$this->virtualDir], 1))) || ($this->virtualDir == '' && in_array($q, $this->getChildIds(0, 1))))) {
                     $this->documentMethod= 'id';
                     return $q;
@@ -484,7 +457,7 @@ class DocumentParser {
                 return $q;
             }
         } else { /* we didn't get an ID back, so instead we assume it's an alias */
-            if ($this->config['friendly_alias_urls'] != 1) {
+            if ($this->getConfig('friendly_alias_urls') != 1) {
                 $q= $qOrig;
             }
             $this->documentMethod= 'alias';
@@ -500,7 +473,7 @@ class DocumentParser {
      */
     function checkCache($id) {
         $tbl_document_groups= $this->getFullTableName("document_groups");
-        if ($this->config['cache_type'] == 2) {
+        if ($this->getConfig('cache_type') == 2) {
             $md5_hash = '';
             if(!empty($_GET)) $md5_hash = '_' . md5(http_build_query($_GET));
             $cacheFile= "assets/cache/docid_" . $id .$md5_hash. ".pageCache.php";
@@ -531,7 +504,7 @@ class DocumentParser {
                     }
                     // diplay error pages if user has no access to cached doc
                     if (!$pass) {
-                        if ($this->config['unauthorized_page']) {
+                        if ($this->getConfig('unauthorized_page')) {
                             // check if file is not public
                             $secrs= $this->db->select('id', $tbl_document_groups, "document='{$id}'", '', '1');
                             if ($secrs)
@@ -618,7 +591,7 @@ class DocumentParser {
         // send out content-type and content-disposition headers
         if (IN_PARSER_MODE == "true") {
             $type= !empty ($this->contentTypes[$this->documentIdentifier]) ? $this->contentTypes[$this->documentIdentifier] : "text/html";
-            header('Content-Type: ' . $type . '; charset=' . $this->config['modx_charset']);
+            header('Content-Type: ' . $type . '; charset=' . $this->getConfig('modx_charset'));
 //            if (($this->documentIdentifier == $this->config['error_page']) || $redirect_error)
 //                header('HTTP/1.0 404 Not Found');
             if (!$this->checkPreview() && $this->documentObject['content_dispo'] == 1) {
@@ -710,7 +683,7 @@ class DocumentParser {
     function checkPublishStatus() {
         $cacheRefreshTime= 0;
         @include $this->config["base_path"] . "assets/cache/sitePublishing.idx.php";
-        $timeNow= time() + $this->config['server_offset_time'];
+        $timeNow= time() + $this->getConfig('server_offset_time');
         if ($cacheRefreshTime <= $timeNow && $cacheRefreshTime != 0) {
             // now, check for documents that need publishing
             $sql = "UPDATE ".$this->getFullTableName("site_content")." SET published=1, publishedon=".time()." WHERE ".$this->getFullTableName("site_content").".pub_date <= $timeNow AND ".$this->getFullTableName("site_content").".pub_date!=0 AND published=0";
@@ -777,7 +750,7 @@ class DocumentParser {
             $basepath= $this->config["base_path"] . "assets/cache";
             // invoke OnBeforeSaveWebPageCache event
             $this->invokeEvent("OnBeforeSaveWebPageCache");
-            if ($this->config['cache_type'] == 2) {
+            if ($this->getConfig('cache_type') == 2) {
                 $md5_hash = '';
                 if(!empty($_GET)) $md5_hash = '_' . md5(http_build_query($_GET));
                 $pageCache = $md5_hash .".pageCache.php";
@@ -807,51 +780,7 @@ class DocumentParser {
     }
 
     function getTagsFromContent($content,$left='[+',$right='+]') {
-        $hash = explode($left,$content);
-        foreach($hash as $i=>$v) {
-            if(0<$i) $hash[$i] = $left.$v;
-        }
-
-        $i=0;
-        $count = count($hash);
-        $safecount = 0;
-        $temp_hash = array();
-        while(0<$count) {
-            $open  = 1;
-            $close = 0;
-            $safecount++;
-            if(1000<$safecount) break;
-            while($close < $open && 0 < $count) {
-                $safecount++;
-                if(!isset($temp_hash[$i])) $temp_hash[$i] = '';
-                if(1000<$safecount) break;
-                $remain = array_shift($hash);
-                $remain = explode($right,$remain);
-                foreach($remain as $v)
-                {
-                    if($close < $open)
-                    {
-                        $close++;
-                        $temp_hash[$i] .= $v . $right;
-                    }
-                    else break;
-                }
-                $count = count($hash);
-                if(0<$i && strpos($temp_hash[$i],$right)===false) $open++;
-            }
-            $i++;
-        }
-        $matches=array();
-        $i = 0;
-        foreach($temp_hash as $v) {
-            if(strpos($v,$left)!==false) {
-                $v = substr($v,0,strrpos($v,$right));
-                $matches[0][$i] = $v . $right;
-                $matches[1][$i] = substr($v,strlen($left));
-                $i++;
-            }
-        }
-        return $matches;
+        return \MODxCore\Parser::getTagsFromContent($content,$left,$right);
     }
 
     /**
@@ -864,7 +793,7 @@ class DocumentParser {
         if (strpos($content, '[*') === false)
             return $content;
         $replace = array();
-        $matches = $this->getTagsFromContent($content, '[*', '*]');
+        $matches = \MODxCore\Parser::getTagsFromContent($content, '[*', '*]');
         if ($matches) {
             for ($i = 0; $i < count($matches[1]); $i++) {
                 if ($matches[1][$i]) {
@@ -894,7 +823,7 @@ class DocumentParser {
         if (strpos($content, '[(') === false)
             return $content;
         $replace = array();
-        $matches = $this->getTagsFromContent($content, '[(', ')]');
+        $matches = \MODxCore\Parser::getTagsFromContent($content, '[(', ')]');
         if ($matches) {
             for ($i = 0; $i < count($matches[1]); $i++) {
                 if ($matches[1][$i] && array_key_exists($matches[1][$i], $this->config))
@@ -980,11 +909,11 @@ class DocumentParser {
 
     function detectError($error) {
         $detected = FALSE;
-        if ($this->config['error_reporting'] == 99 && $error)
+        if ($this->getConfig('error_reporting') == 99 && $error)
             $detected = TRUE;
-        elseif ($this->config['error_reporting'] == 2 && ($error & ~E_NOTICE))
+        elseif ($this->getConfig('error_reporting') == 2 && ($error & ~E_NOTICE))
             $detected = TRUE;
-        elseif ($this->config['error_reporting'] == 1 && ($error & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT))
+        elseif ($this->getConfig('error_reporting') == 1 && ($error & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT))
             $detected = TRUE;
         return $detected;
     }
@@ -1005,7 +934,7 @@ class DocumentParser {
         eval($pluginCode);
         $msg = ob_get_contents();
         ob_end_clean();
-        if ((0 < $this->config['error_reporting']) && $msg && isset($php_errormsg)) {
+        if ((0 < $this->getConfig('error_reporting')) && $msg && isset($php_errormsg)) {
             $error_info = error_get_last();
             if ($this->detectError($error_info['type'])) {
                 extract($error_info);
@@ -1038,7 +967,7 @@ class DocumentParser {
         $snip = eval($snippet);
         $msg = ob_get_contents();
         ob_end_clean();
-        if ((0 < $this->config['error_reporting']) && isset($php_errormsg)) {
+        if ((0 < $this->getConfig('error_reporting')) && isset($php_errormsg)) {
             $error_info = error_get_last();
             if ($this->detectError($error_info['type'])) {
                 extract($error_info);
@@ -1183,7 +1112,7 @@ class DocumentParser {
             if ($this->event->name) $this->snippetsCode .= 'Current Event  => ' . $this->event->name . '<br>';
             if ($this->event->activePlugin) $this->snippetsCode .= 'Current Plugin => ' . $this->event->activePlugin . '<br>';
             foreach ($params as $k=>$v) $this->snippetsCode .=  $k . ' => ' . print_r($v, true) . '<br>';
-            $this->snippetsCode .= '<textarea style="width:60%;height:200px">' . htmlentities($value,ENT_NOQUOTES,$this->config['modx_charset']) . '</textarea>';
+            $this->snippetsCode .= '<textarea style="width:60%;height:200px">' . htmlentities($value,ENT_NOQUOTES,$this->getConfig('modx_charset')) . '</textarea>';
             $this->snippetsCode .= '</fieldset><br />';
             $this->snippetsCount[$snippetObject['name']]++;
             $this->snippetsTime[$snippetObject['name']] += $sniptime;
@@ -1268,7 +1197,7 @@ class DocumentParser {
 
 
     function toAlias($text) {
-        $suff= $this->config['friendly_url_suffix'];
+        $suff= $this->getConfig('friendly_url_suffix');
         return str_replace(array('.xml'.$suff,'.rss'.$suff,'.js'.$suff,'.css'.$suff),array('.xml','.rss','.js','.css'),$text);
     }
 
@@ -1281,7 +1210,7 @@ class DocumentParser {
      */
     function rewriteUrls($documentSource) {
         // rewrite the urls
-        if ($this->config['friendly_urls'] == 1) {
+        if ($this->getConfig('friendly_urls') == 1) {
             $aliases= array ();
             /* foreach ($this->aliasListing as $item) {
                 $aliases[$item['id']]= (strlen($item['path']) > 0 ? $item['path'] . '/' : '') . $item['alias'];
@@ -1292,12 +1221,12 @@ class DocumentParser {
                 $isfolder[$val] = $this->aliasListing[$val]['isfolder'];
             }
             $in= '!\[\~([0-9]+)\~\]!ise'; // Use preg_replace with /e to make it evaluate PHP
-            $isfriendly= ($this->config['friendly_alias_urls'] == 1 ? 1 : 0);
-            $pref= $this->config['friendly_url_prefix'];
-            $suff= $this->config['friendly_url_suffix'];
+            $isfriendly= ($this->getConfig('friendly_alias_urls') == 1 ? 1 : 0);
+            $pref= $this->getConfig('friendly_url_prefix');
+            $suff= $this->getConfig('friendly_url_suffix');
             $thealias= '$aliases[\\1]';
             $thefolder= '$isfolder[\\1]';
-            if ($this->config['seostrict']=='1'){
+            if ($this->getConfig('seostrict')=='1'){
 
                 $found_friendlyurl= "\$this->toAlias(\$this->makeFriendlyURL('$pref','$suff',$thealias,$thefolder,'\\1'))";
             }else{
@@ -1318,38 +1247,38 @@ class DocumentParser {
 
     function sendStrictURI(){
         // FIX URLs
-        if (empty($this->documentIdentifier) || $this->config['seostrict']=='0' || $this->config['friendly_urls']=='0')
+        if (empty($this->documentIdentifier) || $this->getConfig('seostrict')=='0' || $this->getConfig('friendly_urls')=='0')
             return;
-        if ($this->config['site_status'] == 0) return;
+        if ($this->getConfig('site_status') == 0) return;
 
         $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https' : 'http';
-        $len_base_url = strlen($this->config['base_url']);
+        $len_base_url = strlen($this->getConfig('base_url'));
         if(strpos($_SERVER['REQUEST_URI'],'?'))
             list($url_path,$url_query_string) = explode('?', $_SERVER['REQUEST_URI'],2);
         else $url_path = $_SERVER['REQUEST_URI'];
         $url_path = $_GET['q'];//LANG
 
 
-        if(substr($url_path,0,$len_base_url)===$this->config['base_url'])
+        if(substr($url_path,0,$len_base_url)===$this->getConfig('base_url'))
             $url_path = substr($url_path,$len_base_url);
 
         $strictURL =  $this->toAlias($this->makeUrl($this->documentIdentifier));
 
-        if(substr($strictURL,0,$len_base_url)===$this->config['base_url'])
+        if(substr($strictURL,0,$len_base_url)===$this->getConfig('base_url'))
             $strictURL = substr($strictURL,$len_base_url);
         $http_host = $_SERVER['HTTP_HOST'];
         $requestedURL = "{$scheme}://{$http_host}" . '/'.$_GET['q']; //LANG
 
-        $site_url = $this->config['site_url'];
+        $site_url = $this->getConfig('site_url');
 
-        if ($this->documentIdentifier == $this->config['site_start']){
-            if ($requestedURL != $this->config['site_url']){
+        if ($this->documentIdentifier == $this->getConfig('site_start')){
+            if ($requestedURL != $this->getConfig('site_url')){
                 // Force redirect of site start
                 // $this->sendErrorPage();
                 $qstring = isset($url_query_string) ? preg_replace("#(^|&)(q|id)=[^&]+#", '', $url_query_string) : ''; // Strip conflicting id/q from query string
                 if ($qstring) $url = "{$site_url}?{$qstring}";
                 else          $url = $site_url;
-                if ($this->config['base_url'] != $_SERVER['REQUEST_URI']){
+                if ($this->getConfig('base_url') != $_SERVER['REQUEST_URI']){
                     if (empty($_POST)){
                         if (('/?'.$qstring) != $_SERVER['REQUEST_URI']) {
                             $this->sendRedirect($url,0,'REDIRECT_HEADER', 'HTTP/1.0 301 Moved Permanently');
@@ -1358,7 +1287,7 @@ class DocumentParser {
                     }
                 }
             }
-        }elseif ($url_path != $strictURL && $this->documentIdentifier != $this->config['error_page']){
+        }elseif ($url_path != $strictURL && $this->documentIdentifier != $this->getConfig('error_page')){
             // Force page redirect
             //$strictURL = ltrim($strictURL,'/');
 
@@ -1388,7 +1317,7 @@ class DocumentParser {
             $identifier = $this->cleanDocumentIdentifier($identifier);
             $method = $this->documentMethod;
         }
-        if($method == 'alias' && $this->config['use_alias_path'] && array_key_exists($identifier, $this->documentListing)) {
+        if($method == 'alias' && $this->getConfig('use_alias_path') && array_key_exists($identifier, $this->documentListing)) {
             $method = 'id';
             $identifier = $this->documentListing[$identifier];
         }
@@ -1406,7 +1335,7 @@ class DocumentParser {
         $result= $this->db->query($sql);
         $rowCount= $this->db->getRecordCount($result);
         if ($rowCount < 1) {
-            if ($this->config['unauthorized_page']) {
+            if ($this->getConfig('unauthorized_page')) {
                 // method may still be alias, while identifier is not full path alias, e.g. id not found above
                 if ($method === 'alias') {
                     $q = "SELECT dg.id FROM $tbldg dg, $tblsc sc WHERE dg.document = sc.id AND sc.alias = '{$identifier}' LIMIT 1;";
@@ -1495,7 +1424,7 @@ class DocumentParser {
             // replace HTMLSnippets in document
             $source= $this->mergeChunkContent($source);
             // insert META tags & keywords
-            if(isset($this->config['show_meta']) && $this->config['show_meta']==1) {
+            if($this->getConfig('show_meta')==1) {
                 $source= $this->mergeDocumentMETATags($source);
             }
             // find and merge snippets
@@ -1542,7 +1471,7 @@ class DocumentParser {
         }
 
         // IIS friendly url fix
-        if ($this->config['friendly_urls'] == 1 && strpos($_SERVER['SERVER_SOFTWARE'], 'Microsoft-IIS') !== false) {
+        if ($this->getConfig('friendly_urls') == 1 && strpos($_SERVER['SERVER_SOFTWARE'], 'Microsoft-IIS') !== false) {
             $url= $_SERVER['QUERY_STRING'];
             $err= substr($url, 0, 3);
             if ($err == '404' || $err == '405') {
@@ -1550,13 +1479,13 @@ class DocumentParser {
                 unset ($_GET[$k[0]]);
                 unset ($_REQUEST[$k[0]]); // remove 404,405 entry
                 $_SERVER['QUERY_STRING']= $qp['query'];
-                $qp= parse_url(str_replace($this->config['site_url'], '', substr($url, 4)));
+                $qp= parse_url(str_replace($this->getConfig('site_url'), '', substr($url, 4)));
                 if (!empty ($qp['query'])) {
                     parse_str($qp['query'], $qv);
                     foreach ($qv as $n => $v)
                         $_REQUEST[$n]= $_GET[$n]= $v;
                 }
-                $_SERVER['PHP_SELF']= $this->config['base_url'] . $qp['path'];
+                $_SERVER['PHP_SELF']= $this->getConfig('base_url') . $qp['path'];
                 $_REQUEST['q']= $_GET['q']= $qp['path'];
             }
         }
@@ -1564,15 +1493,15 @@ class DocumentParser {
         // check site settings
         if (!$this->checkSiteStatus()) {
             header('HTTP/1.0 503 Service Unavailable');
-            if (!$this->config['site_unavailable_page']) {
+            if (!$this->getConfig('site_unavailable_page')) {
                 // display offline message
-                $this->documentContent= $this->config['site_unavailable_message'];
+                $this->documentContent= $this->getConfig('site_unavailable_message');
                 $this->outputContent();
                 exit; // stop processing here, as the site's offline
             } else {
                 // setup offline page document settings
                 $this->documentMethod= "id";
-                $this->documentIdentifier= $this->config['site_unavailable_page'];
+                $this->documentIdentifier= $this->getConfig('site_unavailable_page');
             }
         } else {
             // make sure the cache doesn't need updating
@@ -1591,7 +1520,7 @@ class DocumentParser {
             $this->documentIdentifier= $this->cleanDocumentIdentifier($this->documentIdentifier);
 
             // Check use_alias_path and check if $this->virtualDir is set to anything, then parse the path
-            if ($this->config['use_alias_path'] == 1) {
+            if ($this->getConfig('use_alias_path') == 1) {
                 $alias= (strlen($this->virtualDir) > 0 ? $this->virtualDir . '/' : '') . $this->documentIdentifier;
                 if (isset($this->documentListing[$alias])) {
                     $this->documentIdentifier= $this->documentListing[$alias];
@@ -1613,10 +1542,10 @@ class DocumentParser {
         // invoke OnWebPageInit event
         $this->invokeEvent("OnWebPageInit");
         // invoke OnLogPageView event
-        if ($this->config['track_visitors'] == 1) {
+        if ($this->getConfig('track_visitors') == 1) {
             $this->invokeEvent("OnLogPageHit");
         }
-        if($this->config['seostrict']==='1') $this->sendStrictURI();
+        if($this->getConfig('seostrict')==='1') $this->sendStrictURI();
         $this->prepareResponse();
     }
 
@@ -1684,7 +1613,7 @@ class DocumentParser {
 
             // check if we should not hit this document
             if ($this->documentObject['donthit'] == 1) {
-                $this->config['track_visitors']= 0;
+                $this->config['track_visitors'] = 0;
             }
 
             // get the template and start parsing!
@@ -1715,7 +1644,7 @@ class DocumentParser {
             //			}
         }
 
-        if($this->documentIdentifier==$this->config['error_page'] &&  $this->config['error_page']!=$this->config['site_start']){
+        if($this->documentIdentifier==$this->getConfig('error_page') &&  $this->getConfig('error_page')!=$this->getConfig('site_start')){
             header('HTTP/1.0 404 Not Found');
         }
         register_shutdown_function(array (
@@ -1781,40 +1710,12 @@ class DocumentParser {
         return $children;
     }
 
-    /**
-     * Displays a javascript alert message in the web browser
-     *
-     * @param string $msg Message to show
-     * @param string $url URL to redirect to
-     */
     function webAlert($msg, $url= "") {
-        $msg= addslashes($this->db->escape($msg));
-        if (substr(strtolower($url), 0, 11) == "javascript:") {
-            $act= "__WebAlert();";
-            $fnc= "function __WebAlert(){" . substr($url, 11) . "};";
-        } else {
-            $act= ($url ? "window.location.href='" . addslashes($url) . "';" : "");
-        }
-        $html= "<script>$fnc window.setTimeout(\"alert('$msg');$act\",100);</script>";
-        if ($this->isFrontend())
-            $this->regClientScript($html);
-        else {
-            echo $html;
-        }
+        \MODxCore\HTML::webAlert($msg, $url);
     }
 
-    /**
-     * Returns true if user has the currect permission
-     *
-     * @param string $pm Permission name
-     * @return int
-     */
     function hasPermission($pm) {
-        $state= false;
-        $pms= $_SESSION['mgrPermissions'];
-        if ($pms)
-            $state= ($pms[$pm] == 1);
-        return $state;
+        return \MODxCore\User\Manager::hasPermission($pm);
     }
 
     /**
@@ -1844,11 +1745,11 @@ class DocumentParser {
             "VALUES($evtid,$type," . time() . ",'$source','$msg','" . $LoginUserID . "')";
         $ds= @$this->db->query($sql);
         if(!$this->db->conn) $source = 'DB connect error';
-        if(isset($this->config['send_errormail']) && $this->config['send_errormail'] !== '0')
+        if($this->getConfig('send_errormail') != '0')
         {
-            if($this->config['send_errormail'] <= $type)
+            if($this->getConfig('send_errormail') <= $type)
             {
-                $subject = 'Error mail from ' . $this->config['site_name'];
+                $subject = 'Error mail from ' . $this->getConfig('site_name');
                 $this->sendmail($subject,$source);
             }
         }
@@ -1903,7 +1804,7 @@ class DocumentParser {
         elseif(is_string($msg) && 0<strlen($msg)) $p['body'] = $msg;
 
         $this->loadExtension('MODxMailer');
-        $sendto = (!isset($p['to']))   ? $this->config['emailsender']  : $p['to'];
+        $sendto = (!isset($p['to']))   ? $this->getConfig('emailsender')  : $p['to'];
         $sendto = explode(',',$sendto);
         foreach($sendto as $address)
         {
@@ -1929,9 +1830,9 @@ class DocumentParser {
             }
         }
         if(isset($p['from'])) list($p['fromname'],$p['from']) = $this->mail->address_split($p['from']);
-        $this->mail->From     = (!isset($p['from']))  ? $this->config['emailsender']  : $p['from'];
-        $this->mail->FromName = (!isset($p['fromname'])) ? $this->config['site_name'] : $p['fromname'];
-        $this->mail->Subject  = (!isset($p['subject']))  ? $this->config['emailsubject'] : $p['subject'];
+        $this->mail->From     = (!isset($p['from']))  ? $this->getConfig('emailsender')  : $p['from'];
+        $this->mail->FromName = (!isset($p['fromname'])) ? $this->getConfig('site_name') : $p['fromname'];
+        $this->mail->Subject  = (!isset($p['subject']))  ? $this->getConfig('emailsubject') : $p['subject'];
         $this->mail->Body     = $p['body'];
         $rs = $this->mail->send();
         return $rs;
@@ -2319,12 +2220,12 @@ class DocumentParser {
     function makeUrl($id, $alias= '', $args= '', $scheme= '') {
         $url= '';
         $virtualDir= '';
-        $f_url_prefix = $this->config['friendly_url_prefix'];
-        $f_url_suffix = $this->config['friendly_url_suffix'];
+        $f_url_prefix = $this->getConfig('friendly_url_prefix');
+        $f_url_suffix = $this->getConfig('friendly_url_suffix');
         if (!is_numeric($id)) {
             $this->messageQuit('`' . $id . '` is not numeric and may not be passed to makeUrl()');
         }
-        if ($args != '' && $this->config['friendly_urls'] == 1) {
+        if ($args != '' && $this->getConfig('friendly_urls') == 1) {
             // add ? to $args if missing
             $c= substr($args, 0, 1);
             if (strpos($f_url_prefix, '?') === false) {
@@ -2344,14 +2245,14 @@ class DocumentParser {
                 $args= '&' . substr($args, 1);
             elseif ($c != '&') $args= '&' . $args;
         }
-        if ($this->config['friendly_urls'] == 1 && $alias != '') {
+        if ($this->getConfig('friendly_urls') == 1 && $alias != '') {
             $url= $f_url_prefix . $alias . $f_url_suffix . $args;
         }
-        elseif ($this->config['friendly_urls'] == 1 && $alias == '') {
+        elseif ($this->getConfig('friendly_urls') == 1 && $alias == '') {
             $alias= $id;
-            if ($this->config['friendly_alias_urls'] == 1) {
+            if ($this->getConfig('friendly_alias_urls') == 1) {
                 $al= $this->aliasListing[$id];
-                if($al['isfolder']===1 && $this->config['make_folders']==='1')
+                if($al['isfolder']===1 && $this->getConfig('make_folders')==='1')
                     $f_url_suffix = '/';
                 $alPath= !empty ($al['path']) ? $al['path'] . '/' : '';
                 if ($al && $al['alias'])
@@ -2363,7 +2264,7 @@ class DocumentParser {
             $url= 'index.php?id=' . $id . $args;
         }
 
-        $host= $this->config['base_url'];
+        $host= $this->getConfig('base_url');
         // check if scheme argument has been set
         if ($scheme != '') {
             // for backward compatibility - check if the desired scheme is different than the current scheme
@@ -2372,14 +2273,14 @@ class DocumentParser {
             }
 
             // to-do: check to make sure that $site_url incudes the url :port (e.g. :8080)
-            $host= $scheme == 'full' ? $this->config['site_url'] : $scheme . '://' . $_SERVER['HTTP_HOST'] . $host;
+            $host= $scheme == 'full' ? $this->getConfig('site_url') : $scheme . '://' . $_SERVER['HTTP_HOST'] . $host;
         }
 
         //fix strictUrl by Bumkaka
-        if ($this->config['seostrict']=='1'){
+        if ($this->getConfig('seostrict')=='1'){
             $url = $this->toAlias($url);
         }
-        if ($this->config['xhtml_urls']) {
+        if ($this->getConfig('xhtml_urls')) {
             return preg_replace("/&(?!amp;)/","&amp;", $host . $virtualDir . $url);
         } else {
             return $host . $virtualDir . $url;
@@ -2393,12 +2294,8 @@ class DocumentParser {
      *
      * @return boolean|string
      */
-    function getConfig($name= '') {
-        if (!empty ($this->config[$name])) {
-            return $this->config[$name];
-        } else {
-            return false;
-        }
+    function getConfig($name= '', $default = false) {
+        return getkey($this->config, $name, $default);
     }
 
     /**
@@ -2417,7 +2314,7 @@ class DocumentParser {
             $this->version['branch']= isset($modx_branch) ? $modx_branch : '';
             $this->version['release_date']= isset($modx_release_date) ? $modx_release_date : '';
             $this->version['full_appname']= isset($modx_full_appname) ? $modx_full_appname : '';
-            $this->version['new_version'] = isset($this->config['newversiontext']) ? $this->config['newversiontext'] : '';
+            $this->version['new_version'] = $this->getConfig('newversiontext');
         }
         return (!is_null($data) && is_array($this->version) && isset($this->version[$data])) ? $this->version[$data] : $this->version;
     }
@@ -2452,61 +2349,14 @@ class DocumentParser {
         return $this->evalSnippet($snippet, $parameters);
     }
 
-    /**
-     * Returns the chunk content for the given chunk name
-     *
-     * @param string $chunkName
-     * @return boolean|string
-     */
     function getChunk($chunkName) {
-        return isset($this->chunkCache[$chunkName]) ? $this->chunkCache[$chunkName] : null;
+        return \MODxCore\Parser::getChunk($chunkName);
     }
-
-    /**
-     * parseText
-     * @version 1.0 (2013-10-17)
-     *
-     * @desc Replaces placeholders in text with required values.
-     *
-     * @param $chunk {string} - String to parse. @required
-     * @param $chunkArr {array} - Array of values. Key — placeholder name, value — value. @required
-     * @param $prefix {string} - Placeholders prefix. Default: '[+'.
-     * @param $suffix {string} - Placeholders suffix. Default: '+]'.
-     *
-     * @return {string} - Parsed text.
-     */
     function parseText($chunk, $chunkArr, $prefix = '[+', $suffix = '+]'){
-        if (!is_array($chunkArr)){
-            return $chunk;
-        }
-
-        foreach ($chunkArr as $key => $value){
-            $chunk = str_replace($prefix.$key.$suffix, $value, $chunk);
-        }
-
-        return $chunk;
+        return \MODxCore\Parser::parseText($chunk, $chunkArr, $prefix, $suffix);
     }
-
-    /**
-     * parseChunk
-     * @version 1.1 (2013-10-17)
-     *
-     * @desc Replaces placeholders in a chunk with required values.
-     *
-     * @param $chunkName {string} - Name of chunk to parse. @required
-     * @param $chunkArr {array} - Array of values. Key — placeholder name, value — value. @required
-     * @param $prefix {string} - Placeholders prefix. Default: '{'.
-     * @param $suffix {string} - Placeholders suffix. Default: '}'.
-     *
-     * @return {string; false} - Parsed chunk or false if $chunkArr is not array.
-     */
     function parseChunk($chunkName, $chunkArr, $prefix = '{', $suffix = '}'){
-        //TODO: Wouldn't it be more practical to return the contents of a chunk instead of false?
-        if (!is_array($chunkArr)){
-            return false;
-        }
-
-        return $this->parseText($this->getChunk($chunkName), $chunkArr, $prefix, $suffix);
+        return \MODxCore\Parser::parseChunk($chunkName, $chunkArr, $prefix, $suffix);
     }
 
     /**
@@ -2521,7 +2371,7 @@ class DocumentParser {
         if($mode !== 'formatOnly' && empty($timestamp)) return '-';
         $timestamp = intval($timestamp);
 
-        switch($this->config['datetime_format']) {
+        switch($this->getConfig('datetime_format')) {
             case 'YYYY/mm/dd':
                 $dateFormat = '%Y/%m/%d';
                 break;
@@ -2558,7 +2408,7 @@ class DocumentParser {
         $str = trim($str);
         if (empty($str)) {return '';}
 
-        switch($this->config['datetime_format']) {
+        switch($this->getConfig('datetime_format')) {
             case 'YYYY/mm/dd':
                 if (!preg_match('/^[0-9]{4}\/[0-9]{2}\/[0-9]{2}[0-9 :]*$/', $str)) {return '';}
                 list ($Y, $m, $d, $H, $M, $S) = sscanf($str, '%4d/%2d/%2d %2d:%2d:%2d');
@@ -2836,56 +2686,18 @@ class DocumentParser {
         return $this->db->config['dbase'] . ".`" . $this->db->config['table_prefix'] . $tbl . "`";
     }
 
-    /**
-     * Returns the placeholder value
-     *
-     * @param string $name Placeholder name
-     * @return string Placeholder value
-     */
+
     function getPlaceholder($name) {
-        return isset($this->placeholders[$name]) ? $this->placeholders[$name] : null;
+        return \MODxCore\Parser::getPlaceholder($name);
     }
-
-    /**
-     * Sets a value for a placeholder
-     *
-     * @param string $name The name of the placeholder
-     * @param string $value The value of the placeholder
-     */
     function setPlaceholder($name, $value) {
-        $this->placeholders[$name]= $value;
+        return \MODxCore\Parser::setPlaceholder($name, $value);
     }
-
-    /**
-     * Set placeholders en masse via an array or object.
-     *
-     * @param object|array $subject
-     * @param string $prefix
-     */
     function toPlaceholders($subject, $prefix= '') {
-        if (is_object($subject)) {
-            $subject= get_object_vars($subject);
-        }
-        if (is_array($subject)) {
-            foreach ($subject as $key => $value) {
-                $this->toPlaceholder($key, $value, $prefix);
-            }
-        }
+        return \MODxCore\Parser::toPlaceholders($subject, $prefix);
     }
-
-    /**
-     * For use by toPlaceholders(); For setting an array or object element as placeholder.
-     *
-     * @param string $key
-     * @param object|array $value
-     * @param string $prefix
-     */
     function toPlaceholder($key, $value, $prefix= '') {
-        if (is_array($value) || is_object($value)) {
-            $this->toPlaceholders($value, "{$prefix}{$key}.");
-        } else {
-            $this->setPlaceholder("{$prefix}{$key}", $value);
-        }
+        return \MODxCore\Parser::toPlaceholder($key, $value, $prefix);
     }
 
     /**
@@ -2946,211 +2758,36 @@ class DocumentParser {
         $rs= $this->db->query($sql);
     }
 
-    /**
-     * Returns current user id.
-     *
-     * @param string $context. Default is an empty string which indicates the method should automatically pick 'web (frontend) or 'mgr' (backend)
-     * @return string
-     */
     function getLoginUserID($context= '') {
-        if ($context && isset ($_SESSION[$context . 'Validated'])) {
-            return $_SESSION[$context . 'InternalKey'];
-        }
-        elseif ($this->isFrontend() && isset ($_SESSION['webValidated'])) {
-            return $_SESSION['webInternalKey'];
-        }
-        elseif ($this->isBackend() && isset ($_SESSION['mgrValidated'])) {
-            return $_SESSION['mgrInternalKey'];
-        }
+        return \MODxCore\User::getLoginUserID($context);
     }
 
-    /**
-     * Returns current user name
-     *
-     * @param string $context. Default is an empty string which indicates the method should automatically pick 'web (frontend) or 'mgr' (backend)
-     * @return string
-     */
     function getLoginUserName($context= '') {
-        if (!empty($context) && isset ($_SESSION[$context . 'Validated'])) {
-            return $_SESSION[$context . 'Shortname'];
-        }
-        elseif ($this->isFrontend() && isset ($_SESSION['webValidated'])) {
-            return $_SESSION['webShortname'];
-        }
-        elseif ($this->isBackend() && isset ($_SESSION['mgrValidated'])) {
-            return $_SESSION['mgrShortname'];
-        }
+        return \MODxCore\User::getLoginUserName($context);
     }
 
-    /**
-     * Returns current login user type - web or manager
-     *
-     * @return string
-     */
     function getLoginUserType() {
-        if ($this->isFrontend() && isset ($_SESSION['webValidated'])) {
-            return 'web';
-        }
-        elseif ($this->isBackend() && isset ($_SESSION['mgrValidated'])) {
-            return 'manager';
-        } else {
-            return '';
-        }
+        return \MODxCore\User::getLoginUserType();
     }
 
-    /**
-     * Returns a user info record for the given manager user
-     *
-     * @param int $uid
-     * @return boolean|string
-     */
     function getUserInfo($uid) {
-        $sql= "
-              SELECT mu.username, mu.password, mua.*
-              FROM " . $this->getFullTableName("manager_users") . " mu
-              INNER JOIN " . $this->getFullTableName("user_attributes") . " mua ON mua.internalkey=mu.id
-              WHERE mu.id = '$uid'
-              ";
-        $rs= $this->db->query($sql);
-        $limit= $this->db->getRecordCount($rs);
-        if ($limit == 1) {
-            $row= $this->db->getRow($rs);
-            if (!$row["usertype"])
-                $row["usertype"]= "manager";
-            return $row;
-        }
+        return \MODxCore\User::getUserInfo($uid);
     }
 
-    /**
-     * Returns a record for the web user
-     *
-     * @param int $uid
-     * @return boolean|string
-     */
     function getWebUserInfo($uid) {
-        $sql= "
-              SELECT wu.username, wu.password, wua.*
-              FROM " . $this->getFullTableName("web_users") . " wu
-              INNER JOIN " . $this->getFullTableName("web_user_attributes") . " wua ON wua.internalkey=wu.id
-              WHERE wu.id='$uid'
-              ";
-        $rs= $this->db->query($sql);
-        $limit= $this->db->getRecordCount($rs);
-        if ($limit == 1) {
-            $row= $this->db->getRow($rs);
-            if (!$row["usertype"])
-                $row["usertype"]= "web";
-            return $row;
-        }
+        return \MODxCore\User::getUserInfo($uid);
     }
 
-    /**
-     * Returns an array of document groups that current user is assigned to.
-     * This function will first return the web user doc groups when running from
-     * frontend otherwise it will return manager user's docgroup.
-     *
-     * @param boolean $resolveIds Set to true to return the document group names
-     *                            Default: false
-     * @return string|array
-     */
     function getUserDocGroups($resolveIds= false) {
-        if ($this->isFrontend() && isset ($_SESSION['webDocgroups']) && isset ($_SESSION['webValidated'])) {
-            $dg= $_SESSION['webDocgroups'];
-            $dgn= isset ($_SESSION['webDocgrpNames']) ? $_SESSION['webDocgrpNames'] : false;
-        } else
-            if ($this->isBackend() && isset ($_SESSION['mgrDocgroups']) && isset ($_SESSION['mgrValidated'])) {
-                $dg= $_SESSION['mgrDocgroups'];
-                $dgn= isset ($_SESSION['mgrDocgrpNames']) ? $_SESSION['mgrDocgrpNames'] : false;
-            } else {
-                $dg= '';
-            }
-        if (!$resolveIds)
-            return $dg;
-        else
-            if (is_array($dgn))
-                return $dgn;
-            else
-                if (is_array($dg)) {
-                    // resolve ids to names
-                    $dgn= array ();
-                    $tbl= $this->getFullTableName("documentgroup_names");
-                    $ds= $this->db->query("SELECT name FROM $tbl WHERE id IN (" . implode(",", $dg) . ")");
-                    while ($row= $this->db->getRow($ds))
-                        $dgn[count($dgn)]= $row['name'];
-                    // cache docgroup names to session
-                    if ($this->isFrontend())
-                        $_SESSION['webDocgrpNames']= $dgn;
-                    else
-                        $_SESSION['mgrDocgrpNames']= $dgn;
-                    return $dgn;
-                }
+        return \MODxCore\User::getUserInfo($resolveIds);
     }
 
-    /**
-     * Change current web user's password
-     *
-     * @todo Make password length configurable, allow rules for passwords and translation of messages
-     * @param string $oldPwd
-     * @param string $newPwd
-     * @return string|boolean Returns true if successful, oterhwise return error
-     *                        message
-     */
     function changeWebUserPassword($oldPwd, $newPwd) {
-        $rt= false;
-        if ($_SESSION["webValidated"] == 1) {
-            $tbl= $this->getFullTableName("web_users");
-            $ds= $this->db->query("SELECT `id`, `username`, `password` FROM $tbl WHERE `id`='" . $this->getLoginUserID() . "'");
-            $limit= $this->db->getRecordCount($ds);
-            if ($limit == 1) {
-                $row= $this->db->getRow($ds);
-                if ($row["password"] == md5($oldPwd)) {
-                    if (strlen($newPwd) < 6) {
-                        return "Password is too short!";
-                    }
-                    elseif ($newPwd == "") {
-                        return "You didn't specify a password for this user!";
-                    } else {
-                        $this->db->query("UPDATE $tbl SET password = md5('" . $this->db->escape($newPwd) . "') WHERE id='" . $this->getLoginUserID() . "'");
-                        // invoke OnWebChangePassword event
-                        $this->invokeEvent("OnWebChangePassword", array (
-                            "userid" => $row["id"],
-                            "username" => $row["username"],
-                            "userpassword" => $newPwd
-                        ));
-                        return true;
-                    }
-                } else {
-                    return "Incorrect password.";
-                }
-            }
-        }
+        return \MODxCore\User::changeWebUserPassword($oldPwd, $newPwd);
     }
 
-    /**
-     * Returns true if the current web user is a member the specified groups
-     *
-     * @param array $groupNames
-     * @return boolean
-     */
     function isMemberOfWebGroup($groupNames= array ()) {
-        if (!is_array($groupNames))
-            return false;
-        // check cache
-        $grpNames= isset ($_SESSION['webUserGroupNames']) ? $_SESSION['webUserGroupNames'] : false;
-        if (!is_array($grpNames)) {
-            $tbl= $this->getFullTableName("webgroup_names");
-            $tbl2= $this->getFullTableName("web_groups");
-            $sql= "SELECT wgn.name
-                    FROM $tbl wgn
-                    INNER JOIN $tbl2 wg ON wg.webgroup=wgn.id AND wg.webuser='" . $this->getLoginUserID() . "'";
-            $grpNames= $this->db->getColumn("name", $sql);
-            // save to cache
-            $_SESSION['webUserGroupNames']= $grpNames;
-        }
-        foreach ($groupNames as $k => $v)
-            if (in_array(trim($v), $grpNames))
-                return true;
-        return false;
+        return \MODxCore\User::isMemberOfWebGroup($groupNames);
     }
 
     /**
@@ -3273,28 +2910,8 @@ class DocumentParser {
         $this->regClientScript($html, true);
     }
 
-    /**
-     * Remove unwanted html tags and snippet, settings and tags
-     *
-     * @param string $html
-     * @param string $allowed Default: Empty string
-     * @return string
-     */
     function stripTags($html, $allowed= "") {
-        $t= strip_tags($html, $allowed);
-        $t= preg_replace('~\[\*(.*?)\*\]~', "", $t); //tv
-        $t= preg_replace('~\[\[(.*?)\]\]~', "", $t); //snippet
-        $t= preg_replace('~\[\!(.*?)\!\]~', "", $t); //snippet
-        $t= preg_replace('~\[\((.*?)\)\]~', "", $t); //settings
-        $t= preg_replace('~\[\+(.*?)\+\]~', "", $t); //placeholders
-        $t= preg_replace('~{{(.*?)}}~', "", $t); //chunks
-        $t= preg_replace('~&#x005B;\*(.*?)\*&#x005D;~', "", $t); //encoded tv
-        $t= preg_replace('~&#x005B;&#x005B;(.*?)&#x005D;&#x005D;~', "", $t); //encoded snippet
-        $t= preg_replace('~&#x005B;\!(.*?)\!&#x005D;~', "", $t); //encoded snippet
-        $t= preg_replace('~&#x005B;\((.*?)\)&#x005D;~', "", $t); //encoded settings
-        $t= preg_replace('~&#x005B;\+(.*?)\+&#x005D;~', "", $t); //encoded placeholders
-        $t= preg_replace('~&#x007B;&#x007B;(.*?)&#x007D;&#x007D;~', "", $t); //encoded chunks
-        return $t;
+        return \MODxCore\Helper::stripTags($html, $allowed);
     }
 
     # Decode JSON regarding hexadecimal entity encoded MODX tags
@@ -3406,29 +3023,8 @@ class DocumentParser {
         return $results;
     }
 
-    /**
-     * Parses a resource property string and returns the result as an array
-     *
-     * @param string $propertyString
-     * @return array Associative array in the form property name => property value
-     */
     function parseProperties($propertyString) {
-        $parameter= array ();
-        if (!empty ($propertyString)) {
-            $tmpParams= explode("&", $propertyString);
-            for ($x= 0; $x < count($tmpParams); $x++) {
-                if (strpos($tmpParams[$x], '=', 0)) {
-                    $pTmp= explode("=", $tmpParams[$x]);
-                    $pvTmp= explode(";", trim($pTmp[1]));
-                    if ($pvTmp[1] == 'list' && $pvTmp[3] != "")
-                        $parameter[trim($pTmp[0])]= $pvTmp[3]; //list default
-                    else
-                        if ($pvTmp[1] != 'list' && $pvTmp[2] != "")
-                            $parameter[trim($pTmp[0])]= $pvTmp[2];
-                }
-            }
-        }
-        return $parameter;
+        return \MODxCore\Parser::parseProperties($propertyString);
     }
 
     /***************************************************************************************/
@@ -3482,9 +3078,9 @@ class DocumentParser {
         $version= isset ($GLOBALS['modx_version']) ? $GLOBALS['modx_version'] : '';
         $release_date= isset ($GLOBALS['release_date']) ? $GLOBALS['release_date'] : '';
         $request_uri = "http://".$_SERVER['HTTP_HOST'].($_SERVER["SERVER_PORT"]==80?"":(":".$_SERVER["SERVER_PORT"])).$_SERVER['REQUEST_URI'];
-        $request_uri = htmlspecialchars($request_uri, ENT_QUOTES, $this->config['modx_charset']);
-        $ua          = htmlspecialchars($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, $this->config['modx_charset']);
-        $referer     = htmlspecialchars($_SERVER['HTTP_REFERER'], ENT_QUOTES, $this->config['modx_charset']);
+        $request_uri = htmlspecialchars($request_uri, ENT_QUOTES, $this->getConfig('modx_charset'));
+        $ua          = htmlspecialchars($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, $this->getConfig('modx_charset'));
+        $referer     = htmlspecialchars($_SERVER['HTTP_REFERER'], ENT_QUOTES, $this->getConfig('modx_charset'));
         if ($is_error) {
             $str = '<h3 style="color:red">&laquo; MODX Parse Error &raquo;</h3>
 	                <table border="0" cellpadding="1" cellspacing="0">
@@ -3664,7 +3260,7 @@ class DocumentParser {
         {
             echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"><html><head><title>MODX Content Manager ' . $version . ' &raquo; ' . $release_date . '</title>
 	             <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	             <link rel="stylesheet" type="text/css" href="' . $this->config['site_manager_url'] . 'media/style/' . $this->config['manager_theme'] . '/style.css" />
+	             <link rel="stylesheet" type="text/css" href="' . $this->getConfig('site_manager_url') . 'media/style/' . $this->getConfig('manager_theme') . '/style.css" />
 	             <style type="text/css">body { padding:10px; } td {font:inherit;}</style>
 	             </head><body>
 	             ' . $str . '</body></html>';
@@ -3735,14 +3331,7 @@ class DocumentParser {
     }
 
     function nicesize($size) {
-        $sizes = array('Tb'=>1099511627776, 'Gb'=>1073741824, 'Mb'=>1048576, 'Kb'=>1024, 'b'=>1);
-        $precisions = count($sizes)-1;
-        foreach ($sizes as $unit=>$bytes) {
-            if ($size>=$bytes)
-                return number_format($size/$bytes, $precisions).' '.$unit;
-            $precisions--;
-        }
-        return '0 b';
+        return \MODxCore\Helper::nicesize($size);
     }
 
     function getIdFromAlias($alias)
@@ -3750,7 +3339,7 @@ class DocumentParser {
         $children = array();
 
         $tbl_site_content = $this->getFullTableName('site_content');
-        if($this->config['use_alias_path']==1)
+        if($this->getConfig('use_alias_path')==1)
         {
             if(strpos($alias,'/')!==false) $_a = explode('/', $alias);
             else                           $_a[] = $alias;

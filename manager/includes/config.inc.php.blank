@@ -88,8 +88,8 @@ $root = dirname(dirname(dirname(__FILE__)))."/core/";
 define('PATH_MODXCORE', realpath($root));
 require_once(PATH_MODXCORE."/bootstrap/start.php");
 
-$config = \MODxCore\Config::getInstance();
-$config['global'] = array(
+$pimple = \MODxCore\Pimple::getInstance();
+$pimple['global_config'] = array(
     'database_type' => $database_type,
     'database_server' => 'localhost',
     'database_user' => 'root',

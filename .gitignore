@@ -7,5 +7,8 @@
 # and the config file
 /manager/includes/config.inc.php
 
+# and any files in the log directory
+/core/log/*
+
 # except do not ignore .gitignore
 !.gitignore

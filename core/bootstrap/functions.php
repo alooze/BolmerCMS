@@ -32,8 +32,10 @@ if (!function_exists('errorHandler')) {
             return;
         }
         // clean all buffers
-        while (ob_get_level()) {
-            ob_end_clean();
+        if(!defined("NOCLEAR_ERROR_BUFFER") or !NOCLEAR_ERROR_BUFFER){
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
         }
         // try to write log
         errorLog($e['message'] ."\n". $e['file'] ."#". $e['line'] ."\n");
@@ -56,9 +58,9 @@ if (!function_exists('errorDisplay')) {
 }
 
 if (!function_exists('modx')){
-    function modx(){
-        global $modx;
-        return $modx;
+    function modx($key = 'modx'){
+        $pimple = \MODxCore\Pimple::getInstance();
+        return isset($pimple[$key]) ? $pimple[$key] : null;
     }
 }
 
@@ -100,7 +102,38 @@ if (!function_exists('modx_dump')) {
         }
     }
 }
+if ( ! function_exists('getkey'))
+{
+    /**
+     *  Код MODX гавно, поэтому забываем про TypeHinting
+     * @param  mixed  $data
+     * @param string $key
+     * @param mixed $default null
+     * @return mixed
+     */
+    function getkey($data, $key, $default = null)
+    {
+        $out = $default;
+        if(is_array($data) && array_key_exists($key, $data)){
+            $out = $data[$key];
+        }
+        return $out;
+    }
+}
 
+if ( ! function_exists('with'))
+{
+    /**
+     * Return the given object. Useful for chaining.
+     *
+     * @param  mixed  $object
+     * @return mixed
+     */
+    function with($object)
+    {
+        return $object;
+    }
+}
 
 // start cms session
 if(!function_exists('startCMSSession')) {

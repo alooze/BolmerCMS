@@ -62,4 +62,3 @@ require PATH_MODXCORE . "/lib/SplClassLoader.class.php";
 
 $classLoader = new SplClassLoader('MODxCore', PATH_MODXCORE ."/src/");
 $classLoader->register();
-//return new \MODX\Pimple($modx);
