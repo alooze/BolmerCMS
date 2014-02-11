@@ -66,7 +66,6 @@ class logHandler {
                 return;
             }
         }
-
         $fields['timestamp']   = time();
         $fields['internalKey'] = $modx->db->escape($this->entry['internalKey']);
         $fields['username']    = $modx->db->escape($this->entry['username']);

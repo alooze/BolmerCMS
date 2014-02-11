@@ -644,7 +644,9 @@ class DocumentParser {
 
 
 
-
+    public function htmlspecialchars($text, $flags = ENT_COMPAT){
+        return \MODxCore\Helper::htmlchars($text, $flags);
+    }
     function checkCache($id) {
         return $this->_pimple['cache']->checkCache($id);
     }

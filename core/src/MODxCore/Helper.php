@@ -143,7 +143,7 @@ class Helper{
         return $strTime;
     }
 
-    function htmlchars($str, $flags = ENT_COMPAT){
+    public static function htmlchars($str, $flags = ENT_COMPAT){
         $charset = getkey(modx('config'), 'modx_charset', 'UTF-8');
         if(!is_scalar($str)){
             $str = '';

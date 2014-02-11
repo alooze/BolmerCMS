@@ -58,7 +58,24 @@ class DBAPI{
         ORM::set_db(null);
     }
     function escape($s, $safecount=0) {
-        return substr(ORM::get_db()->quote($s), 1, -1);
+        $safecount++;
+        if(1000<$safecount) exit("Too many loops '{$safecount}'");
+
+        $conn = ORM::get_db();
+        if(!is_object($conn)){
+            $this->connect();
+        }
+
+        if(is_array($s)) {
+            if(count($s) === 0) $s = '';
+            else {
+                foreach($s as $i=>$v) {
+                    $s[$i] = $this->escape($v,$safecount);
+                }
+            }
+        }
+        else $s = substr(ORM::get_db()->quote($s), 1, -1);
+        return $s;
     }
     function delete($from, $where='', $orderby='', $limit = '') {
         if (!$from)
@@ -93,9 +110,9 @@ class DBAPI{
     }
     function optimize($table_name)
     {
-        $table_name = str_replace('[+prefix+]', $this->config['table_prefix'], $table_name);
-        $rs = $this->query("OPTIMIZE TABLE `{$table_name}`");
-        if($rs) $rs = $this->query("ALTER TABLE `{$table_name}`");
+        $table_name = $this->replaceFullTableName($table_name);
+        $rs = $this->query("OPTIMIZE TABLE {$table_name}");
+        if($rs) $rs = $this->query("ALTER TABLE {$table_name}");
         return $rs;
     }
     /*function freeResult($rs) {
