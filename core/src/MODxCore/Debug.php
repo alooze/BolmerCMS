@@ -9,9 +9,17 @@
 class Debug{
     /** @var \MODxCore\Pimple $_inj */
     private $_inj = null;
-
+    protected static $_queryCode = array();
     public function __construct(\Pimple $inj){
         $this->_inj = $inj;
+    }
+
+    public static function addQuery($q){
+        self::$_queryCode[] = $q;
+    }
+
+    public static function showQuery(){
+        return implode("<br />", self::$_queryCode);
     }
     /**
      * PHP error handler set by http://www.php.net/manual/en/function.set-error-handler.php

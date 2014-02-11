@@ -455,7 +455,9 @@
             }
 
             echo $this->_inj['modx']->documentOutput;
-            if ($this->_inj['modx']->dumpSQL) echo $this->_inj['modx']->queryCode;
+            if ($this->_inj['modx']->dumpSQL) {
+                echo \MODxCore\Debug::showQuery();
+            }
             if ($this->_inj['modx']->dumpSnippets) {
                 $sc = "";
                 $tt = 0;

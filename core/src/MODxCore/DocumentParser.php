@@ -42,9 +42,9 @@ class DocumentParser {
     var $snippetsTime=array();
     var $chunkCache;
     var $snippetCache;
+    var $pluginCache;
     var $contentTypes;
     var $dumpSQL;
-    var $queryCode;
     var $virtualDir;
     var $placeholders;
     var $sjscripts;
@@ -70,42 +70,7 @@ class DocumentParser {
     public function __construct() {
         $pimple = \MODxCore\Pimple::getInstance();
         $pimple['modx'] = $this;
-        $pimple['debug'] = function($inj){
-            return new \MODxCore\Debug($inj);
-        };
-        $pimple['db'] = function($inj){
-            return $inj['modx']->db;
-        };
-        $pimple['config'] = function($inj){
-            return $inj['modx']->config;
-        };
-        $pimple['response'] = function($inj){
-            return new \MODxCore\Response($inj);
-        };
-        $pimple['HTML'] = function($inj){
-            return new \MODxCore\HTML($inj);
-        };
-        $pimple['snippet'] = function($inj){
-            return new \MODxCore\Parser\Snippet($inj);
-        };
-        $pimple['document'] = function($inj){
-            return new \MODxCore\Document($inj);
-        };
-        $pimple['log'] = function($inj){
-            return new \MODxCore\Log($inj);
-        };
-        $pimple['request'] = function($inj){
-            return new \MODxCore\Request($inj);
-        };
-        $pimple['parser'] = function($inj){
-            return new \MODxCore\Parser($inj);
-        };
-        $pimple['plugin'] = function($inj){
-            return new \MODxCore\Parser\Plugin($inj);
-        };
-        $pimple['cache'] = function($inj){
-            return new \MODxCore\Cache($inj);
-        };
+
 
         if(substr(PHP_OS,0,3) === 'WIN' && $pimple['global_config']['database_server']==='localhost'){
             //Global config as Object
@@ -113,7 +78,6 @@ class DocumentParser {
         }
         $this->_pimple = $pimple;
         $this->loadExtension('DBAPI') or die('Could not load DBAPI class.'); // load DBAPI class
-        $this->dbConfig = &$this->db->config; // alias for backward compatibility
         $this->jscripts = array ();
         $this->sjscripts = array ();
         $this->loadedjscripts = array ();
@@ -129,6 +93,19 @@ class DocumentParser {
     function __call($name,$args) {
         include_once(MODX_MANAGER_PATH . 'includes/extenders/deprecated.functions.inc.php');
         if(method_exists($this->old,$name)) return call_user_func_array(array($this->old,$name),$args);
+    }
+    public function __get($name){
+        $out = '';
+        switch($name){
+            case 'queryCode':{
+                $out = \MODxCore\Debug::showQuery();
+                break;
+            }
+            default:{
+                break;
+            }
+        }
+        return $out;
     }
 
     /**
@@ -638,9 +615,6 @@ class DocumentParser {
         if($this->getConfig('seostrict')==='1') $this->sendStrictURI();
         $this->prepareResponse();
     }
-
-
-
 
 
 

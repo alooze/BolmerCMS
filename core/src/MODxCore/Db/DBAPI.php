@@ -465,71 +465,10 @@ class DBAPI{
             'password' => $pwd,
             'prefix' => $prefix,
             'driver_options' => array(\PDO::MYSQL_ATTR_INIT_COMMAND => $connection_method.' '.$charset),
-            'logger' => function($log_string) {
-                    echo $log_string;
+            'logger' => function($q) {
+                    \MODxCore\Debug::addQuery($q);
                 },
-            'logging' => false
+            'logging' => true
         ));
     }
-    /*function connect($host = '', $dbase = '', $uid = '', $pwd = '', $persist = 0) {
-        global $modx;
-        $uid = $uid ? $uid : $this->config['user'];
-        $pwd = $pwd ? $pwd : $this->config['pass'];
-        $host = $host ? $host : $this->config['host'];
-        $dbase = $dbase ? $dbase : $this->config['dbase'];
-        $charset = $this->config['charset'];
-        $connection_method = $this->config['connection_method'];
-        $tstart = $modx->getMicroTime();
-        $safe_count = 0;
-        while(!$this->conn && $safe_count<3)
-        {
-            if($persist!=0) $this->conn = mysql_pconnect($host, $uid, $pwd);
-            else            $this->conn = mysql_connect($host, $uid, $pwd, true);
-
-            if(!$this->conn)
-            {
-                if(isset($modx->config['send_errormail']) && $modx->config['send_errormail'] !== '0')
-                {
-                    if($modx->config['send_errormail'] <= 2)
-                    {
-                        $logtitle    = 'Failed to create the database connection!';
-                        $request_uri = $_SERVER['REQUEST_URI'];
-                        $request_uri = htmlspecialchars($request_uri, ENT_QUOTES);
-                        $ua          = htmlspecialchars($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES);
-                        $referer     = htmlspecialchars($_SERVER['HTTP_REFERER'], ENT_QUOTES);
-                        $subject = 'Missing to create the database connection! from ' . $modx->config['site_name'];
-                        $msg = "{$logtitle}<br />{$request_uri}<br />{$ua}<br />{$referer}";
-                        $modx->sendmail($subject,$msg);
-                    }
-                }
-                sleep(1);
-                $safe_count++;
-            }
-        }
-        if (!$this->conn) {
-            $modx->messageQuit("Failed to create the database connection!");
-            exit;
-        } else {
-            $dbase = str_replace('`', '', $dbase); // remove the `` chars
-            if (!@ mysql_select_db($dbase, $this->conn)) {
-                $modx->messageQuit("Failed to select the database '" . $dbase . "'!");
-                exit;
-            }
-            @mysql_query("{$connection_method} {$charset}", $this->conn);
-            $tend = $modx->getMicroTime();
-            $totaltime = $tend - $tstart;
-            if ($modx->dumpSQL) {
-                $modx->queryCode .= "<fieldset style='text-align:left'><legend>Database connection</legend>" . sprintf("Database connection was created in %2.4f s", $totaltime) . "</fieldset><br />";
-            }
-            if (function_exists('mysql_set_charset')) {
-                mysql_set_charset($this->config['charset']);
-            } else {
-                @mysql_query("SET NAMES {$this->config['charset']}", $this->conn);
-            }
-            $this->isConnected = true;
-            // FIXME (Fixed by line below):
-            // this->queryTime = this->queryTime + $totaltime;
-            $modx->queryTime += $totaltime;
-        }
-    }*/
 }
