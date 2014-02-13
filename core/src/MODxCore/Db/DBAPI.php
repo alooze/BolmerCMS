@@ -177,13 +177,9 @@ class DBAPI{
         return $out;
     }
     public function query($q){
-        $modx = modx();
+
         $db = ORM::get_db();
-        $tstart = $modx->getMicroTime();
         $q = ORM::raw_execute($q);
-        $totaltime = $modx->getMicroTime() - $tstart;
-        $modx->queryTime += $totaltime;
-        $modx->executedQueries = $modx->executedQueries + 1;
         return ORM::get_last_statement();
     }
 
@@ -465,8 +461,8 @@ class DBAPI{
             'password' => $pwd,
             'prefix' => $prefix,
             'driver_options' => array(\PDO::MYSQL_ATTR_INIT_COMMAND => $connection_method.' '.$charset),
-            'logger' => function($q) {
-                    \MODxCore\Debug::addQuery($q);
+            'logger' => function($q, $time) {
+                    \MODxCore\Debug::addQuery($q, $time);
                 },
             'logging' => true
         ));

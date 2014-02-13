@@ -55,7 +55,7 @@ if(!defined('MODX_SITE_HOSTNAMES'))
 	define('MODX_SITE_HOSTNAMES','');
 
 // get start time
-$mtime = microtime(); $mtime = explode(" ",$mtime); $mtime = $mtime[1] + $mtime[0]; $tstart = $mtime;
+$tstart = microtime(true);//isset($_SERVER['REQUEST_TIME_FLOAT']) ? $_SERVER['REQUEST_TIME_FLOAT'] : microtime(true);
 $mstart = memory_get_usage();
 
 // harden it
@@ -138,7 +138,6 @@ $modx->stopOnNotice = false;
 if(!isset($_SESSION['mgrValidated']) || !$_SESSION['mgrValidated']) {
     @ini_set("display_errors","0");
 }
-
 // execute the parser if index.php was not included
 if (!MODX_API_MODE) {
     $modx->executeParser();
