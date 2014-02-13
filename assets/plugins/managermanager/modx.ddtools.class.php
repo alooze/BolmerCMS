@@ -556,8 +556,8 @@ class ddTools {
 			$sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
 			$sql .= "FROM ".self::$tables['site_tmplvars']." tv ";
 			$sql .= "INNER JOIN ".self::$tables['site_tmplvar_templates']." tvtpl ON tvtpl.tmplvarid = tv.id ";
-			$sql .= "LEFT JOIN ".self::$tables['site_tmplvar_contentvalues']." tvc ON tvc.tmplvarid=tv.id AND tvc.contentid = '" . $docid . "' ";
-			$sql .= "WHERE ".$query." AND tvtpl.templateid = ".$docRow['template'];
+			$sql .= "LEFT JOIN ".self::$tables['site_tmplvar_contentvalues']." tvc ON tvc.tmplvarid=tv.id ";
+			$sql .= "WHERE ".$query." AND tvc.contentid = '" . $docid . "' AND tvtpl.templateid = ".$docRow['template'];
 			
 			if ($sort){
 				$sql .= " ORDER BY $sort $dir ";

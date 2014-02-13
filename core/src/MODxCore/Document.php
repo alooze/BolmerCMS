@@ -414,8 +414,8 @@ class Document{
             $sql= "SELECT tv.*, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
             $sql .= "FROM " . $this->_inj['modx']->getFullTableName("site_tmplvars") . " tv ";
             $sql .= "INNER JOIN " . $this->_inj['modx']->getFullTableName("site_tmplvar_templates")." tvtpl ON tvtpl.tmplvarid = tv.id ";
-            $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName("site_tmplvar_contentvalues")." tvc ON tvc.tmplvarid=tv.id AND tvc.contentid = '" . $documentObject['id'] . "' ";
-            $sql .= "WHERE tvtpl.templateid = '" . $documentObject['template'] . "'";
+            $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName("site_tmplvar_contentvalues")." tvc ON tvc.tmplvarid=tv.id ";
+            $sql .= "WHERE tvc.contentid = '" . $documentObject['id'] . "' AND tvtpl.templateid = '" . $documentObject['template'] . "'";
             $rs= $this->_inj['db']->query($sql);
             $rowCount= $this->_inj['db']->getRecordCount($rs);
             if ($rowCount > 0) {
@@ -506,8 +506,8 @@ class Document{
             $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
             $sql .= "FROM " . $this->_inj['modx']->getFullTableName('site_tmplvars')." tv ";
             $sql .= "INNER JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
-            $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id AND tvc.contentid = '" . $docid . "' ";
-            $sql .= "WHERE " . $query . " AND tvtpl.templateid = " . $docRow['template'];
+            $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id ";
+            $sql .= "WHERE " . $query . " AND tvc.contentid = '" . $docid . "' AND tvtpl.templateid = " . $docRow['template'];
             if ($sort)
                 $sql .= " ORDER BY $sort $dir ";
             $rs= $this->_inj['db']->query($sql);
@@ -579,8 +579,8 @@ class Document{
                 $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
                 $sql .= "FROM " . $this->_inj['modx']->getFullTableName('site_tmplvars') . " tv ";
                 $sql .= "INNER JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
-                $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id AND tvc.contentid = '" . $docid . "' ";
-                $sql .= "WHERE " . $query . " AND tvtpl.templateid = " . $docRow['template'];
+                $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id ";
+                $sql .= "WHERE " . $query . " AND tvc.contentid = '" . $docid . "' AND tvtpl.templateid = " . $docRow['template'];
                 if ($tvsort)
                     $sql .= " ORDER BY $tvsort $tvsortdir ";
                 $rs= $this->_inj['db']->query($sql);
