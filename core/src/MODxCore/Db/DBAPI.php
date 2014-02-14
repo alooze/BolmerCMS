@@ -177,7 +177,6 @@ class DBAPI{
         return $out;
     }
     public function query($q){
-
         $db = ORM::get_db();
         $q = ORM::raw_execute($q);
         return ORM::get_last_statement();
