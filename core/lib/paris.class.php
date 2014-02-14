@@ -179,6 +179,7 @@ class Model {
      * value supplied as the third argument (which defaults to null).
      */
     protected static function _get_static_property($class_name, $property, $default=null) {
+
         if (!class_exists($class_name) || !property_exists($class_name, $property)) {
             return $default;
         }

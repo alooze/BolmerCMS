@@ -7,9 +7,8 @@ class ORM extends \ORM{
         static::_execute($query, $this->_values, $this->_connection_name);
         return static::get_last_statement();
     }*/
-
-    /*public static function for_table($table_name, $connection_name = self::DEFAULT_CONNECTION) {
+    public static function for_table($table_name, $connection_name = self::DEFAULT_CONNECTION) {
         static::_setup_db($connection_name);
         return new static($table_name, array(), $connection_name);
-    }*/
+    }
 }

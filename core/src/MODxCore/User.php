@@ -139,20 +139,19 @@ class User{
      */
     public static function getUserInfo($uid) {
         $modx = modx();
-        $sql= "
-              SELECT mu.username, mu.password, mua.*
-              FROM " . $modx->getFullTableName("manager_users") . " mu
-              INNER JOIN " . $modx->getFullTableName("user_attributes") . " mua ON mua.internalkey=mu.id
-              WHERE mu.id = '$uid'
-              ";
-        $rs= $modx->db->query($sql);
-        $limit= $modx->db->getRecordCount($rs);
-        if ($limit == 1) {
-            $row= $modx->db->getRow($rs);
-            if (!$row["usertype"])
+        $row = array();
+        if($uid==0 && is_scalar($uid)){
+            $sql = \MODxCore\Db\ORM::forTable($modx->getTableName('BManagerUser'))
+                        ->tableAlias('mu')
+                        ->selectManyExpr('mu.username', 'mu.password', 'mua.*')
+                        ->innerJoin($modx->getTableName('BManagerUserAttr'), array('mua.internalkey', '=', 'mu.id'), 'mua')
+                        ->where('mu.id', $uid)
+                        ->findArray();
+            if (count($sql) == 1 && empty($row["usertype"])) {
                 $row["usertype"]= "manager";
-            return $row;
+            }
         }
+        return $row;
     }
 
     /**

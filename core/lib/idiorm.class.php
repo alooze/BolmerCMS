@@ -1580,7 +1580,6 @@ class ORM implements ArrayAccess {
     protected function _run() {
         $query = $this->_build_select();
         $caching_enabled = self::$_config[$this->_connection_name]['caching'];
-
         if ($caching_enabled) {
             $cache_key = self::_create_cache_key($query, $this->_values);
             $cached_result = self::_check_query_cache($cache_key, $this->_connection_name);
@@ -1884,8 +1883,12 @@ class ORM implements ArrayAccess {
     public function __call($name, $arguments)
     {
         $method = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $name));
-
-        return call_user_func_array(array($this, $method), $arguments);
+        if(method_exists($this, $method)){
+            $out = call_user_func_array(array($this, $method), $arguments);
+        }else{
+            $out = null;
+        }
+        return $out;
     }
 
     /**

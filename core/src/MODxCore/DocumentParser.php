@@ -630,6 +630,9 @@ class DocumentParser {
     function getCachePath() {
         return $this->_pimple['cache']->getCachePath();
     }
+    function getTableName($className){
+        return \MODxCore\Model::getFullTableName($className);
+    }
     function getFullTableName($tbl) {
         return \MODxCore\Helper::getFullTableName($tbl, $this->db->config);
     }
@@ -845,10 +848,10 @@ class DocumentParser {
         return \MODxCore\User::getUserInfo($uid);
     }
     function getWebUserInfo($uid) {
-        return \MODxCore\User::getUserInfo($uid);
+        return \MODxCore\User::getWebUserInfo($uid);
     }
     function getUserDocGroups($resolveIds= false) {
-        return \MODxCore\User::getUserInfo($resolveIds);
+        return \MODxCore\User::getUserDocGroups($resolveIds);
     }
     function changeWebUserPassword($oldPwd, $newPwd) {
         return \MODxCore\User::changeWebUserPassword($oldPwd, $newPwd);

@@ -20,7 +20,6 @@ class Model extends \Model{
     }
 
     public static function factory($class_name, $connection_name = null) {
-        $class_name = static::$auto_prefix_models . $class_name;
         $table_name = static::_get_table_name($class_name);
         if ($connection_name == null) {
             $connection_name = static::_get_static_property(
@@ -35,14 +34,27 @@ class Model extends \Model{
         return $wrapper;
     }
 
+    public static function getFullTableName($className='', $connection_name = null){
+        $class_name = $className ? (get_class() . '\\'. $className) : get_called_class();
+        $table_name = static::_get_table_name($class_name);
+        if ($connection_name == null) {
+            $connection_name = static::_get_static_property(
+                $class_name,
+                '_connection_name',
+                \ORMWrapper::DEFAULT_CONNECTION
+            );
+        }
+        return static::getTable($table_name, $connection_name);
+    }
+
+    public static function getTable($name, $connection){
+        return \ORMWrapper::get_config('prefix', $connection).$name;
+    }
+
     public static function __callStatic($method, $parameters) {
         if(function_exists('get_called_class')) {
             $model = static::factory(get_called_class());
             return call_user_func_array(array($model, $method), $parameters);
         }
-    }
-
-    public static function getTable($name, $connection){
-        return \ORMWrapper::get_config('prefix', $connection).$name;
     }
 }
