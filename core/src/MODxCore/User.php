@@ -140,7 +140,7 @@ class User{
     public static function getUserInfo($uid) {
         $row = \MODxCore\Model\BManagerUser::filter('fullProfile', $uid);
         if(!empty($row)){
-            $row = $row->asArray();
+            $row = $row->as_array();
             if(empty($row["usertype"])){
                 $row["usertype"]= "manager";
             }

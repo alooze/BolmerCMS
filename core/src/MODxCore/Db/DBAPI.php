@@ -1,4 +1,6 @@
 <?php namespace MODxCore\Db;
+
+use \Granada\ORM as ORM;
 /**
  * Created by PhpStorm.
  * User: Agel_Nash

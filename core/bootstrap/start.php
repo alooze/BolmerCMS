@@ -60,5 +60,5 @@ foreach($files as $i => $f){
 require PATH_MODXCORE . "/lib/Pimple.class.php";
 require PATH_MODXCORE . "/lib/SplClassLoader.class.php";
 
-$classLoader = new SplClassLoader('MODxCore', PATH_MODXCORE ."/src/");
-$classLoader->register();
+with(new SplClassLoader('MODxCore', PATH_MODXCORE ."/src/"))->register();
+with(new SplClassLoader('Granada', PATH_MODXCORE ."/lib/Granada/src/"))->register();

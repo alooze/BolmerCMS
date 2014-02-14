@@ -1,5 +1,7 @@
 <?php namespace MODxCore\Model;
 
+use Granada\Orm\Wrapper as ORMWrapper;
+
 class BManagerUser extends \MODxCore\Model{
     public static $_table = 'manager_users';
 
@@ -10,10 +12,10 @@ class BManagerUser extends \MODxCore\Model{
     /**
      * SELECT mu.username, mu.password, mua.* FROM `manager_users` `mu` INNER JOIN `user_attributes` `mua` ON `mua`.`internalkey` = `mu`.`id` WHERE `mu`.`id` = '?' LIMIT 1
      */
-    public static function fullProfile(\ORMWrapper $orm, $uid, $noping = false){
-        $out = $orm->tableAlias('mu')
-            ->selectManyExpr('mu.username', 'mu.password', 'mua.*')
-            ->innerJoin(
+    public static function fullProfile(ORMWrapper $orm, $uid, $noping = false){
+        $out = $orm->table_alias('mu')
+            ->select_many_expr('mu.username', 'mu.password', 'mua.*')
+            ->inner_join(
                 \MODxCore\Model::getFullTableName('BManagerUserAttr'),
                 array('mua.internalkey', '=', 'mu.id'),
                 'mua'
@@ -21,7 +23,7 @@ class BManagerUser extends \MODxCore\Model{
 
         switch(true){
             case (!empty($uid) && is_array($uid)):{
-                $out = $out->whereIn('mu.id', array_values($uid))
+                $out = $out->where_in('mu.id', array_values($uid))
                     ->find_many();
                 break;
             }
@@ -46,10 +48,10 @@ class BManagerUser extends \MODxCore\Model{
      * SELECT * FROM `manager_users` WHERE `id` = '?' LIMIT 1
      * SELECT * FROM `user_attributes` WHERE `internalkey` = '?' LIMIT 1
      */
-    public static function profile(\ORMWrapper $orm, $uid, $noping = false){
+    public static function profile(ORMWrapper $orm, $uid, $noping = false){
         switch(true){
             case (!empty($uid) && is_array($uid)):{
-                $user = $orm->whereIn('id', array_values($uid))
+                $user = $orm->where_in('id', array_values($uid))
                             ->find_many();
                 if(!empty($user)){
                     foreach($user as $u){

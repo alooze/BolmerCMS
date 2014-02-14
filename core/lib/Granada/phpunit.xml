@@ -1,0 +1,22 @@
+<phpunit backupGlobals="true"
+         backupStaticAttributes="false"
+         bootstrap="tests/bootstrap.php"
+         cacheTokens="false"
+         colors="true">
+    <testsuites>
+        <testsuite name="ORM Test Suite">
+            <directory suffix="Test.php">tests/orm</directory>
+        </testsuite>
+        <testsuite name="Granada Test Suite">
+            <directory suffix="Test.php">tests/granada</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+      <whitelist processUncoveredFilesFromWhitelist="true">
+        <directory suffix=".php">src</directory>
+      </whitelist>
+    </filter>
+    <logging>
+        <log type="coverage-clover" target="clover.xml" />
+    </logging>
+</phpunit>
