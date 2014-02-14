@@ -20,12 +20,12 @@ class BManagerUser extends \MODxCore\Model{
             );
 
         switch(true){
-            case is_array($uid):{
+            case (!empty($uid) && is_array($uid)):{
                 $out = $out->whereIn('mu.id', $uid)
                     ->find_many();
                 break;
             }
-            case is_scalar($uid):{
+            case (!empty($uid) && is_scalar($uid)):{
                 $out = $out->where('mu.id', $uid)
                     ->find_one();
                 break;
@@ -48,7 +48,7 @@ class BManagerUser extends \MODxCore\Model{
      */
     public static function profile(\ORMWrapper $orm, $uid, $noping = false){
         switch(true){
-            case is_array($uid):{
+            case (!empty($uid) && is_array($uid)):{
                 $user = $orm->where_in('id', $uid)
                             ->find_many();
                 if(!empty($user)){
@@ -59,7 +59,7 @@ class BManagerUser extends \MODxCore\Model{
                 }
                 break;
             }
-            case is_scalar($uid):{
+            case (!empty($uid) && is_scalar($uid)):{
                 $user = $orm->find_one($uid);
                 if(!empty($user)){
                     $out = $user->attr()
