@@ -21,7 +21,7 @@ class BManagerUser extends \MODxCore\Model{
 
         switch(true){
             case (!empty($uid) && is_array($uid)):{
-                $out = $out->whereIn('mu.id', $uid)
+                $out = $out->whereIn('mu.id', array_values($uid))
                     ->find_many();
                 break;
             }
@@ -49,7 +49,7 @@ class BManagerUser extends \MODxCore\Model{
     public static function profile(\ORMWrapper $orm, $uid, $noping = false){
         switch(true){
             case (!empty($uid) && is_array($uid)):{
-                $user = $orm->where_in('id', $uid)
+                $user = $orm->whereIn('id', array_values($uid))
                             ->find_many();
                 if(!empty($user)){
                     foreach($user as $u){
