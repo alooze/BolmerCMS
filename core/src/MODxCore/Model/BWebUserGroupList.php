@@ -1,5 +1,5 @@
 <?php namespace MODxCore\Model;
 
-class BWebGroupList extends \MODxCore\Model{
+class BWebUserGroupList extends \MODxCore\Model{
     public static $_table = 'web_groups';
 }

@@ -138,13 +138,12 @@ class User{
      * @return boolean|string
      */
     public static function getUserInfo($uid) {
-        $modx = modx();
         $row = array();
         if($uid==0 && is_scalar($uid)){
-            $sql = \MODxCore\Db\ORM::forTable($modx->getTableName('BManagerUser'))
+            $sql = \MODxCore\Db\ORM::forTable(\MODxCore\Model::getFullTableName('BManagerUser'))
                         ->tableAlias('mu')
                         ->selectManyExpr('mu.username', 'mu.password', 'mua.*')
-                        ->innerJoin($modx->getTableName('BManagerUserAttr'), array('mua.internalkey', '=', 'mu.id'), 'mua')
+                        ->innerJoin(\MODxCore\Model::getFullTableName('BManagerUserAttr'), array('mua.internalkey', '=', 'mu.id'), 'mua')
                         ->where('mu.id', $uid)
                         ->findArray();
             if (count($sql) == 1 && empty($row["usertype"])) {
