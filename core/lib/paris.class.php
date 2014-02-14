@@ -254,7 +254,6 @@ class Model {
     public static function factory($class_name, $connection_name = null) {
         $class_name = self::$auto_prefix_models . $class_name;
         $table_name = self::_get_table_name($class_name);
-
         if ($connection_name == null) {
             $connection_name = self::_get_static_property(
                 $class_name,
@@ -291,8 +290,7 @@ class Model {
             //{$this->_table}.{$foreign_key_name_in_current_models_table}
             $where_value = $this->$foreign_key_name_in_current_models_table;
         }
-
-        return self::factory($associated_class_name, $connection_name)->where($foreign_key_name, $where_value);
+        return static::factory($associated_class_name, $connection_name)->where($foreign_key_name, $where_value);
     }
 
     /**
@@ -317,6 +315,7 @@ class Model {
      */
     protected function belongs_to($associated_class_name, $foreign_key_name=null, $foreign_key_name_in_associated_models_table=null, $connection_name=null) {
         $associated_table_name = self::_get_table_name(self::$auto_prefix_models . $associated_class_name);
+
         $foreign_key_name = self::_build_foreign_key_name($foreign_key_name, $associated_table_name);
         $associated_object_id = $this->$foreign_key_name;
 
@@ -326,10 +325,10 @@ class Model {
             //"{$associated_table_name}.primary_key = {$associated_object_id}"
             //NOTE: primary_key is a placeholder for the actual primary key column's name
             //in $associated_table_name
-            $desired_record = self::factory($associated_class_name, $connection_name)->where_id_is($associated_object_id);
+            $desired_record = static::factory($associated_class_name, $connection_name)->where_id_is($associated_object_id);
         } else {
             //"{$associated_table_name}.{$foreign_key_name_in_associated_models_table} = {$associated_object_id}"
-            $desired_record = self::factory($associated_class_name, $connection_name)->where($foreign_key_name_in_associated_models_table, $associated_object_id);
+            $desired_record = static::factory($associated_class_name, $connection_name)->where($foreign_key_name_in_associated_models_table, $associated_object_id);
         }
 
         return $desired_record;
@@ -380,7 +379,7 @@ class Model {
                  WHERE {$join_table_name}.{$key_to_base_table} = {$this->$base_table_id_column} ;"
         */
 
-        return self::factory($associated_class_name, $connection_name)
+        return static::factory($associated_class_name, $connection_name)
             ->select("{$associated_table_name}.*")
             ->join($join_table_name, array("{$associated_table_name}.{$associated_table_id_column}", '=', "{$join_table_name}.{$key_to_associated_table}"))
             ->where("{$join_table_name}.{$key_to_base_table}", $this->$base_table_id_column); ;

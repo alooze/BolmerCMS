@@ -34,6 +34,15 @@ class Model extends \Model{
         return $wrapper;
     }
 
+    protected static function _get_table_name($class_name) {
+        $specified_table_name = static::_get_static_property($class_name, '_table');
+        $specified_table_name = \ORMWrapper::get_config('prefix') . $specified_table_name;
+        if (is_null($specified_table_name)) {
+            return self::_class_name_to_table_name($class_name);
+        }
+        return $specified_table_name;
+    }
+
     public static function getFullTableName($className='', $connection_name = null){
         $class_name = $className ? (get_class() . '\\'. $className) : get_called_class();
         $table_name = static::_get_table_name($class_name);
@@ -48,7 +57,11 @@ class Model extends \Model{
     }
 
     public static function getTable($name, $connection){
-        return \ORMWrapper::get_config('prefix', $connection).$name;
+        $prefix = \ORMWrapper::get_config('prefix', $connection);
+        if($prefix && substr($name, 0, strlen($prefix))!=$prefix){
+            $name = $prefix . $name;
+        }
+        return $name;
     }
 
     public static function __callStatic($method, $parameters) {
