@@ -59,7 +59,7 @@ if (!function_exists('errorDisplay')) {
 
 if (!function_exists('modx')){
     function modx($key = 'modx'){
-        $pimple = \MODxCore\Pimple::getInstance();
+        $pimple = \Bolmer\Pimple::getInstance();
         return isset($pimple[$key]) ? $pimple[$key] : null;
     }
 }

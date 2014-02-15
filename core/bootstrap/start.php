@@ -56,9 +56,8 @@ foreach($files as $i => $f){
         trigger_error($e->getMessage(), E_USER_ERROR);
     }
 }
+require PATH_MODXCORE . "/app/Pimple.class.php";
+require PATH_MODXCORE . "/app/SplClassLoader.class.php";
 
-require PATH_MODXCORE . "/lib/Pimple.class.php";
-require PATH_MODXCORE . "/lib/SplClassLoader.class.php";
-
-with(new SplClassLoader('MODxCore', PATH_MODXCORE ."/src/"))->register();
-with(new SplClassLoader('Granada', PATH_MODXCORE ."/lib/Granada/src/"))->register();
+with(new SplClassLoader('Bolmer', PATH_MODXCORE ."/app/"))->register();
+with(new SplClassLoader('Granada', PATH_MODXCORE ."/app/Granada/src/"))->register();

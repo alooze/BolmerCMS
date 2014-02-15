@@ -3,4 +3,4 @@
  * Written by Raymond Irving June, 2005
  *
  */
-class DBAPI extends \MODxCore\Db\DBAPI{}
+class DBAPI extends \Bolmer\DB{}
