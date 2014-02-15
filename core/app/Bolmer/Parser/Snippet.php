@@ -77,33 +77,35 @@ class Snippet{
      * @return string
      */
     public function evalSnippet($snippet, $params) {
-        $etomite = $modx = & $this->_inj['modx'];
-        $this->_inj['modx']->event->params = & $params; // store params inside event object
-        if (is_array($params)) {
-            extract($params, EXTR_SKIP);
-        }
-        ob_start();
-        $snip = eval($snippet);
-        $msg = ob_get_contents();
-        ob_end_clean();
+        if($snippet){
+            $etomite = $modx = & $this->_inj['modx'];
+            $this->_inj['modx']->event->params = & $params; // store params inside event object
+            if (is_array($params)) {
+                extract($params, EXTR_SKIP);
+            }
+            ob_start();
+            $snip = eval($snippet);
+            $msg = ob_get_contents();
+            ob_end_clean();
 
-        if (0 < $this->_inj['modx']->getConfig('error_reporting')) {
-            $error_info = error_get_last();
-            if (!empty($error_info) && $this->_inj['debug']->detectError($error_info['type'])) {
-                extract($error_info);
-                $msg = ($msg === false) ? 'ob_get_contents() error' : $msg;
-                $result = $this->_inj['debug']->messageQuit('PHP Parse Error', '', true, $error_info['type'], $error_info['file'], 'Snippet', $error_info['message'], $error_info['line'], $msg);
-                if ($this->_inj['modx']->isBackend()) {
-                    $this->_inj['modx']->event->alert('An error occurred while loading. Please see the event log for more information<p>' . $msg . $snip . '</p>');
+            if (0 < $this->_inj['modx']->getConfig('error_reporting')) {
+                $error_info = error_get_last();
+                if (!empty($error_info) && $this->_inj['debug']->detectError($error_info['type'])) {
+                    extract($error_info);
+                    $msg = ($msg === false) ? 'ob_get_contents() error' : $msg;
+                    $result = $this->_inj['debug']->messageQuit('PHP Parse Error', '', true, $error_info['type'], $error_info['file'], 'Snippet', $error_info['message'], $error_info['line'], $msg);
+                    if ($this->_inj['modx']->isBackend()) {
+                        $this->_inj['modx']->event->alert('An error occurred while loading. Please see the event log for more information<p>' . $msg . $snip . '</p>');
+                    }
                 }
             }
-        }
-        unset($modx->event->params);
-        $this->_inj['modx']->currentSnippet = '';
-        if (is_array($snip) || is_object($snip)) {
-            return $snip;
-        } else {
-            return $msg . $snip;
+            unset($modx->event->params);
+            $this->_inj['modx']->currentSnippet = '';
+            if (is_array($snip) || is_object($snip)) {
+                return $snip;
+            } else {
+                return $msg . $snip;
+            }
         }
     }
 

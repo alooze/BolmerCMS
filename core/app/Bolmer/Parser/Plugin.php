@@ -21,30 +21,32 @@ class Plugin{
      * @param array $params
      */
     function evalPlugin($pluginCode, $params) {
-        $etomite = $modx = &$this->_inj['modx'];
-        $this->_inj['modx']->event->params = & $params; // store params inside event object
-        if (is_array($params)) {
-            extract($params, EXTR_SKIP);
-        }
-        ob_start();
-        eval($pluginCode);
-        $msg = ob_get_contents();
-        ob_end_clean();
-
-        if ((0 < $this->_inj['modx']->getConfig('error_reporting')) && $msg && isset($php_errormsg)) {
-            $error_info = error_get_last();
-            if ($this->_inj['debug']->detectError($error_info['type'])) {
-                extract($error_info);
-                $msg = ($msg === false) ? 'ob_get_contents() error' : $msg;
-                $result = $this->_inj['modx']->messageQuit('PHP Parse Error', '', true, $type, $file, 'Plugin', $text, $line, $msg);
-                if ($this->_inj['modx']->isBackend()) {
-                    $this->_inj['modx']->event->alert('An error occurred while loading. Please see the event log for more information.<p>' . $msg . '</p>');
-                }
+        if($pluginCode){
+            $etomite = $modx = &$this->_inj['modx'];
+            $this->_inj['modx']->event->params = & $params; // store params inside event object
+            if (is_array($params)) {
+                extract($params, EXTR_SKIP);
             }
-        } else {
-            echo $msg;
+            ob_start();
+            eval($pluginCode);
+            $msg = ob_get_contents();
+            ob_end_clean();
+
+            if ((0 < $this->_inj['modx']->getConfig('error_reporting')) && $msg && isset($php_errormsg)) {
+                $error_info = error_get_last();
+                if ($this->_inj['debug']->detectError($error_info['type'])) {
+                    extract($error_info);
+                    $msg = ($msg === false) ? 'ob_get_contents() error' : $msg;
+                    $result = $this->_inj['modx']->messageQuit('PHP Parse Error', '', true, $type, $file, 'Plugin', $text, $line, $msg);
+                    if ($this->_inj['modx']->isBackend()) {
+                        $this->_inj['modx']->event->alert('An error occurred while loading. Please see the event log for more information.<p>' . $msg . '</p>');
+                    }
+                }
+            } else {
+                echo $msg;
+            }
+            unset($modx->event->params);
         }
-        unset($modx->event->params);
     }
 
     /**

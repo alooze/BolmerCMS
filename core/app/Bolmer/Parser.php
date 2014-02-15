@@ -324,9 +324,10 @@ class Parser{
      *   - URL tags [~...~]
      *
      * @param string $source
+     * @param bool $uncached_snippets
      * @return string
      */
-    function parseDocumentSource($source) {
+    function parseDocumentSource($source, $uncached_snippets = false) {
         // set the number of times we are to parse the document source
         $this->_inj['modx']->minParserPasses= empty ($this->_inj['modx']->minParserPasses) ? 2 : $this->_inj['modx']->minParserPasses;
         $this->_inj['modx']->maxParserPasses= empty ($this->_inj['modx']->maxParserPasses) ? 10 : $this->_inj['modx']->maxParserPasses;
@@ -355,6 +356,9 @@ class Parser{
             // insert META tags & keywords
             if($this->_inj['modx']->getConfig('show_meta')==1) {
                 $source= $this->_inj['modx']->mergeDocumentMETATags($source);
+            }
+            if($uncached_snippets){
+                $source = str_replace(array('[!', '!]'), array('[[', ']]'), $source);
             }
             // find and merge snippets
             $source= $this->mergeSnippetsContent($source);
