@@ -213,7 +213,7 @@
                 $this->_inj['modx']->invokeEvent("OnLoadWebDocument");
 
                 // Parse document source
-                $this->_inj['modx']->documentContent = $this->_inj['modx']->parseDocumentSource($this->_inj['modx']->documentContent, true);
+                $this->_inj['modx']->documentContent = $this->_inj['modx']->parseDocumentSource($this->_inj['modx']->documentContent, false);
 
                 // setup <base> tag for friendly urls
                 //			if($this->config['friendly_urls']==1 && $this->config['use_alias_path']==1) {
@@ -374,9 +374,8 @@
             // check for non-cached snippet output
             if (strpos($this->_inj['modx']->documentOutput, '[!') !== false) {
                 // Parse document source
-                $this->_inj['modx']->documentOutput= $this->_inj['modx']->parseDocumentSource($this->_inj['modx']->documentOutput, true);
+                $this->_inj['modx']->documentOutput= $this->_inj['parser']->parseDocumentSource($this->_inj['modx']->documentOutput, true);
             }
-
             // Moved from prepareResponse() by sirlancelot
             // Insert Startup jscripts & CSS scripts into template - template must have a <head> tag
             if ($js= $this->_inj['modx']->getRegisteredClientStartupScripts()) {

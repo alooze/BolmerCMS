@@ -370,7 +370,7 @@ class Parser{
             if ($this->_inj['modx']->dumpSnippets == 1) {
                 $this->_inj['modx']->snippetsCode .= "</fieldset><br />";
             }
-            if ($i == ($passes -1) && $i < ($this->maxParserPasses - 1)) {
+            if ($i == ($passes -1) && $i < ($this->_inj['modx']->maxParserPasses - 1)) {
                 // check if source length was changed
                 $et= strlen($source);
                 if ($st != $et)

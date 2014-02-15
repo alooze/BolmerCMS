@@ -675,7 +675,7 @@ class Core {
         $this->_pimple['response']->postProcess();
     }
     function parseDocumentSource($source) {
-        return $this->_pimple['parser']->parseDocumentSource($source, true);
+        return $this->_pimple['parser']->parseDocumentSource($source, false);
     }
     function prepareResponse() {
         $this->_pimple['response']->prepareResponse();
