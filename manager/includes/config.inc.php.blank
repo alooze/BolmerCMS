@@ -86,9 +86,10 @@ define('MODX_DEBUG', true);
 //Core path
 $root = dirname(dirname(dirname(__FILE__)))."/core/";
 define('PATH_MODXCORE', realpath($root));
+
 require_once(PATH_MODXCORE."/bootstrap/start.php");
 
-$pimple = \MODxCore\Pimple::getInstance();
+$pimple = \Bolmer\Pimple::getInstance();
 $pimple['global_config'] = array(
     'database_type' => $database_type,
     'database_server' => 'localhost',
