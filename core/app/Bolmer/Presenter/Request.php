@@ -42,7 +42,11 @@ class Request{
         $docIdentifier= $this->_inj['modx']->getConfig('site_start');
         switch ($method) {
             case 'alias' :
-                $docIdentifier= $this->_inj['db']->escape($_REQUEST['q']);
+                if (!is_scalar($_REQUEST['q'])) {
+                    $this->_inj['modx']->sendErrorPage();
+                }else{
+                    $docIdentifier= $this->_inj['db']->escape($_REQUEST['q']);
+                }
                 break;
             case 'id' :
                 if (!is_numeric($_REQUEST['id'])) {

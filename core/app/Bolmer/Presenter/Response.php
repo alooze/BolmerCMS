@@ -116,7 +116,9 @@
             } else {
                 $unauthorizedPage= $this->_inj['modx']->getConfig('site_start');
             }
-            $this->_inj['modx']->sendForward($unauthorizedPage, 'HTTP/1.1 401 Unauthorized');
+            // Changed by TimGS 22/6/2012. Originally was a 401 but this HTTP code appears intended for situations
+            // where the client can authenticate via HTTP authentication and send a www-authenticate header.
+            $this->_inj['modx']->sendForward($unauthorizedPage, 'HTTP/1.1 403 Forbidden');
             exit();
         }
 
@@ -211,7 +213,7 @@
                 $this->_inj['modx']->invokeEvent("OnLoadWebDocument");
 
                 // Parse document source
-                $this->_inj['modx']->documentContent = $this->_inj['modx']->parseDocumentSource($this->_inj['modx']->documentContent);
+                $this->_inj['modx']->documentContent = $this->_inj['modx']->parseDocumentSource($this->_inj['modx']->documentContent, false);
 
                 // setup <base> tag for friendly urls
                 //			if($this->config['friendly_urls']==1 && $this->config['use_alias_path']==1) {
@@ -238,18 +240,11 @@
         function postProcess() {
             // if the current document was generated, cache it!
             if ($this->_inj['modx']->documentGenerated == 1 && $this->_inj['modx']->documentObject['cacheable'] == 1 && $this->_inj['modx']->documentObject['type'] == 'document' && $this->_inj['modx']->documentObject['published'] == 1) {
-                $basepath= MODX_BASE_PATH . "assets/cache";
                 // invoke OnBeforeSaveWebPageCache event
                 $this->_inj['modx']->invokeEvent("OnBeforeSaveWebPageCache");
-                if ($this->_inj['modx']->getConfig('cache_type') == 2) {
-                    $md5_hash = '';
-                    if(!empty($_GET)) $md5_hash = '_' . md5(http_build_query($_GET));
-                    $pageCache = $md5_hash .".pageCache.php";
-                }else{
-                    $pageCache = ".pageCache.php";
-                }
+                $cacheFile = $this->_inj['cache']->pageCacheFile($this->_inj['modx']->documentIdentifier);
 
-                if ($fp= @ fopen($basepath . "/docid_" . $this->_inj['modx']->documentIdentifier . $pageCache, "w")) {
+                if ($fp= @ fopen($cacheFile, "w")) {
                     // get and store document groups inside document object. Document groups will be used to check security on cache pages
                     $sql= "SELECT document_group FROM " . $this->_inj['modx']->getFullTableName("document_groups") . " WHERE document='" . $this->_inj['modx']->documentIdentifier . "'";
                     $docGroups= $this->_inj['db']->getColumn("document_group", $sql);
@@ -377,14 +372,10 @@
             }
 
             // check for non-cached snippet output
-            if (strpos($this->_inj['modx']->documentOutput, '[!') > -1) {
-                $this->_inj['modx']->documentOutput= str_replace('[!', '[[', $this->_inj['modx']->documentOutput);
-                $this->_inj['modx']->documentOutput= str_replace('!]', ']]', $this->_inj['modx']->documentOutput);
-
+            if (strpos($this->_inj['modx']->documentOutput, '[!') !== false) {
                 // Parse document source
-                $this->_inj['modx']->documentOutput= $this->_inj['modx']->parseDocumentSource($this->_inj['modx']->documentOutput);
+                $this->_inj['modx']->documentOutput= $this->_inj['parser']->parseDocumentSource($this->_inj['modx']->documentOutput, true);
             }
-
             // Moved from prepareResponse() by sirlancelot
             // Insert Startup jscripts & CSS scripts into template - template must have a <head> tag
             if ($js= $this->_inj['modx']->getRegisteredClientStartupScripts()) {

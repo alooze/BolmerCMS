@@ -13,6 +13,36 @@
         public function __construct(\Pimple $inj){
             $this->_inj= $inj;
         }
+
+        /**
+         * Get the path of a page cache file
+         *
+         * @param int $docid
+         * @param bool $fullpath If false give the path relative to the site root, if true give the fullpath. Default true.
+         * @return string
+         */
+        function pageCacheFile($docid, $fullpath = true) {
+            if ($this->_inj['modx']->getConfig('cache_type') == 2) {
+                $md5_hash = '';
+                if(!empty($_GET)) $md5_hash = '_' . md5(http_build_query($_GET));
+                $cacheFile = "docid_" . $docid .$md5_hash. ".pageCache.php";
+            }else{
+                $cacheFile = "docid_" . $docid . ".pageCache.php";
+            }
+
+            return $this->getCachePath($fullpath).$cacheFile;
+        }
+
+        /**
+         * Is a file a page cache file?
+         *
+         * @param string $filename
+         * @return bool
+         */
+        function isPageCacheFile($filename) {
+            return (bool)preg_match('/^docid_([\d\w]+)\.pageCache\.php$/', $filename);
+        }
+
         /**
          * Check the cache for a specific document/resource
          *
@@ -21,13 +51,7 @@
          */
         function checkCache($id) {
             $tbl_document_groups= $this->_inj['modx']->getFullTableName("document_groups");
-            if ($this->_inj['modx']->getConfig('cache_type') == 2) {
-                $md5_hash = '';
-                if(!empty($_GET)) $md5_hash = '_' . md5(http_build_query($_GET));
-                $cacheFile= "assets/cache/docid_" . $id .$md5_hash. ".pageCache.php";
-            }else{
-                $cacheFile= "assets/cache/docid_" . $id . ".pageCache.php";
-            }
+            $cacheFile = $this->pageCacheFile($id);
             if (file_exists($cacheFile)) {
                 $this->_inj['modx']->documentGenerated= 0;
                 $flContent = file_get_contents($cacheFile, false);
@@ -93,11 +117,11 @@
             if ($type=='full') {
                 include_once(MODX_MANAGER_PATH . 'processors/cache_sync.class.processor.php');
                 $sync = new \synccache();
-                $sync->setCachepath(MODX_BASE_PATH . 'assets/cache/');
+                $sync->setCachepath($this->getCachePath(true));
                 $sync->setReport($report);
                 $sync->emptyCache();
             } else {
-                $files = glob(MODX_BASE_PATH . 'assets/cache/*');
+                $files = glob($this->getCachePath(true).'*');
                 $deletedfiles = array();
                 while ($file = array_shift($files)) {
                     $name = basename($file);
@@ -115,7 +139,20 @@
          * @global string $base_url
          * @return string The complete URL to the cache folder
          */
-        function getCachePath() {
-            return MODX_BASE_URL . 'assets/cache/';
+        function getCachePath($full = null) {
+            switch($full){
+                case true:{
+                    $out = MODX_BASE_PATH;
+                    break;
+                }
+                case null:{
+                    $out = MODX_BASE_URL;
+                    break;
+                }
+                default:{
+                    $out = '';
+                }
+            }
+            return $out . 'assets/cache/';
         }
     }

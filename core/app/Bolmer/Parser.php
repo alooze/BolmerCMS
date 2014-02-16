@@ -9,15 +9,59 @@
 class Parser{
     /** @var \Bolmer\Pimple $_inj */
     private $_inj = null;
+    protected $eval_stack = array();
+    protected $eval_type = null;
+    protected $eval_name = null;
+    protected $eval_hash = null;
 
     public function __construct(\Pimple $inj){
         $this->_inj= $inj;
     }
 
     /**
+     * Set eval type and name
+     * Used by the fatal error handler.
+     * After the eval'd code is run, call unregisterEvalInfo().
+     *
+     * @param string $type
+     * @param string $name
+     * @return string
+     */
+    function registerEvalInfo($type, $name) {
+        $hash = $this->_inj['debug']->addToEvalStack($type, $name);
+        $this->_inj['debug']->setDataEvalStack($hash, 'owner', $this->eval_hash);
+        $this->eval_stack[] = array('type'=>$this->eval_type, 'name'=>$this->eval_name, 'hash'=>$this->eval_hash);
+        $this->eval_type = $type;
+        $this->eval_name = $name;
+        $this->eval_hash = $hash;
+        return $hash;
+    }
+
+    public function getCurrentEval(){
+        return array('type'=>$this->eval_type, 'name'=>$this->eval_name, 'hash'=>$this->eval_hash);
+    }
+    /**
+     * Unset eval type and name
+     *
+     * @param float $time
+     * @return void
+     */
+    function unregisterEvalInfo($time = 0.0) {
+        $this->_inj['debug']->setDataEvalStack($this->eval_hash, 'time', $time);
+        $tmp = array_pop($this->eval_stack);
+        if(is_array($tmp)){
+            $this->eval_type = $tmp['type'];
+            $this->eval_name = $tmp['name'];
+            $this->eval_hash = $tmp['hash'];
+        }else{
+            $this->eval_name = $this->eval_type = $this->eval_hash = null;
+        }
+    }
+
+    /**
      * Merge content fields and TVs
      *
-     * @param string $template
+     * @param string $content
      * @return string
      */
     function mergeDocumentContent($content) {
@@ -324,9 +368,10 @@ class Parser{
      *   - URL tags [~...~]
      *
      * @param string $source
+     * @param bool $uncached_snippets
      * @return string
      */
-    function parseDocumentSource($source) {
+    function parseDocumentSource($source, $uncached_snippets = false) {
         // set the number of times we are to parse the document source
         $this->_inj['modx']->minParserPasses= empty ($this->_inj['modx']->minParserPasses) ? 2 : $this->_inj['modx']->minParserPasses;
         $this->_inj['modx']->maxParserPasses= empty ($this->_inj['modx']->maxParserPasses) ? 10 : $this->_inj['modx']->maxParserPasses;
@@ -356,6 +401,9 @@ class Parser{
             if($this->_inj['modx']->getConfig('show_meta')==1) {
                 $source= $this->_inj['modx']->mergeDocumentMETATags($source);
             }
+            if($uncached_snippets){
+                $source = str_replace(array('[!', '!]'), array('[[', ']]'), $source);
+            }
             // find and merge snippets
             $source= $this->mergeSnippetsContent($source);
             // find and replace Placeholders (must be parsed last) - Added by Raymond
@@ -366,7 +414,7 @@ class Parser{
             if ($this->_inj['modx']->dumpSnippets == 1) {
                 $this->_inj['modx']->snippetsCode .= "</fieldset><br />";
             }
-            if ($i == ($passes -1) && $i < ($this->maxParserPasses - 1)) {
+            if ($i == ($passes -1) && $i < ($this->_inj['modx']->maxParserPasses - 1)) {
                 // check if source length was changed
                 $et= strlen($source);
                 if ($st != $et)

@@ -10,8 +10,41 @@ class Debug{
     /** @var \Bolmer\Pimple $_inj */
     private static $_inj = null;
     protected static $_queryCode = array();
+    protected $_evalStack = array();
+
     public function __construct(\Pimple $inj){
         static::$_inj = $inj;
+    }
+
+    public function getEvalStack(){
+        return $this->_evalStack;
+    }
+    public function findEvalStack($hash){
+        return (!empty($hash) && is_scalar($hash) && isset($this->_evalStack[$hash])) ? $this->_evalStack[$hash] : null;
+    }
+
+    public function setDataEvalStack($hash, $data, $value = 0){
+        $stack = static::findEvalStack($hash);
+        if(!empty($stack)){
+            $this->_evalStack[$hash][$data] = $stack[$data] = $value;
+        }
+        return $stack;
+    }
+
+    public function addToEvalStack($type, $name){
+        $self = null;
+        if(is_scalar($type) && (is_scalar($name) || is_null($name))){
+            $self = md5(time().$type.$name);
+            $this->_evalStack[$self] = compact('self', 'type', 'name');
+        }
+        return $self;
+    }
+
+    public function buildTreeEvalStack(){
+        $tree = static::getEvalStack();
+        $tree = \Bolmer\Helper\Tree::build($tree, 'self', 'owner', 0, 'level', 'stack');
+
+        return $tree;
     }
 
     public static function addQuery($q, $time=0){
