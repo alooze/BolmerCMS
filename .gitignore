@@ -6,6 +6,7 @@
 
 # and the config file
 /manager/includes/config.inc.php
-
+config.inc.php
 # except do not ignore .gitignore
 !.gitignore
+*\-bkp*
