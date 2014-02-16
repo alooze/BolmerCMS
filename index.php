@@ -1,5 +1,5 @@
 <?php
-/*
+/**
 *************************************************************************
 	MODX Content Management System and PHP Application Framework 
 	Managed and maintained by Raymond Irving, Ryan Thrash and the
