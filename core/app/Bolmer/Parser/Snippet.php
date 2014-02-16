@@ -36,7 +36,9 @@ class Snippet{
      * @return string
      */
     function getSnippetName() {
-        return $this->_inj['modx']->currentSnippet;
+        $out = $this->_inj['parser']->getCurrentEval();
+        return $out['name'];
+        //return $this->_inj['modx']->currentSnippet;
     }
 
     /**
@@ -66,7 +68,7 @@ class Snippet{
         $parameters= $this->_inj['modx']->parseProperties($properties);
         $parameters= array_merge($parameters, $params);
         // run snippet
-        return $this->evalSnippet($snippet, $parameters);
+        return $this->evalSnippet($snippet, $parameters, $snippetName);
     }
 
     /**
@@ -76,35 +78,40 @@ class Snippet{
      * @param array $params
      * @return string
      */
-    public function evalSnippet($snippet, $params) {
-        if($snippet){
+    public function evalSnippet($___code, $___params, $___name = null) {
+        if($___code){
             $etomite = $modx = & $this->_inj['modx'];
-            $this->_inj['modx']->event->params = & $params; // store params inside event object
-            if (is_array($params)) {
-                extract($params, EXTR_SKIP);
+            $this->_inj['modx']->event->params = & $___params; // store params inside event object
+            if (is_array($___params)) {
+                extract($___params, EXTR_SKIP);
             }
+            $___hash = $this->_inj['parser']->registerEvalInfo('snippet', $___name);
+            $this->_inj['debug']->setDataEvalStack($___hash, 'params', $___params);
+            $time = \Bolmer\Helper::getMicroTime();
             ob_start();
-            $snip = eval($snippet);
-            $msg = ob_get_contents();
+            $___snip = eval($___code);
+            $___msg = ob_get_contents();
             ob_end_clean();
+
+            $this->_inj['parser']->unregisterEvalInfo(sprintf("%2.5f", (\Bolmer\Helper::getMicroTime() - $time)));
 
             if (0 < $this->_inj['modx']->getConfig('error_reporting')) {
                 $error_info = error_get_last();
                 if (!empty($error_info) && $this->_inj['debug']->detectError($error_info['type'])) {
                     extract($error_info);
-                    $msg = ($msg === false) ? 'ob_get_contents() error' : $msg;
-                    $result = $this->_inj['debug']->messageQuit('PHP Parse Error', '', true, $error_info['type'], $error_info['file'], 'Snippet', $error_info['message'], $error_info['line'], $msg);
+                    $___msg = ($___msg === false) ? 'ob_get_contents() error' : $___msg;
+                    $result = $this->_inj['debug']->messageQuit('PHP Parse Error', '', true, $error_info['type'], $error_info['file'], 'Snippet', $error_info['message'], $error_info['line'], $___msg);
                     if ($this->_inj['modx']->isBackend()) {
-                        $this->_inj['modx']->event->alert('An error occurred while loading. Please see the event log for more information<p>' . $msg . $snip . '</p>');
+                        $this->_inj['modx']->event->alert('An error occurred while loading. Please see the event log for more information<p>' . $___msg . $___snip . '</p>');
                     }
                 }
             }
             unset($modx->event->params);
             $this->_inj['modx']->currentSnippet = '';
-            if (is_array($snip) || is_object($snip)) {
-                return $snip;
+            if (is_array($___snip) || is_object($___snip)) {
+                return $___snip;
             } else {
-                return $msg . $snip;
+                return $___msg . $___snip;
             }
         }
     }
@@ -224,7 +231,7 @@ class Snippet{
             }
             unset($temp_params);
         }
-        $value = $this->evalSnippet($snippetObject['content'], $params);
+        $value = $this->evalSnippet($snippetObject['content'], $params, $snip_name);
 
         if($this->_inj['modx']->dumpSnippets == 1)
         {

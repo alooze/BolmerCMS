@@ -61,7 +61,7 @@ class Core {
     /**
      * @var \Bolmer\Pimple
      */
-    protected $_pimple = null;
+    public $_pimple = null;
     /**
      * Document constructor
      *

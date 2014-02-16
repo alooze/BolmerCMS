@@ -9,15 +9,59 @@
 class Parser{
     /** @var \Bolmer\Pimple $_inj */
     private $_inj = null;
+    protected $eval_stack = array();
+    protected $eval_type = null;
+    protected $eval_name = null;
+    protected $eval_hash = null;
 
     public function __construct(\Pimple $inj){
         $this->_inj= $inj;
     }
 
     /**
+     * Set eval type and name
+     * Used by the fatal error handler.
+     * After the eval'd code is run, call unregisterEvalInfo().
+     *
+     * @param string $type
+     * @param string $name
+     * @return string
+     */
+    function registerEvalInfo($type, $name) {
+        $hash = $this->_inj['debug']->addToEvalStack($type, $name);
+        $this->_inj['debug']->setDataEvalStack($hash, 'owner', $this->eval_hash);
+        $this->eval_stack[] = array('type'=>$this->eval_type, 'name'=>$this->eval_name, 'hash'=>$this->eval_hash);
+        $this->eval_type = $type;
+        $this->eval_name = $name;
+        $this->eval_hash = $hash;
+        return $hash;
+    }
+
+    public function getCurrentEval(){
+        return array('type'=>$this->eval_type, 'name'=>$this->eval_name, 'hash'=>$this->eval_hash);
+    }
+    /**
+     * Unset eval type and name
+     *
+     * @param float $time
+     * @return void
+     */
+    function unregisterEvalInfo($time = 0.0) {
+        $this->_inj['debug']->setDataEvalStack($this->eval_hash, 'time', $time);
+        $tmp = array_pop($this->eval_stack);
+        if(is_array($tmp)){
+            $this->eval_type = $tmp['type'];
+            $this->eval_name = $tmp['name'];
+            $this->eval_hash = $tmp['hash'];
+        }else{
+            $this->eval_name = $this->eval_type = $this->eval_hash = null;
+        }
+    }
+
+    /**
      * Merge content fields and TVs
      *
-     * @param string $template
+     * @param string $content
      * @return string
      */
     function mergeDocumentContent($content) {
