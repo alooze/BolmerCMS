@@ -61,3 +61,4 @@ require PATH_MODXCORE . "/app/SplClassLoader.class.php";
 
 with(new SplClassLoader('Bolmer', PATH_MODXCORE ."/app/"))->register();
 with(new SplClassLoader('Granada', PATH_MODXCORE ."/app/Granada/src/"))->register();
+with(new SplClassLoader('Tcache', PATH_MODXCORE ."/app/Tcache/src/"))->register();
