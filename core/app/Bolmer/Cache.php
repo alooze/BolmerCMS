@@ -271,7 +271,7 @@ class Cache extends Tcache
      */
     public function runSnippet($name, array $options=array(), array $consider=array())
     {
-        global $modx;
+        $modx = $this->_inj['modx'];
 
         // получаем ключ кеша
         $id = serialize($name).serialize($options);
