@@ -22,8 +22,8 @@ class Plugin{
      */
     function evalPlugin($pluginCode, $params) {
         if($pluginCode){
-            $etomite = $modx = &$this->_inj['modx'];
-            $this->_inj['modx']->event->params = & $params; // store params inside event object
+            $etomite = $modx = &$this->_inj['_modx'];
+            $this->_inj['_modx']->event->params = & $params; // store params inside event object
             if (is_array($params)) {
                 extract($params, EXTR_SKIP);
             }
@@ -32,14 +32,14 @@ class Plugin{
             $msg = ob_get_contents();
             ob_end_clean();
 
-            if ((0 < $this->_inj['modx']->getConfig('error_reporting')) && $msg && isset($php_errormsg)) {
+            if ((0 < $this->_inj['_modx']->getConfig('error_reporting')) && $msg && isset($php_errormsg)) {
                 $error_info = error_get_last();
-                if ($this->_inj['debug']->detectError($error_info['type'])) {
+                if ($this->_inj['_debugger']->detectError($error_info['type'])) {
                     extract($error_info);
                     $msg = ($msg === false) ? 'ob_get_contents() error' : $msg;
-                    $result = $this->_inj['modx']->messageQuit('PHP Parse Error', '', true, $type, $file, 'Plugin', $text, $line, $msg);
-                    if ($this->_inj['modx']->isBackend()) {
-                        $this->_inj['modx']->event->alert('An error occurred while loading. Please see the event log for more information.<p>' . $msg . '</p>');
+                    $result = $this->_inj['_modx']->messageQuit('PHP Parse Error', '', true, $type, $file, 'Plugin', $text, $line, $msg);
+                    if ($this->_inj['_modx']->isBackend()) {
+                        $this->_inj['_modx']->event->alert('An error occurred while loading. Please see the event log for more information.<p>' . $msg . '</p>');
                     }
                 }
             } else {
@@ -59,9 +59,9 @@ class Plugin{
     function addEventListener($evtName, $pluginName) {
         if (!$evtName || !$pluginName)
             return false;
-        if (!array_key_exists($evtName,$this->_inj['modx']->pluginEvent))
-            $this->_inj['modx']->pluginEvent[$evtName] = array();
-        return array_push($this->_inj['modx']->pluginEvent[$evtName], $pluginName); // return array count
+        if (!array_key_exists($evtName,$this->_inj['_modx']->pluginEvent))
+            $this->_inj['_modx']->pluginEvent[$evtName] = array();
+        return array_push($this->_inj['_modx']->pluginEvent[$evtName], $pluginName); // return array count
     }
 
     /**
@@ -73,14 +73,14 @@ class Plugin{
     function removeEventListener($evtName) {
         if (!$evtName)
             return false;
-        unset ($this->_inj['modx']->pluginEvent[$evtName]);
+        unset ($this->_inj['_modx']->pluginEvent[$evtName]);
     }
     /**
      * Remove all event listners - only for use within the current execution cycle
      */
     function removeAllEventListener() {
-        unset ($this->_inj['modx']->pluginEvent);
-        $this->_inj['modx']->pluginEvent= array ();
+        unset ($this->_inj['_modx']->pluginEvent);
+        $this->_inj['_modx']->pluginEvent= array ();
     }
     /**
      * Invoke an event.
@@ -92,35 +92,35 @@ class Plugin{
     function invokeEvent($evtName, $extParams= array ()) {
         if (!$evtName)
             return false;
-        if (!isset ($this->_inj['modx']->pluginEvent[$evtName]))
+        if (!isset ($this->_inj['_modx']->pluginEvent[$evtName]))
             return false;
-        $el= $this->_inj['modx']->pluginEvent[$evtName];
+        $el= $this->_inj['_modx']->pluginEvent[$evtName];
         $results= array ();
         $numEvents= count($el);
         if ($numEvents > 0)
             for ($i= 0; $i < $numEvents; $i++) { // start for loop
-                if ($this->_inj['modx']->dumpPlugins == 1) $eventtime = $this->_inj['modx']->getMicroTime();
+                if ($this->_inj['_modx']->dumpPlugins == 1) $eventtime = $this->_inj['_modx']->getMicroTime();
                 $pluginName= $el[$i];
                 $pluginName = stripslashes($pluginName);
                 // reset event object
-                $e= & $this->_inj['modx']->Event;
+                $e= & $this->_inj['_modx']->Event;
                 $e->_resetEventObject();
                 $e->name= $evtName;
                 $e->activePlugin= $pluginName;
 
                 // get plugin code
-                if (isset ($this->_inj['modx']->pluginCache[$pluginName])) {
-                    $pluginCode= $this->_inj['modx']->pluginCache[$pluginName];
-                    $pluginProperties= isset($this->_inj['modx']->pluginCache[$pluginName . "Props"]) ? $this->_inj['modx']->pluginCache[$pluginName . "Props"] : '';
+                if (isset ($this->_inj['_modx']->pluginCache[$pluginName])) {
+                    $pluginCode= $this->_inj['_modx']->pluginCache[$pluginName];
+                    $pluginProperties= isset($this->_inj['_modx']->pluginCache[$pluginName . "Props"]) ? $this->_inj['_modx']->pluginCache[$pluginName . "Props"] : '';
                 } else {
-                    $sql= "SELECT `name`, `plugincode`, `properties` FROM " . $this->_inj['modx']->getFullTableName("site_plugins") . " WHERE `name`='" . $pluginName . "' AND `disabled`=0;";
-                    $result= $this->_inj['db']->query($sql);
-                    if ($this->_inj['db']->getRecordCount($result) == 1) {
-                        $row= $this->_inj['db']->getRow($result);
-                        $pluginCode= $this->_inj['modx']->pluginCache[$row['name']]= $row['plugincode'];
-                        $pluginProperties= $this->_inj['modx']->pluginCache[$row['name'] . "Props"]= $row['properties'];
+                    $sql= "SELECT `name`, `plugincode`, `properties` FROM " . $this->_inj['_modx']->getFullTableName("site_plugins") . " WHERE `name`='" . $pluginName . "' AND `disabled`=0;";
+                    $result= $this->_inj['_modx']->db->query($sql);
+                    if ($this->_inj['_modx']->db->getRecordCount($result) == 1) {
+                        $row= $this->_inj['_modx']->db->getRow($result);
+                        $pluginCode= $this->_inj['_modx']->pluginCache[$row['name']]= $row['plugincode'];
+                        $pluginProperties= $this->_inj['_modx']->pluginCache[$row['name'] . "Props"]= $row['properties'];
                     } else {
-                        $pluginCode= $this->_inj['modx']->pluginCache[$pluginName]= "return false;";
+                        $pluginCode= $this->_inj['_modx']->pluginCache[$pluginName]= "return false;";
                         $pluginProperties= '';
                     }
                 }
@@ -133,7 +133,7 @@ class Plugin{
                 // eval plugin
                 $this->evalPlugin($pluginCode, $parameter);
                 if ($this->dumpPlugins == 1) {
-                    $eventtime = $this->_inj['modx']->getMicroTime() - $eventtime;
+                    $eventtime = $this->_inj['_modx']->getMicroTime() - $eventtime;
                     $this->pluginsCode .= '<fieldset><legend><b>' . $evtName . ' / ' . $pluginName . '</b> ('.sprintf('%2.2f ms', $eventtime*1000).')</legend>';
                     foreach ($parameter as $k=>$v) $this->pluginsCode .= $k . ' => ' . print_r($v, true) . '<br>';
                     $this->pluginsCode .= '</fieldset><br />';

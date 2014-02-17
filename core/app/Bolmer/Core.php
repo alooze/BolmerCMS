@@ -61,22 +61,23 @@ class Core {
     /**
      * @var \Bolmer\Pimple
      */
-    public $_pimple = null;
+    public $_service = null;
     /**
      * Document constructor
      *
      * @return \Bolmer\Core
      */
     public function __construct() {
-        $pimple = \Bolmer\Pimple::getInstance();
-        $pimple['modx'] = $this;
+        $this->_service = \Bolmer\Service::getInstance();
+        $this->_service->register('modx', $this);
+        //$pimple['modx'] = $this;
 
-
-        if(substr(PHP_OS,0,3) === 'WIN' && $pimple['global_config']['database_server']==='localhost'){
+        $config = $this->_service->get('global_config');
+        if(substr(PHP_OS,0,3) === 'WIN' && $config['database_server']==='localhost'){
             //Global config as Object
-            $pimple['global_config']['database_server'] = '127.0.0.1';
+            $config['database_server'] = '127.0.0.1';
+            $this->_service->register('global_config', $config);
         }
-        $this->_pimple = $pimple;
         $this->loadExtension('DBAPI') or die('Could not load DBAPI class.'); // load DBAPI class
         $this->jscripts = array ();
         $this->sjscripts = array ();
@@ -95,13 +96,13 @@ class Core {
         if(method_exists($this->old,$name)) return call_user_func_array(array($this->old,$name),$args);
     }
     public function __get($name){
-        $out = '';
         switch($name){
             case 'queryCode':{
                 $out = \Bolmer\Debug::showQuery();
                 break;
             }
             default:{
+                $out = $this->_service->get($name);
                 break;
             }
         }
@@ -523,7 +524,7 @@ class Core {
      */
     function executeParser() {
 
-        //error_reporting(0);
+       //error_reporting(0);
         set_error_handler(array (
             & $this,
             "phpError"
@@ -558,7 +559,7 @@ class Core {
 
         // check site settings
         if (!$this->checkSiteStatus()) {
-            header('HTTP/1.0 503 Service Unavailable');
+             header('HTTP/1.0 503 Service Unavailable');
             if (!$this->getConfig('site_unavailable_page')) {
                 // display offline message
                 $this->documentContent= $this->getConfig('site_unavailable_message');
@@ -577,6 +578,7 @@ class Core {
             $this->documentMethod= $this->getDocumentMethod();
             $this->documentIdentifier= $this->getDocumentIdentifier($this->documentMethod);
         }
+
 
         if ($this->documentMethod == "none") {
             $this->documentMethod= "id"; // now we know the site_start, change the none method to id
@@ -621,13 +623,13 @@ class Core {
         return \Bolmer\Helper::htmlchars($text, $flags);
     }
     function checkCache($id) {
-        return $this->_pimple['cache']->checkCache($id);
+        return $this->cache->checkCache($id);
     }
     function clearCache($type='', $report=false) {
-        return $this->_pimple['cache']->clearCache($type, $report);
+        return $this->cache->clearCache($type, $report);
     }
     function getCachePath() {
-        return $this->_pimple['cache']->getCachePath();
+        return $this->cache->getCachePath();
     }
     function getTableName($className){
         return \Bolmer\Model::getFullTableName($className);
@@ -636,121 +638,121 @@ class Core {
         return \Bolmer\Helper::getFullTableName($tbl, $this->db->config);
     }
     function rewriteUrls($documentSource) {
-        return $this->_pimple['parser']->rewriteUrls($documentSource);
+        return $this->parser->rewriteUrls($documentSource);
     }
     function isBackend() {
-        return $this->_pimple['response']->isBackend();
+        return $this->response->isBackend();
     }
     function isFrontend() {
-        return $this->_pimple['response']->isFrontend();
+        return $this->response->isFrontend();
     }
     function insideManager() {
-        return $this->_pimple['response']->insideManager();
+        return $this->response->insideManager();
     }
     function sendStrictURI(){
-        return $this->_pimple['response']->sendStrictURI();
+        return $this->response->sendStrictURI();
     }
     function outputContent($noEvent= false) {
-        return $this->_pimple['response']->outputContent($noEvent);
+        return $this->response->outputContent($noEvent);
     }
     function checkSiteStatus() {
-        return $this->_pimple['response']->checkSiteStatus();
+        return $this->response->checkSiteStatus();
     }
     function checkPublishStatus() {
-        return $this->_pimple['response']->checkPublishStatus();
+        return $this->response->checkPublishStatus();
     }
     function phpError($nr, $text, $file, $line) {
-        $this->_pimple['debug']->phpError($nr, $text, $file, $line);
+        $this->debugger->phpError($nr, $text, $file, $line);
     }
     function detectError($error) {
-        $this->_pimple['debug']->detectError($error);
+        $this->debugger->detectError($error);
     }
     function messageQuit($msg= 'unspecified error', $query= '', $is_error= true, $nr= '', $file= '', $source= '', $text= '', $line= '', $output='') {
-        $this->_pimple['debug']->messageQuit($msg, $query, $is_error, $nr, $file, $source, $text, $line, $output);
+        $this->debugger->messageQuit($msg, $query, $is_error, $nr, $file, $source, $text, $line, $output);
     }
     function get_backtrace($backtrace) {
-        return $this->_pimple['debug']->get_backtrace($backtrace);
+        return $this->debugger->get_backtrace($backtrace);
     }
     function postProcess() {
-        $this->_pimple['response']->postProcess();
+        $this->response->postProcess();
     }
     function parseDocumentSource($source) {
-        return $this->_pimple['parser']->parseDocumentSource($source, false);
+        return $this->parser->parseDocumentSource($source, false);
     }
     function prepareResponse() {
-        $this->_pimple['response']->prepareResponse();
+        $this->response->prepareResponse();
     }
     function evalPlugin($pluginCode, $params) {
-        $this->_pimple['plugin']->evalPlugin($pluginCode, $params);
+        $this->plugin->evalPlugin($pluginCode, $params);
     }
     function addEventListener($evtName, $pluginName) {
-        return $this->_pimple['plugin']->addEventListener($evtName, $pluginName);
+        return $this->plugin->addEventListener($evtName, $pluginName);
     }
     function removeEventListener($evtName) {
-        return $this->_pimple['plugin']->removeEventListener($evtName);
+        return $this->plugin->removeEventListener($evtName);
     }
     function removeAllEventListener() {
-        $this->_pimple['plugin']->removeAllEventListener();
+        $this->plugin->removeAllEventListener();
     }
     function invokeEvent($evtName, $extParams= array ()) {
-        return $this->_pimple['plugin']->invokeEvent($evtName, $extParams);
+        return $this->plugin->invokeEvent($evtName, $extParams);
     }
     function mergeDocumentContent($content) {
-        return $this->_pimple['parser']->mergeDocumentContent($content);
+        return $this->parser->mergeDocumentContent($content);
     }
     function mergeSettingsContent($content) {
-        return $this->_pimple['parser']->mergeSettingsContent($content);
+        return $this->parser->mergeSettingsContent($content);
     }
     function mergeChunkContent($content) {
-        return $this->_pimple['parser']->mergeChunkContent($content);
+        return $this->parser->mergeChunkContent($content);
     }
     function mergePlaceholderContent($content){
-        return $this->_pimple['parser']->mergePlaceholderContent($content);
+        return $this->parser->mergePlaceholderContent($content);
     }
     function getRegisteredClientStartupScripts() {
-        return $this->_pimple['HTML']->getRegisteredClientStartupScripts();
+        return $this->HTML->getRegisteredClientStartupScripts();
     }
     function getDocumentIdentifier($method) {
-        return  $this->_pimple['request']->getDocumentIdentifier($method);
+        return  $this->request->getDocumentIdentifier($method);
     }
     function sendAlert($type, $to, $from, $subject, $msg, $private= 0) {
         return \Bolmer\Operations\User\Manager::sendAlert($type, $to, $from, $subject, $msg, $private);
     }
     function getIdFromAlias($alias){
-        return $this->_pimple['document']->getIdFromAlias($alias);
+        return $this->document->getIdFromAlias($alias);
     }
     function stripAlias($alias) {
-        return $this->_pimple['document']->stripAlias($alias);
+        return $this->document->stripAlias($alias);
     }
     function getDocumentMethod() {
-        return $this->_pimple['request']->getDocumentMethod();
+        return $this->request->getDocumentMethod();
     }
     function logEvent($evtid, $type, $msg, $source= 'Parser') {
-        $this->_pimple['log']->logEvent($evtid, $type, $msg, $source);
+        $this->log->logEvent($evtid, $type, $msg, $source);
     }
     function rotate_log($target='event_log',$limit=3000, $trim=100){
-        $this->_pimple['log']->rotate_log($target, $limit, $trim);
+        $this->log->rotate_log($target, $limit, $trim);
     }
     function getRegisteredClientScripts() {
-        return $this->_pimple['HTML']->getRegisteredClientScripts();
+        return $this->HTML->getRegisteredClientScripts();
     }
     function getDocumentChildrenTVars($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC", $tvfields= "*", $tvsort= "rank", $tvsortdir= "ASC") {
-        return $this->_pimple['document']->getDocumentChildrenTVars($parentid, $tvidnames, $published, $docsort, $docsortdir, $tvfields, $tvsort, $tvsortdir);
+        return $this->document->getDocumentChildrenTVars($parentid, $tvidnames, $published, $docsort, $docsortdir, $tvfields, $tvsort, $tvsortdir);
     }
     function getDocumentChildrenTVarOutput($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC") {
-        return $this->_pimple['document']->getDocumentChildrenTVarOutput($parentid, $tvidnames, $published, $docsort, $docsortdir);
+        return $this->document->getDocumentChildrenTVarOutput($parentid, $tvidnames, $published, $docsort, $docsortdir);
     }
     function getTemplateVar($idname= "", $fields= "*", $docid= "", $published= 1) {
-        return $this->_pimple['document']->getTemplateVar($idname, $fields, $docid, $published);
+        return $this->document->getTemplateVar($idname, $fields, $docid, $published);
     }
     function getTemplateVars($idnames= array (), $fields= "*", $docid= "", $published= 1, $sort= "rank", $dir= "ASC") {
-        return $this->_pimple['document']->getTemplateVar($idnames, $fields, $docid, $published, $sort, $dir);
+        return $this->document->getTemplateVar($idnames, $fields, $docid, $published, $sort, $dir);
     }
     function getTemplateVarOutput($idnames= array (), $docid= "", $published= 1, $sep='') {
-        return $this->_pimple['document']->getTemplateVarOutput($idnames, $docid, $published, $sep);
+        return $this->document->getTemplateVarOutput($idnames, $docid, $published, $sep);
     }
     function getDocumentObject($method, $identifier, $isPrepareResponse=false) {
-        return $this->_pimple['document']->getDocumentObject($method, $identifier, $isPrepareResponse);
+        return $this->document->getDocumentObject($method, $identifier, $isPrepareResponse);
     }
     function toDateFormat($timestamp = 0, $mode = '') {
         return \Bolmer\Helper::toDateFormat($timestamp, $mode);
@@ -759,49 +761,49 @@ class Core {
         return \Bolmer\Helper::toTimeStamp($str);
     }
     function regClientCSS($src, $media='') {
-        return $this->_pimple['HTML']->regClientCSS($src, $media);
+        return $this->HTML->regClientCSS($src, $media);
     }
     function regClientStartupScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false)) {
-        return $this->_pimple['HTML']->regClientCSS($src, $options);
+        return $this->HTML->regClientCSS($src, $options);
     }
     function regClientScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false), $startup= false) {
-        return $this->_pimple['HTML']->regClientScript($src, $options, $startup);
+        return $this->HTML->regClientScript($src, $options, $startup);
     }
     function regClientStartupHTMLBlock($html) {
-        return $this->_pimple['HTML']->regClientStartupHTMLBlock($html);
+        return $this->HTML->regClientStartupHTMLBlock($html);
     }
     function regClientHTMLBlock($html) {
-        return $this->_pimple['HTML']->regClientHTMLBlock($html);
+        return $this->HTML->regClientHTMLBlock($html);
     }
     function getAllChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        return $this->_pimple['document']->getAllChildren($id, $sort, $dir, $fields);
+        return $this->document->getAllChildren($id, $sort, $dir, $fields);
     }
     function getActiveChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        return $this->_pimple['document']->getActiveChildren($id, $sort, $dir, $fields);
+        return $this->document->getActiveChildren($id, $sort, $dir, $fields);
     }
     function getDocumentChildren($parentid= 0, $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
-        return $this->_pimple['document']->getDocumentChildren($parentid, $published, $deleted, $fields, $where, $sort, $dir, $limit);
+        return $this->document->getDocumentChildren($parentid, $published, $deleted, $fields, $where, $sort, $dir, $limit);
     }
     function getDocuments($ids= array (), $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
-        return $this->_pimple['document']->getDocuments($ids, $published, $deleted, $fields, $where, $sort, $dir, $limit);
+        return $this->document->getDocuments($ids, $published, $deleted, $fields, $where, $sort, $dir, $limit);
     }
     function getDocument($id= 0, $fields= "*", $published= 1, $deleted= 0) {
-        return $this->_pimple['document']->getDocument($id, $fields, $published, $deleted);
+        return $this->document->getDocument($id, $fields, $published, $deleted);
     }
     function getPageInfo($pageid= -1, $active= 1, $fields= 'id, pagetitle, description, alias') {
-        return $this->_pimple['document']->getPageInfo($pageid, $active, $fields);
+        return $this->document->getPageInfo($pageid, $active, $fields);
     }
     function getParent($pid= -1, $active= 1, $fields= 'id, pagetitle, description, alias, parent') {
-        return $this->_pimple['document']->getParent($pid, $active, $fields);
+        return $this->document->getParent($pid, $active, $fields);
     }
     function getSnippetId() {
-        return $this->_pimple['snippet']->getSnippetId();
+        return $this->snippet->getSnippetId();
     }
     function getSnippetName() {
-        return $this->_pimple['snippet']->getSnippetName();
+        return $this->snippet->getSnippetName();
     }
     function runSnippet($snippetName, $params= array ()) {
-        return $this->_pimple['snippet']->runSnippet($snippetName, $params);
+        return $this->snippet->runSnippet($snippetName, $params);
     }
     // deprecated
     function putChunk($chunkName) {
@@ -868,22 +870,22 @@ class Core {
         return \Bolmer\Parser::parseProperties($propertyString);
     }
     function getParentIds($id, $height= 10) {
-        return $this->_pimple['document']->getParentIds($id, $height);
+        return $this->document->getParentIds($id, $height);
     }
     function getChildIds($id, $depth= 10, $children= array ()) {
-        return $this->_pimple['document']->getChildIds($id, $depth, $children);
+        return $this->document->getChildIds($id, $depth, $children);
     }
     function webAlert($msg, $url= "") {
-        return $this->_pimple['HTML']->webAlert($msg, $url);
+        return $this->HTML->webAlert($msg, $url);
     }
     function hasPermission($pm) {
         return \Bolmer\Operations\User\Manager::hasPermission($pm);
     }
     function evalSnippet($snippet, $params) {
-        return $this->_pimple['snippet']->evalSnippet($snippet, $params);
+        return $this->snippet->evalSnippet($snippet, $params);
     }
     function evalSnippets($documentSource) {
-        return $this->_pimple['snippet']->evalSnippets($documentSource);
+        return $this->snippet->evalSnippets($documentSource);
     }
     function checkSession() {
         return \Bolmer\Operations\User\Manager::checkSession();
@@ -895,15 +897,15 @@ class Core {
         return \Bolmer\Helper::getMicroTime();
     }
     function sendRedirect($url, $count_attempts= 0, $type= '', $responseCode= '') {
-        return $this->_pimple['response']->sendRedirect($url, $count_attempts, $type, $responseCode);
+        return $this->response->sendRedirect($url, $count_attempts, $type, $responseCode);
     }
     function sendForward($id, $responseCode= '') {
-        return $this->_pimple['response']->sendForward($id, $responseCode);
+        return $this->response->sendForward($id, $responseCode);
     }
     function sendErrorPage() {
-        return $this->_pimple['response']->sendErrorPage();
+        return $this->response->sendErrorPage();
     }
     function sendUnauthorizedPage() {
-        $this->_pimple['response']->sendUnauthorizedPage();
+        $this->response->sendUnauthorizedPage();
     }
 }

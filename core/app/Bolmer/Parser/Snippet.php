@@ -20,10 +20,10 @@ class Snippet{
      * @return int
      */
     public function getSnippetId() {
-        if ($this->_inj['modx']->currentSnippet) {
-            $tbl= $this->_inj['modx']->getFullTableName("site_snippets");
-            $rs= $this->_inj['db']->query("SELECT id FROM $tbl WHERE name='" . $this->_inj['db']->escape($this->_inj['modx']->currentSnippet) . "' LIMIT 1");
-            $row= @ $this->_inj['db']->getRow($rs);
+        if ($this->_inj['_modx']->currentSnippet) {
+            $tbl= $this->_inj['_modx']->getFullTableName("site_snippets");
+            $rs= $this->_inj['_modx']->db->query("SELECT id FROM $tbl WHERE name='" . $this->_inj['_modx']->db->escape($this->_inj['_modx']->currentSnippet) . "' LIMIT 1");
+            $row= @ $this->_inj['_modx']->db->getRow($rs);
             if ($row['id'])
                 return $row['id'];
         }
@@ -36,9 +36,9 @@ class Snippet{
      * @return string
      */
     function getSnippetName() {
-        $out = $this->_inj['parser']->getCurrentEval();
+        $out = $this->_inj['_parser']->getCurrentEval();
         return $out['name'];
-        //return $this->_inj['modx']->currentSnippet;
+        //return $this->_inj['_modx']->currentSnippet;
     }
 
     /**
@@ -49,23 +49,23 @@ class Snippet{
      * @return string
      */
     public function runSnippet($snippetName, $params= array ()) {
-        if (isset ($this->_inj['modx']->snippetCache[$snippetName])) {
-            $snippet= $this->_inj['modx']->snippetCache[$snippetName];
-            $properties= $this->_inj['modx']->snippetCache[$snippetName . "Props"];
+        if (isset ($this->_inj['_modx']->snippetCache[$snippetName])) {
+            $snippet= $this->_inj['_modx']->snippetCache[$snippetName];
+            $properties= $this->_inj['_modx']->snippetCache[$snippetName . "Props"];
         } else { // not in cache so let's check the db
-            $sql= "SELECT `name`, `snippet`, `properties` FROM " . $this->_inj['modx']->getFullTableName("site_snippets") . " WHERE " . $this->_inj['modx']->getFullTableName("site_snippets") . ".`name`='" . $this->_inj['db']->escape($snippetName) . "';";
-            $result= $this->_inj['db']->query($sql);
-            if ($this->_inj['db']->getRecordCount($result) == 1) {
-                $row= $this->_inj['db']->getRow($result);
-                $snippet= $this->_inj['modx']->snippetCache[$row['name']]= $row['snippet'];
-                $properties= $this->_inj['modx']->snippetCache[$row['name'] . "Props"]= $row['properties'];
+            $sql= "SELECT `name`, `snippet`, `properties` FROM " . $this->_inj['_modx']->getFullTableName("site_snippets") . " WHERE " . $this->_inj['_modx']->getFullTableName("site_snippets") . ".`name`='" . $this->_inj['_modx']->db->escape($snippetName) . "';";
+            $result= $this->_inj['_modx']->db->query($sql);
+            if ($this->_inj['_modx']->db->getRecordCount($result) == 1) {
+                $row= $this->_inj['_modx']->db->getRow($result);
+                $snippet= $this->_inj['_modx']->snippetCache[$row['name']]= $row['snippet'];
+                $properties= $this->_inj['_modx']->snippetCache[$row['name'] . "Props"]= $row['properties'];
             } else {
-                $snippet= $this->_inj['modx']->snippetCache[$snippetName]= "return false;";
+                $snippet= $this->_inj['_modx']->snippetCache[$snippetName]= "return false;";
                 $properties= '';
             }
         }
         // load default params/properties
-        $parameters= $this->_inj['modx']->parseProperties($properties);
+        $parameters= $this->_inj['_modx']->parseProperties($properties);
         $parameters= array_merge($parameters, $params);
         // run snippet
         return $this->evalSnippet($snippet, $parameters, $snippetName);
@@ -80,34 +80,34 @@ class Snippet{
      */
     public function evalSnippet($___code, $___params, $___name = null) {
         if($___code){
-            $etomite = $modx = & $this->_inj['modx'];
-            $this->_inj['modx']->event->params = & $___params; // store params inside event object
+            $etomite = $modx = & $this->_inj['_modx'];
+            $this->_inj['_modx']->event->params = & $___params; // store params inside event object
             if (is_array($___params)) {
                 extract($___params, EXTR_SKIP);
             }
-            $___hash = $this->_inj['parser']->registerEvalInfo('snippet', $___name);
-            $this->_inj['debug']->setDataEvalStack($___hash, 'params', $___params);
+            $___hash = $this->_inj['_parser']->registerEvalInfo('snippet', $___name);
+            $this->_inj['_debugger']->setDataEvalStack($___hash, 'params', $___params);
             $time = \Bolmer\Helper::getMicroTime();
             ob_start();
             $___snip = eval($___code);
             $___msg = ob_get_contents();
             ob_end_clean();
 
-            $this->_inj['parser']->unregisterEvalInfo(sprintf("%2.5f", (\Bolmer\Helper::getMicroTime() - $time)));
+            $this->_inj['_parser']->unregisterEvalInfo(sprintf("%2.5f", (\Bolmer\Helper::getMicroTime() - $time)));
 
-            if (0 < $this->_inj['modx']->getConfig('error_reporting')) {
+            if (0 < $this->_inj['_modx']->getConfig('error_reporting')) {
                 $error_info = error_get_last();
-                if (!empty($error_info) && $this->_inj['debug']->detectError($error_info['type'])) {
+                if (!empty($error_info) && $this->_inj['_debugger']->detectError($error_info['type'])) {
                     extract($error_info);
                     $___msg = ($___msg === false) ? 'ob_get_contents() error' : $___msg;
-                    $result = $this->_inj['debug']->messageQuit('PHP Parse Error', '', true, $error_info['type'], $error_info['file'], 'Snippet', $error_info['message'], $error_info['line'], $___msg);
-                    if ($this->_inj['modx']->isBackend()) {
-                        $this->_inj['modx']->event->alert('An error occurred while loading. Please see the event log for more information<p>' . $___msg . $___snip . '</p>');
+                    $result = $this->_inj['_debugger']->messageQuit('PHP Parse Error', '', true, $error_info['type'], $error_info['file'], 'Snippet', $error_info['message'], $error_info['line'], $___msg);
+                    if ($this->_inj['_modx']->isBackend()) {
+                        $this->_inj['_modx']->event->alert('An error occurred while loading. Please see the event log for more information<p>' . $___msg . $___snip . '</p>');
                     }
                 }
             }
             unset($modx->event->params);
-            $this->_inj['modx']->currentSnippet = '';
+            $this->_inj['_modx']->currentSnippet = '';
             if (is_array($___snip) || is_object($___snip)) {
                 return $___snip;
             } else {
@@ -130,11 +130,11 @@ class Snippet{
         unset($documentSource);
 
 
-        $passes = $this->_inj['modx']->minParserPasses;
+        $passes = $this->_inj['_modx']->minParserPasses;
 
         for($i= 0; $i < $passes; $i++)
         {
-            $stack=$this->_inj['modx']->mergeSettingsContent($stack);
+            $stack=$this->_inj['_modx']->mergeSettingsContent($stack);
             if($i == ($passes -1)) $bt = md5($stack);
             $pieces = array();
             $pieces = explode('[[', $stack);
@@ -150,7 +150,7 @@ class Snippet{
                 $stack .= $result;
                 $loop_count++; // End of foreach loop
             }
-            if($i == ($passes -1) && $i < ($this->_inj['modx']->maxParserPasses - 1))
+            if($i == ($passes -1) && $i < ($this->_inj['_modx']->maxParserPasses - 1))
             {
                 if($bt != md5($stack)) $passes++;
             }
@@ -160,7 +160,7 @@ class Snippet{
 
     private function _get_snip_result($piece)
     {
-        if ($this->_inj['modx']->dumpSnippets == 1) $sniptime = $this->_inj['modx']->getMicroTime();
+        if ($this->_inj['_modx']->dumpSnippets == 1) $sniptime = $this->_inj['_modx']->getMicroTime();
         $snip_call        = $this->_split_snip_call($piece);
         $snip_name        = $snip_call['name'];
         $except_snip_call = $snip_call['except_snip_call'];
@@ -169,9 +169,9 @@ class Snippet{
 
         $snippetObject = $this->_get_snip_properties($snip_call);
         $params   = array ();
-        $this->_inj['modx']->currentSnippet = $snippetObject['name'];
+        $this->_inj['_modx']->currentSnippet = $snippetObject['name'];
 
-        if(isset($snippetObject['properties'])) $params = $this->_inj['modx']->parseProperties($snippetObject['properties']);
+        if(isset($snippetObject['properties'])) $params = $this->_inj['_modx']->parseProperties($snippetObject['properties']);
         else                                    $params = '';
         // current params
         if(!empty($snip_call['params']))
@@ -215,10 +215,10 @@ class Snippet{
                 }
                 if($delim !== "'")
                 {
-                    $pvalue = (strpos($pvalue,'[*')!==false) ? $this->_inj['modx']->mergeDocumentContent($pvalue) : $pvalue;
-                    $pvalue = (strpos($pvalue,'[(')!==false) ? $this->_inj['modx']->mergeSettingsContent($pvalue) : $pvalue;
-                    $pvalue = (strpos($pvalue,'{{')!==false) ? $this->_inj['modx']->mergeChunkContent($pvalue)    : $pvalue;
-                    $pvalue = (strpos($pvalue,'[+')!==false) ? $this->_inj['modx']->mergePlaceholderContent($pvalue) : $pvalue;
+                    $pvalue = (strpos($pvalue,'[*')!==false) ? $this->_inj['_modx']->mergeDocumentContent($pvalue) : $pvalue;
+                    $pvalue = (strpos($pvalue,'[(')!==false) ? $this->_inj['_modx']->mergeSettingsContent($pvalue) : $pvalue;
+                    $pvalue = (strpos($pvalue,'{{')!==false) ? $this->_inj['_modx']->mergeChunkContent($pvalue)    : $pvalue;
+                    $pvalue = (strpos($pvalue,'[+')!==false) ? $this->_inj['_modx']->mergePlaceholderContent($pvalue) : $pvalue;
                 }
 
                 $pname  = str_replace('&amp;', '', $pname);
@@ -233,17 +233,17 @@ class Snippet{
         }
         $value = $this->evalSnippet($snippetObject['content'], $params, $snip_name);
 
-        if($this->_inj['modx']->dumpSnippets == 1)
+        if($this->_inj['_modx']->dumpSnippets == 1)
         {
-            $sniptime = $this->_inj['modx']->getMicroTime() - $sniptime;
-            $this->_inj['modx']->snippetsCode .= '<fieldset><legend><b>' . $snippetObject['name'] . '</b> (' . sprintf('%2.2f ms', $sniptime*1000) . ')</legend>';
-            if ($this->_inj['modx']->event->name) $this->_inj['modx']->snippetsCode .= 'Current Event  => ' . $this->_inj['modx']->event->name . '<br>';
-            if ($this->_inj['modx']->event->activePlugin) $this->_inj['modx']->snippetsCode .= 'Current Plugin => ' . $this->_inj['modx']->event->activePlugin . '<br>';
-            foreach ($params as $k=>$v) $this->_inj['modx']->snippetsCode .=  $k . ' => ' . print_r($v, true) . '<br>';
-            $this->_inj['modx']->snippetsCode .= '<textarea style="width:60%;height:200px">' . htmlentities($value,ENT_NOQUOTES,$this->_inj['modx']->getConfig('modx_charset')) . '</textarea>';
-            $this->_inj['modx']->snippetsCode .= '</fieldset><br />';
-            $this->_inj['modx']->snippetsCount[$snippetObject['name']]++;
-            $this->_inj['modx']->snippetsTime[$snippetObject['name']] += $sniptime;
+            $sniptime = $this->_inj['_modx']->getMicroTime() - $sniptime;
+            $this->_inj['_modx']->snippetsCode .= '<fieldset><legend><b>' . $snippetObject['name'] . '</b> (' . sprintf('%2.2f ms', $sniptime*1000) . ')</legend>';
+            if ($this->_inj['_modx']->event->name) $this->_inj['_modx']->snippetsCode .= 'Current Event  => ' . $this->_inj['_modx']->event->name . '<br>';
+            if ($this->_inj['_modx']->event->activePlugin) $this->_inj['_modx']->snippetsCode .= 'Current Plugin => ' . $this->_inj['_modx']->event->activePlugin . '<br>';
+            foreach ($params as $k=>$v) $this->_inj['_modx']->snippetsCode .=  $k . ' => ' . print_r($v, true) . '<br>';
+            $this->_inj['_modx']->snippetsCode .= '<textarea style="width:60%;height:200px">' . htmlentities($value,ENT_NOQUOTES,$this->_inj['_modx']->getConfig('modx_charset')) . '</textarea>';
+            $this->_inj['_modx']->snippetsCode .= '</fieldset><br />';
+            $this->_inj['_modx']->snippetsCount[$snippetObject['name']]++;
+            $this->_inj['_modx']->snippetsTime[$snippetObject['name']] += $sniptime;
         }
         return $value . $except_snip_call;
     }
@@ -286,37 +286,37 @@ class Snippet{
     {
         $snip_name  = $snip_call['name'];
 
-        if(isset($this->_inj['modx']->snippetCache[$snip_name]))
+        if(isset($this->_inj['_modx']->snippetCache[$snip_name]))
         {
             $snippetObject['name']    = $snip_name;
-            $snippetObject['content'] = $this->_inj['modx']->snippetCache[$snip_name];
-            if(isset($this->_inj['modx']->snippetCache[$snip_name . 'Props']))
+            $snippetObject['content'] = $this->_inj['_modx']->snippetCache[$snip_name];
+            if(isset($this->_inj['_modx']->snippetCache[$snip_name . 'Props']))
             {
-                $snippetObject['properties'] = $this->_inj['modx']->snippetCache[$snip_name . 'Props'];
+                $snippetObject['properties'] = $this->_inj['_modx']->snippetCache[$snip_name . 'Props'];
             }
         }
         else
         {
-            $tbl_snippets  = $this->_inj['modx']->getFullTableName('site_snippets');
-            $esc_snip_name = $this->_inj['db']->escape($snip_name);
+            $tbl_snippets  = $this->_inj['_modx']->getFullTableName('site_snippets');
+            $esc_snip_name = $this->_inj['_modx']->db->escape($snip_name);
             // get from db and store a copy inside cache
-            $result= $this->_inj['db']->select('name,snippet,properties',$tbl_snippets,"name='{$esc_snip_name}'");
+            $result= $this->_inj['_modx']->db->select('name,snippet,properties',$tbl_snippets,"name='{$esc_snip_name}'");
             $added = false;
-            if($this->_inj['db']->getRecordCount($result) == 1)
+            if($this->_inj['_modx']->db->getRecordCount($result) == 1)
             {
-                $row = $this->_inj['db']->getRow($result);
+                $row = $this->_inj['_modx']->db->getRow($result);
                 if($row['name'] == $snip_name)
                 {
                     $snippetObject['name']       = $row['name'];
-                    $snippetObject['content']    = $this->_inj['modx']->snippetCache[$snip_name]           = $row['snippet'];
-                    $snippetObject['properties'] = $this->_inj['modx']->snippetCache[$snip_name . 'Props'] = $row['properties'];
+                    $snippetObject['content']    = $this->_inj['_modx']->snippetCache[$snip_name]           = $row['snippet'];
+                    $snippetObject['properties'] = $this->_inj['_modx']->snippetCache[$snip_name . 'Props'] = $row['properties'];
                     $added = true;
                 }
             }
             if($added === false)
             {
                 $snippetObject['name']       = $snip_name;
-                $snippetObject['content']    = $this->_inj['modx']->snippetCache[$snip_name] = 'return false;';
+                $snippetObject['content']    = $this->_inj['_modx']->snippetCache[$snip_name] = 'return false;';
                 $snippetObject['properties'] = '';
             }
         }

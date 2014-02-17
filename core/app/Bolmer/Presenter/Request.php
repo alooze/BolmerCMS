@@ -39,18 +39,18 @@ class Request{
      */
     function getDocumentIdentifier($method) {
         // function to test the query and find the retrieval method
-        $docIdentifier= $this->_inj['modx']->getConfig('site_start');
+        $docIdentifier= $this->_inj['_modx']->getConfig('site_start');
         switch ($method) {
             case 'alias' :
                 if (!is_scalar($_REQUEST['q'])) {
-                    $this->_inj['modx']->sendErrorPage();
+                    $this->_inj['_modx']->sendErrorPage();
                 }else{
-                    $docIdentifier= $this->_inj['db']->escape($_REQUEST['q']);
+                    $docIdentifier= $this->_inj['_modx']->db->escape($_REQUEST['q']);
                 }
                 break;
             case 'id' :
                 if (!is_numeric($_REQUEST['id'])) {
-                    $this->_inj['modx']->sendErrorPage();
+                    $this->_inj['_modx']->sendErrorPage();
                 } else {
                     $docIdentifier= intval($_REQUEST['id']);
                 }

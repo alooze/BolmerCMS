@@ -7,63 +7,69 @@
  */
 class Pimple extends \Pimple
 {
+    const KEY_PREFIX = '_';
+    /**
+     * @var \Bolmer\Helper\xNop
+     */
+    protected $_nop = null;
+
+    public function getFullName($name){
+        return static::KEY_PREFIX.$name;
+    }
+
     protected static $instance;
+
+    public function __set($name, $value) {
+        $this[$this->getFullName($name)] = $value;
+    }
+
+    public function __get($name) {
+        return isset($this[$this->getFullName($name)]) ? $this[$this->getFullName($name)] : $this->_nop;
+    }
+
 
     public function __construct($data)
     {
-        $this['debug'] = function ($inj) {
+        $this->debugger = function ($inj) {
             return new \Bolmer\Debug($inj);
         };
 
-        $this['log'] = function ($inj) {
+        $this->log = function ($inj) {
             return new \Bolmer\Log($inj);
         };
 
-        $this['config'] = function ($inj) {
-            return $inj['modx']->config;
-        };
-
-        $this['db'] = function ($inj) {
-            return $inj['modx']->db;
-        };
-
-        $this['request'] = function ($inj) {
+        $this->request = function ($inj) {
             return new \Bolmer\Presenter\Request($inj);
         };
 
-        $this['document'] = function ($inj) {
+        $this->document = function ($inj) {
             return new \Bolmer\Operations\Document($inj);
         };
 
-        $this['parser'] = function ($inj) {
+        $this->parser = function ($inj) {
             return new \Bolmer\Parser($inj);
         };
 
-        $this['snippet'] = function ($inj) {
+        $this->snippet = function ($inj) {
             return new \Bolmer\Parser\Snippet($inj);
         };
 
-        $this['plugin'] = function ($inj) {
+        $this->plugin = function ($inj) {
             return new \Bolmer\Parser\Plugin($inj);
         };
 
-        $this['HTML'] = function ($inj) {
+        $this->HTML = function ($inj) {
             return new \Bolmer\Presenter\HTML($inj);
         };
 
-        $this['cache'] = function ($inj) {
+        $this->cache = function ($inj) {
             return new \Bolmer\Cache($inj);
         };
 
-        $this['response'] = function ($inj) {
+        $this->response = function ($inj) {
             return new \Bolmer\Presenter\Response($inj);
         };
-    }
 
-    final public static function getInstance(array $values = array())
-    {
-        $class = get_called_class();
-        if (!static::$instance) static::$instance = new $class($values);
-        return static::$instance;
+        $this->_nop = new \Bolmer\Helper\xNop();
     }
 }
