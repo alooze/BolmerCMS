@@ -11,6 +11,7 @@ class Service{
 
     private function __construct($data){
         $this->collection = new Pimple($data);
+
         $this->_nop = new \Bolmer\Helper\xNop();
     }
 

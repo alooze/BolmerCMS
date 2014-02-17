@@ -9,6 +9,8 @@ class Pimple extends \Pimple{
 
     public function __construct($data)
     {
+        parent::__construct($data);
+
         $this['debug'] = function ($inj) {
             return new \Bolmer\Debug($inj);
         };

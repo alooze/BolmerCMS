@@ -161,7 +161,6 @@ class Pimple implements ArrayAccess
         if (!is_object($callable) || !method_exists($callable, '__invoke')) {
             throw new InvalidArgumentException('Service definition is not a Closure or invokable object.');
         }
-
         $this->factories->attach($callable);
 
         return $callable;
