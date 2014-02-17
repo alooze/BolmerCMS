@@ -397,6 +397,6 @@ function movedocument() {
 <?php if ($show_preview==1) { ?>
 <div class="sectionHeader"><?php echo $_lang['preview']?></div>
 <div class="sectionBody" id="lyr2">
-	<iframe src="<?php echo MODX_SITE_URL; ?>index.php?id=<?php echo $id?>&z=manprev" frameborder="0" border="0" id="previewIframe"></iframe>
+	<iframe src="<?php echo BOLMER_SITE_URL; ?>index.php?id=<?php echo $id?>&z=manprev" frameborder="0" border="0" id="previewIframe"></iframe>
 </div>
 <?php }

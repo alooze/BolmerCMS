@@ -234,7 +234,7 @@ if($content['locked']==1 && $_SESSION['mgrRole']!=1) {
 				echo "An error occured while loading module dependencies.";
 			}
 			else {
-				include_once MODX_MANAGER_PATH."includes/controls/datagrid.class.php";
+				include_once BOLMER_MANAGER_PATH."includes/controls/datagrid.class.php";
 				$grd = new DataGrid('',$ds,0); // set page size to 0 t show all items
 				$grd->noRecordMsg = $_lang["no_records_found"];
 				$grd->cssClass="grid";

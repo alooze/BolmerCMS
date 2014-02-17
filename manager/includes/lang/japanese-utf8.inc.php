@@ -87,11 +87,11 @@ $_lang["captcha_words_message"] = '「CAPTCHAコードの使用」を「はい�
 $_lang["captcha_words_title"] = 'CAPTCHA用ワード';
 $_lang["category_heading"] = 'カテゴリー';
 $_lang["category_msg"] = '<h3 style="font-weight:bold;">全エレメントの一覧</h3>カテゴリーでグループ化したエレメントを一覧・編集できます。不要なカテゴリーの削除もこちらで。削除されるのはカテゴリー名だけで、エレメントは「カテゴリーなし」に移動します。';
-$_lang["cfg_base_path"] = 'MODX_BASE_PATH';
-$_lang["cfg_base_url"] = 'MODX_BASE_URL';
-$_lang["cfg_manager_path"] = 'MODX_MANAGER_PATH';
-$_lang["cfg_manager_url"] = 'MODX_MANAGER_URL';
-$_lang["cfg_site_url"] = 'MODX_SITE_URL';
+$_lang["cfg_base_path"] = 'BOLMER_BASE_PATH';
+$_lang["cfg_base_url"] = 'BOLMER_BASE_URL';
+$_lang["cfg_manager_path"] = 'BOLMER_MANAGER_PATH';
+$_lang["cfg_manager_url"] = 'BOLMER_MANAGER_URL';
+$_lang["cfg_site_url"] = 'BOLMER_SITE_URL';
 $_lang["change_name"] = 'ログイン名を変更';
 $_lang["change_password"] = 'パスワード変更';
 $_lang["change_password_confirm"] = 'パスワードをもう一度';

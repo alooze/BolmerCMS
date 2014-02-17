@@ -16,8 +16,8 @@
 // you are using session configuration.
 // See http://kcfinder.sunhater.com/install for setting descriptions
 
-if (file_exists(MODX_BASE_PATH . 'assets/plugins/transalias/transliterations/common.php')) {
-	$commonTransliterations = array_merge(include(MODX_BASE_PATH . 'assets/plugins/transalias/transliterations/common.php'), array(' ' => '-', ':' => '.'));
+if (file_exists(BOLMER_BASE_PATH . 'assets/plugins/transalias/transliterations/common.php')) {
+	$commonTransliterations = array_merge(include(BOLMER_BASE_PATH . 'assets/plugins/transalias/transliterations/common.php'), array(' ' => '-', ':' => '.'));
 } else {
 	$commonTransliterations = array(
 		'&' => 'and', '%' => '', '\'' => '',
@@ -143,7 +143,7 @@ $_CONFIG = array(
 
     // THE FOLLOWING SETTINGS CANNOT BE OVERRIDED WITH SESSION CONFIGURATION
     '_check4htaccess' => false,
-    '_tinyMCEPath' => MODX_BASE_URL . "assets/plugins/tinymce/tiny_mce",
+    '_tinyMCEPath' => BOLMER_BASE_URL . "assets/plugins/tinymce/tiny_mce",
 
     '_sessionVar' => &$_SESSION['KCFINDER'],
     //'_sessionLifetime' => 30,

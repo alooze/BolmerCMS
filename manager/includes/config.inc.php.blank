@@ -81,13 +81,13 @@ if (!defined('MODX_MANAGER_PATH')) define('MODX_MANAGER_PATH', $base_path.MGR_DI
 if (!defined('MODX_MANAGER_URL')) define('MODX_MANAGER_URL', $site_url.MGR_DIR.'/');
 
 //Debug mode
-define('MODX_DEBUG', true);
+define('BOLMER_DEBUG', false);
 
 //Core path
 $root = dirname(dirname(dirname(__FILE__)))."/core/";
-define('PATH_MODXCORE', realpath($root));
+define('PATH_BOLMER_CORE', realpath($root));
 
-require_once(PATH_MODXCORE."/bootstrap/start.php");
+require_once(PATH_BOLMER_CORE."/bootstrap/start.php");
 
 \Bolmer\Service::getInstance()->collection['global_config'] = array(
     'database_type' => $database_type,

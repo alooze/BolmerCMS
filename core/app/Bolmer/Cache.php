@@ -13,8 +13,8 @@ class Cache extends Tcache
     /** @var \Bolmer\Pimple $_inj */
     private $_inj = null;
 
-    /** @var \Bolmer\Core $_modx */
-    protected $_modx = null;
+    /** @var \Bolmer\Core $_core */
+    protected $_core = null;
 
     /**
      * @param Pimple $inj
@@ -25,10 +25,10 @@ class Cache extends Tcache
     public function __construct(\Pimple $inj, $namespace = 'B', $defaultTTL = null, $ttlVariation = 0)
     {
         $this->_inj= $inj;
-        $this->_modx = $inj['modx'];
+        $this->_core = $inj['core'];
         
         // создаем основной кеш
-        $options = array('dir'=>MODX_BASE_PATH.'assets/cache',
+        $options = array('dir'=>BOLMER_BASE_PATH.'assets/cache',
                         'sub_dirs'=>false,
                         'id_as_filename'=>true,
                         'file_extension'=>'.pageCache.php'
@@ -38,7 +38,7 @@ class Cache extends Tcache
         
         parent::__construct($backend, $namespace, $defaultTTL, $ttlVariation);
         // файловый кеш не поддерживает теги, создаем отдельный кеш для тегов
-        $options = array('dir'=>MODX_BASE_PATH.'assets/cache/tags',
+        $options = array('dir'=>BOLMER_BASE_PATH.'assets/cache/tags',
                         'sub_dirs'=>false,
                         'id_as_filename'=>true,
                         'file_extension'=>'.tag'
@@ -55,14 +55,14 @@ class Cache extends Tcache
      */
     public function checkCache($id) 
     {
-        $tbl_document_groups= $this->_modx->getFullTableName("document_groups");
+        $tbl_document_groups= $this->_core->getFullTableName("document_groups");
         
         $cacheId = $this->getCacheId($id);
 
         $cacheContent = $this->get($cacheId);
 
         if ($cacheContent !== NULL) {
-            $this->_modx->documentGenerated = 0;
+            $this->_core->documentGenerated = 0;
             $cacheContent = substr($flContent, 37); // remove php header
             $a = explode("<!--__MODxCacheSpliter__-->", $cacheContent, 2);
             if (count($a) == 1) {
@@ -71,7 +71,7 @@ class Cache extends Tcache
                 $docObj= unserialize($a[0]); // rebuild document object
                 if ($docObj['privateweb'] && isset ($docObj['__MODxDocGroups__'])) {
                     $pass= false;
-                    $usrGrps= $this->_modx->getUserDocGroups();
+                    $usrGrps= $this->_core->getUserDocGroups();
                     $docGrps= explode(",", $docObj['__MODxDocGroups__']);
                     // check is user has access to doc groups
                     if (is_array($usrGrps)) {
@@ -83,35 +83,35 @@ class Cache extends Tcache
                     }
                     // diplay error pages if user has no access to cached doc
                     if (!$pass) {
-                        if ($this->_modx->getConfig('unauthorized_page')) {
+                        if ($this->_core->getConfig('unauthorized_page')) {
                             // check if file is not public
-                            $secrs= $this->_modx->db->select('id', $tbl_document_groups, "document='{$id}'", '', '1');
+                            $secrs= $this->_core->db->select('id', $tbl_document_groups, "document='{$id}'", '', '1');
                             if ($secrs)
-                                $seclimit= $this->_modx->db->getRecordCount($secrs);
+                                $seclimit= $this->_core->db->getRecordCount($secrs);
                         }
                         if ($seclimit > 0) {
                             // match found but not publicly accessible, send the visitor to the unauthorized_page
-                            $this->_modx->sendUnauthorizedPage();
+                            $this->_core->sendUnauthorizedPage();
                             exit; // stop here
                         } else {
                             // no match found, send the visitor to the error_page
-                            $this->_modx->sendErrorPage();
+                            $this->_core->sendErrorPage();
                             exit; // stop here
                         }
                     }
                 }
                 // Grab the Scripts
-                if (isset($docObj['__MODxSJScripts__'])) $this->_modx->sjscripts = $docObj['__MODxSJScripts__'];
-                if (isset($docObj['__MODxJScripts__']))  $this->_modx->jscripts = $docObj['__MODxJScripts__'];
+                if (isset($docObj['__MODxSJScripts__'])) $this->_core->sjscripts = $docObj['__MODxSJScripts__'];
+                if (isset($docObj['__MODxJScripts__']))  $this->_core->jscripts = $docObj['__MODxJScripts__'];
 
                 // Remove intermediate variables
                 unset($docObj['__MODxDocGroups__'], $docObj['__MODxSJScripts__'], $docObj['__MODxJScripts__']);
 
-                $this->_modx->documentObject= $docObj;
+                $this->_core->documentObject= $docObj;
                 return $a[1]; // return document content
             }                
         } else {
-            $this->_modx->documentGenerated= 1;
+            $this->_core->documentGenerated= 1;
             return "";
         }
     }
@@ -121,7 +121,7 @@ class Cache extends Tcache
      */
     public function getCacheId($id)
     {
-        if ($this->_modx->getConfig('cache_type') == 2) {
+        if ($this->_core->getConfig('cache_type') == 2) {
             $cacheId = 'docid_'.$id.'_'.$this->getIdGivenThe('GET','*');
             // $md5_hash = '';
             // if(!empty($_GET)) $md5_hash = '_' . md5(http_build_query($_GET));
@@ -142,9 +142,9 @@ class Cache extends Tcache
     public function clearCache($type='', $report=false) 
     {
         if ($type=='full') {
-            include_once(MODX_MANAGER_PATH . 'processors/cache_sync.class.processor.php');
+            include_once(BOLMER_MANAGER_PATH . 'processors/cache_sync.class.processor.php');
             $sync = new \synccache();
-            $sync->setCachepath(MODX_BASE_PATH . 'assets/cache/');
+            $sync->setCachepath(BOLMER_BASE_PATH . 'assets/cache/');
             $sync->setReport($report);
             $sync->emptyCache();
             return $this->flushAll();
@@ -161,7 +161,7 @@ class Cache extends Tcache
      */
     public function getCachePath() 
     {
-        // return MODX_BASE_URL . 'assets/cache/';
+        // return BOLMER_BASE_URL . 'assets/cache/';
         return $this->backend->$dir;
     }
 
@@ -238,11 +238,11 @@ class Cache extends Tcache
             case 'Document':
             case 'Resource':
                 if ($rules[0] == '*') {
-                    $id = http_build_query($this->_modx->documentObject);
+                    $id = http_build_query($this->_core->documentObject);
                 } else {
                     foreach ($rules as $rule) {
-                        if (isset($this->_modx->documentObject[$rule])) {
-                            $id.= serialize($this->_modx->documentObject[$rule]);
+                        if (isset($this->_core->documentObject[$rule])) {
+                            $id.= serialize($this->_core->documentObject[$rule]);
                         }
                     }
                 }
@@ -256,7 +256,7 @@ class Cache extends Tcache
     }
 
     /**
-     * Выполнение сниппета в контексте modx и сохранение кеша "на лету"
+     * Выполнение сниппета в контексте Bolmer и сохранение кеша "на лету"
      *
      * Следующий код выполнит сниппет только первый раз, последующие вызовы
      * будут отдавать код из кеша. При этом отслеживается УНИКАЛЬНОСТЬ
@@ -276,7 +276,7 @@ class Cache extends Tcache
      */
     public function runSnippet($name, array $options=array(), array $consider=array())
     {
-        $modx = $this->_modx;
+        $core = $this->_core;
 
         // получаем ключ кеша
         $id = serialize($name).serialize($options);
@@ -292,19 +292,19 @@ class Cache extends Tcache
             //готовим данные для сохранения в кеше
 
             //получаем все установленные плейсхолдеры ДО вызова сниппета
-            if (!is_array($modx->placeholders)) {
+            if (!is_array($core->placeholders)) {
                 $tmpAr = array();
             } else {
-                $tmpAr = $modx->placeholders;
+                $tmpAr = $core->placeholders;
             }
 
-            $value = $modx->runSnippet($name, $options);
+            $value = $core->runSnippet($name, $options);
 
             // отделяем плейсхолдеры, которые установил вызванный сниппет
-            if (!is_array($modx->placeholders)) {
+            if (!is_array($core->placeholders)) {
                 $phAr = array();
             } else {
-                $phAr = array_diff($modx->placeholders, $tmpAr);
+                $phAr = array_diff($core->placeholders, $tmpAr);
             }
 
             //дописываем плейсхолдеры в кеш
@@ -314,7 +314,7 @@ class Cache extends Tcache
         }
 
         $tmpAr = explode('~~~SPLITTER~~~', $value);
-        $modx->toPlaceholders(unserialize($tmpAr[0]));
+        $core->toPlaceholders(unserialize($tmpAr[0]));
 
         return $tmpAr[1];
     }

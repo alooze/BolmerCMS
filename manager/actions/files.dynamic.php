@@ -353,7 +353,7 @@ $files = 0;
 $folders = 0;
 $dirs_array = array();
 $files_array = array();
-if(strlen(MODX_BASE_PATH) < strlen($filemanager_path)) $len--;
+if(strlen(BOLMER_BASE_PATH) < strlen($filemanager_path)) $len--;
 
 echo '<br />';
 ?>
@@ -445,8 +445,8 @@ if($buffer===false) {
 <?php
 $_CM_BASE = 'assets/plugins/codemirror/';
 $_CM_URL = $modx->config['site_url'] . $_CM_BASE;
-if(is_file(MODX_BASE_PATH . $_CM_BASE .'cm/codemirror.files.php'))
-	require(MODX_BASE_PATH. $_CM_BASE .'cm/codemirror.files.php');
+if(is_file(BOLMER_BASE_PATH . $_CM_BASE .'cm/codemirror.files.php'))
+	require(BOLMER_BASE_PATH. $_CM_BASE .'cm/codemirror.files.php');
 }
 
 function ls($curpath)

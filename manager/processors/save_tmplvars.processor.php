@@ -73,7 +73,7 @@ switch ($_POST['mode']) {
 			$content['category'] = $_POST['categoryid'];
 
 			include 'header.inc.php';
-			include(MODX_MANAGER_PATH.'actions/mutate_tmplvars.dynamic.php');
+			include(BOLMER_MANAGER_PATH.'actions/mutate_tmplvars.dynamic.php');
 			include 'footer.inc.php';
 			
 			exit;

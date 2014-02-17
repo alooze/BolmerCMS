@@ -12,8 +12,8 @@ $maxtime = (is_numeric($_POST['maxtime'])) ? $_POST['maxtime'] : 30;
 $modx->loadExtension('EXPORT_SITE');
 
 
-if(is_dir(MODX_BASE_PATH . 'temp'))       $export_dir = MODX_BASE_PATH . 'temp/export';
-elseif(is_dir(MODX_BASE_PATH . 'assets')) $export_dir = MODX_BASE_PATH . 'assets/export';
+if(is_dir(BOLMER_BASE_PATH . 'temp'))       $export_dir = BOLMER_BASE_PATH . 'temp/export';
+elseif(is_dir(BOLMER_BASE_PATH . 'assets')) $export_dir = BOLMER_BASE_PATH . 'assets/export';
 $modx->export->targetDir = $export_dir;
 
 if(strpos($modx->config['base_path'],"{$export_dir}/")===0 && 0 <= strlen(str_replace("{$export_dir}/",'',$modx->config['base_path'])))

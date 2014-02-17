@@ -289,15 +289,15 @@ if($rememberme == '1') {
 	
 	$secure = (  (isset ($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on') || $_SERVER['SERVER_PORT'] == $https_port);
 	if ( version_compare(PHP_VERSION, '5.2', '<') ) {
-		setcookie('modx_remember_manager', $_SESSION['mgrShortname'], time()+60*60*24*365, MODX_BASE_URL, '; HttpOnly' , $secure );
+		setcookie('modx_remember_manager', $_SESSION['mgrShortname'], time()+60*60*24*365, BOLMER_BASE_URL, '; HttpOnly' , $secure );
 	} else {
-		setcookie('modx_remember_manager', $_SESSION['mgrShortname'], time()+60*60*24*365, MODX_BASE_URL, NULL, $secure, true);
+		setcookie('modx_remember_manager', $_SESSION['mgrShortname'], time()+60*60*24*365, BOLMER_BASE_URL, NULL, $secure, true);
 	}
 } else {
     $_SESSION['modx.mgr.session.cookie.lifetime']= 0;
 	
 	// Remove the Remember Me cookie
-	setcookie ('modx_remember_manager', "", time() - 3600, MODX_BASE_URL);
+	setcookie ('modx_remember_manager', "", time() - 3600, BOLMER_BASE_URL);
 }
 
 $log = new logHandler;
@@ -320,7 +320,7 @@ if(isset($id) && $id>0) {
     else header($header);
 }
 else {
-    $header = 'Location: '.MODX_MANAGER_URL;
+    $header = 'Location: '.BOLMER_MANAGER_URL;
     if($_POST['ajax']==1) echo $header;
     else header($header);
 }

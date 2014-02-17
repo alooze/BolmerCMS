@@ -331,7 +331,7 @@ class uploader {
 	protected function normalizeFilename($filename) {
 		if ($transaliasSettings = $this->getTransaliasSettings()) {
 			if (!class_exists('TransAlias')) {
-				include MODX_BASE_PATH . 'assets/plugins/transalias/transalias.class.php';
+				include BOLMER_BASE_PATH . 'assets/plugins/transalias/transalias.class.php';
 			}
 			$trans = new TransAlias();
 			$trans->loadTable($transaliasSettings['table_name']);
@@ -347,7 +347,7 @@ class uploader {
 	protected function normalizeDirname($dirname) {
 		if ($transaliasSettings = $this->getTransaliasSettings()) {
 			if (!class_exists('TransAlias')) {
-				include MODX_BASE_PATH . 'assets/plugins/transalias/transalias.class.php';
+				include BOLMER_BASE_PATH . 'assets/plugins/transalias/transalias.class.php';
 			}
 			$trans = new TransAlias();
 			$trans->loadTable($transaliasSettings['table_name']);

@@ -10,27 +10,27 @@
         /** @var \Bolmer\Pimple $_inj */
         private $_inj = null;
 
-        /** @var \Bolmer\Core $_modx */
-        protected $_modx = null;
+        /** @var \Bolmer\Core $_core */
+        protected $_core = null;
 
         public function __construct(\Pimple $inj){
             $this->_inj= $inj;
-            $this->_modx = $inj['modx'];
+            $this->_core = $inj['core'];
         }
 
         function rotate_log($target='event_log',$limit=3000, $trim=100)
         {
             if($limit < $trim) $trim = $limit;
 
-            $table_name = $this->_modx->getFullTableName($target);
-            $count = $this->_modx->db->getValue($this->_modx->db->select('COUNT(id)',$table_name));
+            $table_name = $this->_core->getFullTableName($target);
+            $count = $this->_core->db->getValue($this->_core->db->select('COUNT(id)',$table_name));
             $over = $count - $limit;
             if(0 < $over)
             {
                 $trim = ($over + $trim);
-                $this->_modx->db->delete($table_name,'','',$trim);
+                $this->_core->db->delete($table_name,'','',$trim);
             }
-            $this->_modx->db->optimize($table_name);
+            $this->_core->db->optimize($table_name);
         }
 
         /**
@@ -43,29 +43,29 @@
          *                       Default: Parser
          */
         function logEvent($evtid, $type, $msg, $source= 'Parser') {
-            $msg= $this->_modx->db->escape($msg);
-            $source= $this->_modx->db->escape($source);
+            $msg= $this->_core->db->escape($msg);
+            $source= $this->_core->db->escape($source);
             if ($this->_inj['global_config']['database_connection_charset'] == 'utf8' && extension_loaded('mbstring')) {
                 $source = mb_substr($source, 0, 50 , "UTF-8");
             } else {
                 $source = substr($source, 0, 50);
             }
-            $LoginUserID = $this->_modx->getLoginUserID();
+            $LoginUserID = $this->_core->getLoginUserID();
             if ($LoginUserID == '') $LoginUserID = 0;
             $evtid= intval($evtid);
             $type = intval($type);
             if ($type < 1) $type= 1; // Types: 1 = information, 2 = warning, 3 = error
             if (3 < $type) $type= 3;
-            $sql= "INSERT INTO " . $this->_modx->getFullTableName("event_log") . " (eventid,type,createdon,source,description,user) " .
+            $sql= "INSERT INTO " . $this->_core->getFullTableName("event_log") . " (eventid,type,createdon,source,description,user) " .
                 "VALUES($evtid,$type," . time() . ",'$source','$msg','" . $LoginUserID . "')";
-            $ds= @$this->_modx->db->query($sql);
-            if(!$this->_modx->db->conn) $source = 'DB connect error';
-            if($this->_modx->getConfig('send_errormail') != '0')
+            $ds= @$this->_core->db->query($sql);
+            if(!$this->_core->db->conn) $source = 'DB connect error';
+            if($this->_core->getConfig('send_errormail') != '0')
             {
-                if($this->_modx->getConfig('send_errormail') <= $type)
+                if($this->_core->getConfig('send_errormail') <= $type)
                 {
-                    $subject = 'Error mail from ' . $this->_modx->getConfig('site_name');
-                    $this->_modx->sendmail($subject,$source);
+                    $subject = 'Error mail from ' . $this->_core->getConfig('site_name');
+                    $this->_core->sendmail($subject,$source);
                 }
             }
             if (!$ds) {

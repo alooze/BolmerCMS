@@ -304,7 +304,7 @@ function OpenServerBrowser(url, width, height ) {
 function BrowseServer() {
     var w = screen.width * 0.7;
     var h = screen.height * 0.7;
-    OpenServerBrowser("<?php echo MODX_MANAGER_URL;?>media/browser/mcpuk/browser.php?Type=images", w, h);
+    OpenServerBrowser("<?php echo BOLMER_MANAGER_URL;?>media/browser/mcpuk/browser.php?Type=images", w, h);
 }
 
 function SetUrl(url, width, height, alt) {
@@ -432,7 +432,7 @@ $ds = $modx->db->query($sql);
 if (!$ds) {
     echo "An error occured while loading module dependencies.";
 } else {
-    include_once MODX_MANAGER_PATH."includes/controls/datagrid.class.php";
+    include_once BOLMER_MANAGER_PATH."includes/controls/datagrid.class.php";
     $grd = new DataGrid('', $ds, 0); // set page size to 0 t show all items
     $grd->noRecordMsg = $_lang['no_records_found'];
     $grd->cssClass = 'grid';

@@ -291,7 +291,7 @@ if ($actionToTake != "new") {
 // check to see if the user is allowed to save the document in the place he wants to save it in
 if ($use_udperms == 1) {
 	if ($existingDocument['parent'] != $parent) {
-		include_once MODX_MANAGER_PATH ."processors/user_documents_permissions.class.php";
+		include_once BOLMER_MANAGER_PATH ."processors/user_documents_permissions.class.php";
 		$udperms = new udperms();
 		$udperms->user = $modx->getLoginUserID();
 		$udperms->document = $parent;
@@ -468,11 +468,11 @@ switch ($actionToTake) {
 		));
 
 		// secure web documents - flag as private
-		include MODX_MANAGER_PATH . "includes/secure_web_documents.inc.php";
+		include BOLMER_MANAGER_PATH . "includes/secure_web_documents.inc.php";
 		secureWebDocument($key);
 
 		// secure manager documents - flag as private
-		include MODX_MANAGER_PATH . "includes/secure_mgr_documents.inc.php";
+		include BOLMER_MANAGER_PATH . "includes/secure_mgr_documents.inc.php";
 		secureMgrDocument($key);
 
 		// Set the item name for logger
@@ -705,11 +705,11 @@ switch ($actionToTake) {
 		));
 
 		// secure web documents - flag as private
-		include MODX_MANAGER_PATH . "includes/secure_web_documents.inc.php";
+		include BOLMER_MANAGER_PATH . "includes/secure_web_documents.inc.php";
 		secureWebDocument($id);
 
 		// secure manager documents - flag as private
-		include MODX_MANAGER_PATH . "includes/secure_mgr_documents.inc.php";
+		include BOLMER_MANAGER_PATH . "includes/secure_mgr_documents.inc.php";
 		secureMgrDocument($id);
 
 		// Set the item name for logger
@@ -721,7 +721,7 @@ switch ($actionToTake) {
 		}
 		
 		if ($_POST['refresh_preview'] == '1')
-			$header = "Location: ".MODX_SITE_URL."index.php?id=$id&z=manprev";
+			$header = "Location: ".BOLMER_SITE_URL."index.php?id=$id&z=manprev";
 		else {
 			if ($_POST['stay'] != '') {
 				$id = $_REQUEST['id'];

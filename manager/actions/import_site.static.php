@@ -124,8 +124,8 @@ function run()
 	
 	$parent = intval($_POST['parent']);
 	
-	if(is_dir(MODX_BASE_PATH . 'temp/import'))       $filedir = MODX_BASE_PATH . 'temp/import/';
-	elseif(is_dir(MODX_BASE_PATH . 'assets/import')) $filedir = MODX_BASE_PATH . 'assets/import/';
+	if(is_dir(BOLMER_BASE_PATH . 'temp/import'))       $filedir = BOLMER_BASE_PATH . 'temp/import/';
+	elseif(is_dir(BOLMER_BASE_PATH . 'assets/import')) $filedir = BOLMER_BASE_PATH . 'assets/import/';
 	
 	$filesfound = 0;
 	

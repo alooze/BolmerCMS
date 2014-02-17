@@ -193,7 +193,7 @@ if(IN_MANAGER_MODE!="true") die("<b>INCLUDE_ORDERING_ERROR</b><br /><br />Please
             
             $node = $evtOut;
             
-            if ($replace =='') {
+            if (empty($replace)) {
                 if (!$isfolder) {
                     $icon = ($privateweb||$privatemgr) ? $_style["tree_page_secure"] : $_style["tree_page"];
                     

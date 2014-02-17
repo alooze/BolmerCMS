@@ -16,9 +16,9 @@ class Tfile extends File
      */
     public function __construct(array $options=array())
     {
-        global $modx;
+        $core = getService('core');
 
-        $dir = isset($options['dir']) ? $options['dir'] : MODX_BASE_PATH.'assets/cache/tcache';
+        $dir = isset($options['dir']) ? $options['dir'] : BOLMER_BASE_PATH.'assets/cache/tcache';
         $this->dir = rtrim($dir, DIRECTORY_SEPARATOR);
         $this->subDirs = isset($options['sub_dirs']) && $options['sub_dirs'] or false;
         $this->idAsFilename = isset($options['id_as_filename']) && $options['id_as_filename'] or true;

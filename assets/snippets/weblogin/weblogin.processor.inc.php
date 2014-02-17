@@ -202,7 +202,7 @@ $table_prefix = $modx->dbConfig['table_prefix'];
                             ));
 
     $sql = "SELECT $dbase.`".$table_prefix."web_users`.*, $dbase.`".$table_prefix."web_user_attributes`.* FROM $dbase.`".$table_prefix."web_users`, $dbase.`".$table_prefix."web_user_attributes` WHERE BINARY $dbase.`".$table_prefix."web_users`.username = '".$username."' and $dbase.`".$table_prefix."web_user_attributes`.internalKey=$dbase.`".$table_prefix."web_users`.id;";
-    $ds = $modx->db->query($sql);
+$ds = $modx->db->query($sql);
     $limit = $modx->db->getRecordCount($ds);
 
     if($limit==0 || $limit>1) {

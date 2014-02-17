@@ -47,8 +47,8 @@ if($data['friendly_urls']==='1' && strpos($_SERVER['SERVER_SOFTWARE'],'IIS')===f
 	}
 }
 
-$data['filemanager_path'] = str_replace('[(base_path)]',MODX_BASE_PATH,$data['filemanager_path']);
-$data['rb_base_dir']      = str_replace('[(base_path)]',MODX_BASE_PATH,$data['rb_base_dir']); 
+$data['filemanager_path'] = str_replace('[(base_path)]',BOLMER_BASE_PATH,$data['filemanager_path']);
+$data['rb_base_dir']      = str_replace('[(base_path)]',BOLMER_BASE_PATH,$data['rb_base_dir']);
 
 if (isset($data) && count($data) > 0) {
 	$savethese = array();
@@ -81,8 +81,8 @@ if (isset($data) && count($data) > 0) {
 				$v = rtrim($v,'/') . '/';
 				break;
             case 'manager_language':
-                $langDir = realpath(MODX_MANAGER_PATH . 'includes/lang');
-                $langFile = realpath(MODX_MANAGER_PATH . 'includes/lang/' . $v . '.inc.php');
+                $langDir = realpath(BOLMER_MANAGER_PATH . 'includes/lang');
+                $langFile = realpath(BOLMER_MANAGER_PATH . 'includes/lang/' . $v . '.inc.php');
                 $langFileDir = dirname($langFile);
                 if($langDir !== $langFileDir || !file_exists($langFile)) {
                     $v = 'english';
@@ -102,7 +102,7 @@ if (isset($data) && count($data) > 0) {
 				if ($v !== ',') {
 					$v = ($v != 'MODX_SITE_HOSTNAMES') ? $v : '';
 					$configString = '<?php' . "\n" . 'define(\'MODX_SITE_HOSTNAMES\', \'' . $v . '\');' . "\n";
-					@file_put_contents(MODX_BASE_PATH . 'assets/cache/siteHostnames.php', $configString);
+					@file_put_contents(BOLMER_BASE_PATH . 'assets/cache/siteHostnames.php', $configString);
 				}
 				$k = '';
 				break;

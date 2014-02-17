@@ -151,14 +151,14 @@ include_once "settings.inc.php";
 include_once "user_settings.inc.php";
 
 // include_once the language file
-if(!isset($manager_language) || !file_exists(MODX_MANAGER_PATH."includes/lang/".$manager_language.".inc.php")) {
+if(!isset($manager_language) || !file_exists(BOLMER_MANAGER_PATH."includes/lang/".$manager_language.".inc.php")) {
     $manager_language = "english"; // if not set, get the english language file.
 }
 $_lang = array();
 include_once "lang/english.inc.php";
 $length_eng_lang = count($_lang);
 
-if($manager_language!="english" && file_exists(MODX_MANAGER_PATH."includes/lang/".$manager_language.".inc.php")) {
+if($manager_language!="english" && file_exists(BOLMER_MANAGER_PATH."includes/lang/".$manager_language.".inc.php")) {
     include_once "lang/".$manager_language.".inc.php";
 }
 
@@ -236,7 +236,7 @@ if (isset($modx->config['validate_referer']) && intval($modx->config['validate_r
         $referer = $_SERVER['HTTP_REFERER'];
 
         if (!empty($referer)) {
-            if (!preg_match('/^'.preg_quote(MODX_SITE_URL, '/').'/i', $referer)) {
+            if (!preg_match('/^'.preg_quote(BOLMER_SITE_URL, '/').'/i', $referer)) {
                 echo "A possible CSRF attempt was detected from referer: {$referer}.";
                 exit();
             }

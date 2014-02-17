@@ -47,28 +47,28 @@ class Manager{
      */
     public static function sendAlert($type, $to, $from, $subject, $msg, $private= 0) {
         $private= ($private) ? 1 : 0;
-        $modx = getService('modx');
+        $core = getService('core');
         if (!is_numeric($to)) {
             // Query for the To ID
-            $sql= "SELECT id FROM " . $modx->getFullTableName("manager_users") . " WHERE username='$to';";
-            $rs= $modx->db->query($sql);
-            if ($modx->db->getRecordCount($rs)) {
-                $rs= $modx->db->getRow($rs);
+            $sql= "SELECT id FROM " . $core->getFullTableName("manager_users") . " WHERE username='$to';";
+            $rs= $core->db->query($sql);
+            if ($core->db->getRecordCount($rs)) {
+                $rs= $core->db->getRow($rs);
                 $to= $rs['id'];
             }
         }
         if (!is_numeric($from)) {
             // Query for the From ID
-            $sql= "SELECT id FROM " . $modx->getFullTableName("manager_users") . " WHERE username='$from';";
-            $rs= $modx->db->query($sql);
-            if ($modx->db->getRecordCount($rs)) {
-                $rs= $modx->db->getRow($rs);
+            $sql= "SELECT id FROM " . $core->getFullTableName("manager_users") . " WHERE username='$from';";
+            $rs= $core->db->query($sql);
+            if ($core->db->getRecordCount($rs)) {
+                $rs= $core->db->getRow($rs);
                 $from= $rs['id'];
             }
         }
         // insert a new message into user_messages
-        $sql= "INSERT INTO " . $modx->getFullTableName("user_messages") . " ( id , type , subject , message , sender , recipient , private , postdate , messageread ) VALUES ( '', '$type', '$subject', '$msg', '$from', '$to', '$private', '" . time() . "', '0' );";
-        $rs= $modx->db->query($sql);
+        $sql= "INSERT INTO " . $core->getFullTableName("user_messages") . " ( id , type , subject , message , sender , recipient , private , postdate , messageread ) VALUES ( '', '$type', '$subject', '$msg', '$from', '$to', '$private', '" . time() . "', '0' );";
+        $rs= $core->db->query($sql);
         return true;
     }
 }

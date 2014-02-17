@@ -32,7 +32,7 @@ tpExport = new WebFXTabPane(document.getElementById("exportPane"));
 
 if(isset($_POST['export']))
 {
-	$rs = include_once(MODX_MANAGER_PATH . 'processors/export_site.processor.php');
+	$rs = include_once(BOLMER_MANAGER_PATH . 'processors/export_site.processor.php');
 	echo $rs;
 }
 else

@@ -452,7 +452,7 @@ function sendMailMessage($email, $uid, $pwd, $ufn) {
 	$message = str_replace("[+sname+]", $site_name, $message);
 	$message = str_replace("[+saddr+]", $emailsender, $message);
 	$message = str_replace("[+semail+]", $emailsender, $message);
-	$message = str_replace("[+surl+]", MODX_MANAGER_URL, $message);
+	$message = str_replace("[+surl+]", BOLMER_MANAGER_URL, $message);
 
 	$param = array();
 	$param['from']    = "{$site_name}<{$emailsender}>";

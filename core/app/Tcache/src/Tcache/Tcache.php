@@ -27,7 +27,7 @@ class Tcache extends Cache
     public function __construct($namespace = '', $defaultTTL = null, $ttlVariation = 0)
     {
         // создаем основной кеш
-        $options = array('dir'=>MODX_BASE_PATH.'assets/cache/tcache',
+        $options = array('dir'=>BOLMER_BASE_PATH.'assets/cache/tcache',
                         'sub_dirs'=>false,
                         'id_as_filename'=>true,
                         'file_extension'=>'.cache'
@@ -38,7 +38,7 @@ class Tcache extends Cache
         parent::__construct($backend, $namespace, $defaultTTL, $ttlVariation);
 
         // файловый кеш не поддерживает теги, создаем кеш для тегов
-        $options = array('dir'=>MODX_BASE_PATH.'assets/cache/tcache/tags',
+        $options = array('dir'=>BOLMER_BASE_PATH.'assets/cache/tcache/tags',
                         'sub_dirs'=>false,
                         'id_as_filename'=>true,
                         'file_extension'=>'.tag'
@@ -69,8 +69,7 @@ class Tcache extends Cache
      */
     public function runSnippet($name, array $options=array(), array $consider=array())
     {
-        global $modx;
-
+        $core = getService('core');
         // получаем ключ кеша
         $id = serialize($name).serialize($options);
 
@@ -85,19 +84,19 @@ class Tcache extends Cache
             //готовим данные для сохранения в кеше
 
             //получаем все установленные плейсхолдеры ДО вызова сниппета
-            if (!is_array($modx->placeholders)) {
+            if (!is_array($core->placeholders)) {
                 $tmpAr = array();
             } else {
-                $tmpAr = $modx->placeholders;
+                $tmpAr = $core->placeholders;
             }
 
-            $value = $modx->runSnippet($name, $options);
+            $value = $core->runSnippet($name, $options);
 
             // отделяем плейсхолдеры, которые установил вызванный сниппет
-            if (!is_array($modx->placeholders)) {
+            if (!is_array($core->placeholders)) {
                 $phAr = array();
             } else {
-                $phAr = array_diff($modx->placeholders, $tmpAr);
+                $phAr = array_diff($core->placeholders, $tmpAr);
             }
 
             //дописываем плейсхолдеры в кеш
@@ -107,7 +106,7 @@ class Tcache extends Cache
         }
 
         $tmpAr = explode('~~~SPLITTER~~~', $value);
-        $modx->toPlaceholders(unserialize($tmpAr[0]));
+        $core->toPlaceholders(unserialize($tmpAr[0]));
 
         return $tmpAr[1];
     }
@@ -122,7 +121,7 @@ class Tcache extends Cache
      */
     public function getIdGivenThe($name, $rules)
     {
-        global $modx;
+        $core = getService('core');
 
         // принудительно приводим список к массиву
         if (!is_array($rules)) {
@@ -151,8 +150,8 @@ class Tcache extends Cache
             case 'document':
             case 'resource':
                 foreach ($rules as $rule) {
-                    if (isset($modx->documentObject[$rule])) {
-                        $id.= serialize($modx->documentObject[$rule]);
+                    if (isset($core->documentObject[$rule])) {
+                        $id.= serialize($core->documentObject[$rule]);
                     }
                 }
                 return $id;

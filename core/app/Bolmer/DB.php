@@ -200,6 +200,7 @@ class DB{
     }
     function insert($fields, $intotable, $fromfields = "*", $fromtable = "", $where = "", $limit = "") {
         if(empty($intotable)) return false;
+        $sql = '';
         if (!is_array($fields))
             $flds = $fields;
         else {
@@ -218,28 +219,6 @@ class DB{
         $rt = $this->query("INSERT INTO $intotable $flds $sql");
         $lid = $this->getInsertId();
         return $lid ? $lid : $rt;
-        /*if (!$intotable)
-            return false;
-        else {
-            if (!is_array($fields))
-                $flds = $fields;
-            else {
-                $keys = array_keys($fields);
-                $values = array_values($fields);
-                $flds = "(" . implode(",", $keys) . ") " .
-                    (!$fromtable && $values ? "VALUES('" . implode("','", $values) . "')" : "");
-                if ($fromtable) {
-                    $fromtable = $this->replaceFullTableName($fromtable);
-                    $where = ($where != "") ? "WHERE $where" : "";
-                    $limit = ($limit != "") ? "LIMIT $limit" : "";
-                    $sql = "SELECT $fromfields FROM $fromtable $where $limit";
-                }
-            }
-            $intotable = $this->replaceFullTableName($intotable);
-            $rt = $this->query("INSERT INTO $intotable $flds $sql");
-            $lid = $this->getInsertId();
-            return $lid ? $lid : $rt;
-        }*/
     }
     function makeArray($q){
         $out = array();
@@ -305,7 +284,7 @@ class DB{
                     return $ds->fetch(\PDO::FETCH_BOTH);
                 }
                 default:{
-                getService('modx')->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
+                getService('core')->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
                 }
             }
         }
@@ -401,7 +380,7 @@ class DB{
         if (is_string($dsq))
             $dsq = $this->query($dsq);
         if ($dsq instanceof \PDOStatement) {
-            include_once MODX_MANAGER_PATH . 'includes/controls/datagrid.class.php';
+            include_once BOLMER_MANAGER_PATH . 'includes/controls/datagrid.class.php';
             $grd = new \DataGrid('', $dsq);
             $grd->noRecordMsg = $params['noRecordMsg'];
 

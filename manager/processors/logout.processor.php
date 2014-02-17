@@ -16,7 +16,7 @@ $modx->invokeEvent("OnBeforeManagerLogout",
 //$_SESSION = array();
 // destroy session cookie
 if (isset($_COOKIE[session_name()])) {
-    setcookie(session_name(), '', 0, MODX_BASE_URL);
+    setcookie(session_name(), '', 0, BOLMER_BASE_URL);
 }
 //// now destroy the session
 @session_destroy(); // this sometimes generate an error in iis
@@ -33,5 +33,5 @@ $modx->invokeEvent("OnManagerLogout",
 						));
 
 // show login screen
-header('Location: ' . MODX_MANAGER_URL);
+header('Location: ' . BOLMER_MANAGER_URL);
 ?>

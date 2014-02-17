@@ -28,8 +28,8 @@ $sql = "SELECT setting_name, setting_value FROM $dbase.`".$table_prefix."system_
 $rs = $modx->db->query($sql);
 $number_of_settings = $modx->db->getRecordCount($rs);
 while ($row = $modx->db->getRow($rs)) $settings[$row['setting_name']] = $row['setting_value'];
-$settings['filemanager_path'] = preg_replace('@^' . MODX_BASE_PATH . '@', '[(base_path)]', $settings['filemanager_path']);
-$settings['rb_base_dir']      = preg_replace('@^' . MODX_BASE_PATH . '@', '[(base_path)]', $settings['rb_base_dir']);
+$settings['filemanager_path'] = preg_replace('@^' . BOLMER_BASE_PATH . '@', '[(base_path)]', $settings['filemanager_path']);
+$settings['rb_base_dir']      = preg_replace('@^' . BOLMER_BASE_PATH . '@', '[(base_path)]', $settings['rb_base_dir']);
 extract($settings, EXTR_OVERWRITE);
 
 $displayStyle = ($_SESSION['browser']==='modern') ? 'table-row' : 'block' ;
@@ -51,8 +51,8 @@ $isDefaultUnavailableMsgJs = $isDefaultUnavailableMsg ? 'true' : 'false';
 $site_unavailable_message_view = isset($site_unavailable_message) ? $site_unavailable_message : $_lang['siteunavailable_message_default'];
 
 /* check the file paths */
-$settings['filemanager_path'] = $filemanager_path = trim($settings['filemanager_path']) == '' ? MODX_BASE_PATH : $settings['filemanager_path'];
-$settings['rb_base_dir'] = $rb_base_dir = trim($settings['rb_base_dir']) == '' ? MODX_BASE_PATH.'assets/' : $settings['rb_base_dir'];
+$settings['filemanager_path'] = $filemanager_path = trim($settings['filemanager_path']) == '' ? BOLMER_BASE_PATH : $settings['filemanager_path'];
+$settings['rb_base_dir'] = $rb_base_dir = trim($settings['rb_base_dir']) == '' ? BOLMER_BASE_PATH.'assets/' : $settings['rb_base_dir'];
 $settings['rb_base_url'] =  $rb_base_url = trim($settings['rb_base_url']) == '' ? 'assets/' : $settings['rb_base_url'];
 
 ?>
@@ -1753,7 +1753,7 @@ if (is_numeric($_GET['tab'])) {
  * @return array of keys from a language file
  */
 function get_lang_keys($filename) {
-    $file = MODX_MANAGER_PATH.'includes/lang' . DIRECTORY_SEPARATOR . $filename;
+    $file = BOLMER_MANAGER_PATH.'includes/lang' . DIRECTORY_SEPARATOR . $filename;
     if(is_file($file) && is_readable($file)) {
         include($file);
         return array_keys($_lang);

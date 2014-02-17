@@ -3,7 +3,7 @@ if(IN_MANAGER_MODE!="true") die("<b>INCLUDE_ORDERING_ERROR</b><br /><br />Please
 
 if (isset($_SESSION['mgrValidated']) && $_SESSION['usertype']!='manager'){
 //		if (isset($_COOKIE[session_name()])) {
-//			setcookie(session_name(), '', 0, MODX_BASE_URL);
+//			setcookie(session_name(), '', 0, BOLMER_BASE_URL);
 //		}
 		@session_destroy();
 		// start session
@@ -11,20 +11,20 @@ if (isset($_SESSION['mgrValidated']) && $_SESSION['usertype']!='manager'){
 }
 
 // andrazk 20070416 - if installer is running, destroy active sessions
-if (file_exists(MODX_BASE_PATH . 'assets/cache/installProc.inc.php')) {
-	include_once(MODX_BASE_PATH . 'assets/cache/installProc.inc.php');
+if (file_exists(BOLMER_BASE_PATH . 'assets/cache/installProc.inc.php')) {
+	include_once(BOLMER_BASE_PATH . 'assets/cache/installProc.inc.php');
 	if (isset($installStartTime)) {
 		if ((time() - $installStartTime) > 5 * 60) { // if install flag older than 5 minutes, discard
 			unset($installStartTime);
-			@ chmod(MODX_BASE_PATH . 'assets/cache/installProc.inc.php', 0755);
-			unlink(MODX_BASE_PATH . 'assets/cache/installProc.inc.php');
+			@ chmod(BOLMER_BASE_PATH . 'assets/cache/installProc.inc.php', 0755);
+			unlink(BOLMER_BASE_PATH . 'assets/cache/installProc.inc.php');
 		} 
 		else {
 			if ($_SERVER['REQUEST_METHOD'] != 'POST') {
 				if (isset($_COOKIE[session_name()])) {
 					session_unset();
 					@session_destroy();
-//					setcookie(session_name(), '', 0, MODX_BASE_URL);
+//					setcookie(session_name(), '', 0, BOLMER_BASE_URL);
 				}
 				$installGoingOn = 1;
 			}
@@ -41,10 +41,10 @@ if (isset($lastInstallTime)) {
 					if (isset($_COOKIE[session_name()])) {
 						session_unset();
 						@session_destroy();
-//						setcookie(session_name(), '', 0, MODX_BASE_URL);
+//						setcookie(session_name(), '', 0, BOLMER_BASE_URL);
 					}
 					header('HTTP/1.0 307 Redirect');
-					header('Location: '.MODX_MANAGER_URL.'index.php?installGoingOn=2');
+					header('Location: '.BOLMER_MANAGER_URL.'index.php?installGoingOn=2');
 				}
 			}
 		}
@@ -74,7 +74,7 @@ if(!isset($_SESSION['mgrValidated'])){
 	$modx->setPlaceholder('manager_path',MGR_DIR);
 	$modx->setPlaceholder('logo_slogan',$_lang["logo_slogan"]);
 	$modx->setPlaceholder('login_message',$_lang["login_message"]);
-	$modx->setPlaceholder('manager_theme_url',MODX_MANAGER_URL . 'media/style/' . $modx->config['manager_theme'] . '/');
+	$modx->setPlaceholder('manager_theme_url',BOLMER_MANAGER_URL . 'media/style/' . $modx->config['manager_theme'] . '/');
 	$modx->setPlaceholder('year',date('Y'));
 
 	// andrazk 20070416 - notify user of install/update
@@ -90,7 +90,7 @@ if(!isset($_SESSION['mgrValidated'])){
 
 	if($use_captcha==1)  {
 		$modx->setPlaceholder('login_captcha_message',$_lang["login_captcha_message"]);
-		$modx->setPlaceholder('captcha_image','<a href="'.MODX_MANAGER_URL.'" class="loginCaptcha"><img id="captcha_image" src="'.MODX_MANAGER_URL.'includes/veriword.php?rand='.rand().'" alt="'.$_lang["login_captcha_message"].'" /></a>');
+		$modx->setPlaceholder('captcha_image','<a href="'.BOLMER_MANAGER_URL.'" class="loginCaptcha"><img id="captcha_image" src="'.BOLMER_MANAGER_URL.'includes/veriword.php?rand='.rand().'" alt="'.$_lang["login_captcha_message"].'" /></a>');
 		$modx->setPlaceholder('captcha_input','<label>'.$_lang["captcha_code"].'</label> <input type="text" name="captcha_code" tabindex="3" value="" />');
 	}
 
@@ -113,11 +113,11 @@ if(!isset($_SESSION['mgrValidated'])){
 
 	// load template
     if(!isset($modx->config['manager_login_tpl']) || empty($modx->config['manager_login_tpl'])) {
-    	$modx->config['manager_login_tpl'] = MODX_MANAGER_PATH . 'media/style/common/login.tpl'; 
+    	$modx->config['manager_login_tpl'] = BOLMER_MANAGER_PATH . 'media/style/common/login.tpl';
     }
     
     $target = $modx->config['manager_login_tpl'];
-    $target = str_replace('[+base_path+]', MODX_BASE_PATH, $target);
+    $target = str_replace('[+base_path+]', BOLMER_BASE_PATH, $target);
     $target = $modx->mergeSettingsContent($target);
     
     if(substr($target,0,1)==='@') {
@@ -134,20 +134,20 @@ if(!isset($_SESSION['mgrValidated'])){
     	if($chunk!==false && !empty($chunk)) {
     		$login_tpl = $chunk;
 	}
-    	elseif(is_file(MODX_BASE_PATH . $target)) {
-    		$target = MODX_BASE_PATH . $target;
+    	elseif(is_file(BOLMER_BASE_PATH . $target)) {
+    		$target = BOLMER_BASE_PATH . $target;
     		$login_tpl = file_get_contents($target);
     	}
-    	elseif(is_file(MODX_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/login.tpl')) {
-    		$target = MODX_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/login.tpl';
+    	elseif(is_file(BOLMER_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/login.tpl')) {
+    		$target = BOLMER_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/login.tpl';
     		$login_tpl = file_get_contents($target);
     	}
-    	elseif(is_file(MODX_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/html/login.html')) { // ClipperCMS compatible
-    		$target = MODX_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/html/login.html';
+    	elseif(is_file(BOLMER_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/html/login.html')) { // ClipperCMS compatible
+    		$target = BOLMER_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/html/login.html';
     		$login_tpl = file_get_contents($target);
 	}
 	else {
-    		$target = MODX_MANAGER_PATH . 'media/style/common/login.tpl';
+    		$target = BOLMER_MANAGER_PATH . 'media/style/common/login.tpl';
     		$login_tpl = file_get_contents($target);
     	}
 	}

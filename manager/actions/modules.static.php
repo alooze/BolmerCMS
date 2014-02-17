@@ -26,7 +26,7 @@ $_PAGE['vs']['lm'] = $listmode;
 
 
 // context menu
-include_once MODX_MANAGER_PATH."includes/controls/contextmenu.php";
+include_once BOLMER_MANAGER_PATH."includes/controls/contextmenu.php";
 $cm = new ContextMenu("cntxm", 150);
 $cm->addItem($_lang["run_module"],"js:menuAction(1)",$_style['icons_save'],(!$modx->hasPermission('exec_module') ? 1:0));
 $cm->addSeparator();
@@ -97,7 +97,7 @@ echo $cm->render();
 			"ORDER BY name";
 	$ds = $modx->db->query($sql);
 
-	include_once MODX_MANAGER_PATH."includes/controls/datagrid.class.php";
+	include_once BOLMER_MANAGER_PATH."includes/controls/datagrid.class.php";
 	$grd = new DataGrid('',$ds,$number_of_results); // set page size to 0 t show all items
 	$grd->noRecordMsg = $_lang["no_records_found"];
 	$grd->cssClass="grid";

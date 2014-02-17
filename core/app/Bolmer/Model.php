@@ -9,7 +9,7 @@ class Model extends \Granada\Model{
     public function save($CallEvents = false,$clearCache = false) {
         $q = $this->orm->save();
         if($clearCache){
-            getService('modx')->clearCache('full', false);
+            getService('core')->clearCache('full', false);
         }
         return $q;
     }
