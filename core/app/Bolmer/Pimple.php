@@ -18,11 +18,11 @@ class Pimple extends \Pimple{
         };
 
         $this['config'] = function ($inj) {
-            return $inj['modx']->config;
+            return $inj['core']->config;
         };
 
         $this['db'] = function ($inj) {
-            return $inj['modx']->db;
+            return $inj['core']->db;
         };
 
         $this['request'] = function ($inj) {

@@ -1,5 +1,5 @@
 <?php
-$modx_version = '1.0.13RC3';           // Current version number
-$modx_release_date = 'Jan 30, 2014'; // Date of release
-$modx_branch = 'Evolution';        // Codebase name
-$modx_full_appname = 'MODX '.$modx_branch.' '.$modx_version.' ('.$modx_release_date.')';
+$bolmer_version = '0.1.0'; // Current version number
+$bolmer_release_date = 'Jan 30, 2014';
+$bolmer_branch = 'BolmerCMS';        // Codebase name
+$bolmer_full_appname = $bolmer_branch.' '.$bolmer_version.' ('.$bolmer_release_date.')';

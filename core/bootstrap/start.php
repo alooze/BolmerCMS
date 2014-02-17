@@ -7,8 +7,14 @@ if (version_compare(phpversion(), '5.3.0', '<')) {
     exit();
 }
 
+if (!defined('BOLMER_BASE_PATH')) define('BOLMER_BASE_PATH', MODX_BASE_PATH);
+if (!defined('BOLMER_BASE_URL')) define('BOLMER_BASE_URL', MODX_BASE_URL);
+if (!defined('BOLMER_SITE_URL')) define('BOLMER_SITE_URL', MODX_SITE_URL);
+if (!defined('BOLMER_MANAGER_PATH')) define('BOLMER_MANAGER_PATH', MODX_MANAGER_PATH);
+if (!defined('BOLMER_MANAGER_URL')) define('BOLMER_MANAGER_URL', MODX_MANAGER_URL);
+
 if (!defined("BOLMER_DEBUG")) {
-    define("BOLMER_DEBUG", true);
+    define("BOLMER_DEBUG", false);
 }
 if(BOLMER_DEBUG){
     error_reporting(E_ALL);

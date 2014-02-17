@@ -36,7 +36,7 @@ $modx->setPlaceholder('welcome_title',$_lang['welcome_title']);
 
 // setup message info
 if($modx->hasPermission('messages')) {
-		include_once MODX_MANAGER_PATH.'includes/messageCount.inc.php';
+		include_once BOLMER_MANAGER_PATH.'includes/messageCount.inc.php';
 		$_SESSION['nrtotalmessages'] = $nrtotalmessages;
 		$_SESSION['nrnewmessages'] = $nrnewmessages;
 
@@ -210,11 +210,11 @@ if(is_array($evtOut)) {
 
 // load template
 if(!isset($modx->config['manager_welcome_tpl']) || empty($modx->config['manager_welcome_tpl'])) {
-	$modx->config['manager_welcome_tpl'] = MODX_MANAGER_PATH . 'media/style/common/welcome.tpl'; 
+	$modx->config['manager_welcome_tpl'] = BOLMER_MANAGER_PATH . 'media/style/common/welcome.tpl';
 }
 
 $target = $modx->config['manager_welcome_tpl'];
-$target = str_replace('[+base_path+]', MODX_BASE_PATH, $target);
+$target = str_replace('[+base_path+]', BOLMER_BASE_PATH, $target);
 $target = $modx->mergeSettingsContent($target);
 
 if(substr($target,0,1)==='@') {
@@ -231,20 +231,20 @@ if(substr($target,0,1)==='@') {
 	if($chunk!==false && !empty($chunk)) {
 		$welcome_tpl = $chunk;
 	}
-	elseif(is_file(MODX_BASE_PATH . $target)) {
-		$target = MODX_BASE_PATH . $target;
+	elseif(is_file(BOLMER_BASE_PATH . $target)) {
+		$target = BOLMER_BASE_PATH . $target;
 		$welcome_tpl = file_get_contents($target);
 	}
-	elseif(is_file(MODX_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/welcome.tpl')) {
-		$target = MODX_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/welcome.tpl';
+	elseif(is_file(BOLMER_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/welcome.tpl')) {
+		$target = BOLMER_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/welcome.tpl';
 		$welcome_tpl = file_get_contents($target);
 	}
-	elseif(is_file(MODX_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/html/welcome.html')) { // ClipperCMS compatible
-		$target = MODX_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/html/welcome.html';
+	elseif(is_file(BOLMER_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/html/welcome.html')) { // ClipperCMS compatible
+		$target = BOLMER_MANAGER_PATH . 'media/style/' . $modx->config['manager_theme'] . '/html/welcome.html';
 		$welcome_tpl = file_get_contents($target);
 	}
 	else {
-		$target = MODX_MANAGER_PATH . 'media/style/common/welcome.tpl';
+		$target = BOLMER_MANAGER_PATH . 'media/style/common/welcome.tpl';
 		$welcome_tpl = file_get_contents($target);
 	}
 }

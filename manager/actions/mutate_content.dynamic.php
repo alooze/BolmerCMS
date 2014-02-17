@@ -24,7 +24,7 @@ switch ($_REQUEST['a']) {
             $e->dumpError();
         } elseif(isset($_REQUEST['pid']) && $_REQUEST['pid'] != '0') {
             // check user has permissions for parent
-            include_once(MODX_MANAGER_PATH.'processors/user_documents_permissions.class.php');
+            include_once(BOLMER_MANAGER_PATH.'processors/user_documents_permissions.class.php');
             $udperms = new udperms();
             $udperms->user = $modx->getLoginUserID();
             $udperms->document = empty($_REQUEST['pid']) ? 0 : $_REQUEST['pid'];
@@ -66,7 +66,7 @@ $tbl_site_tmplvars              = $modx->getFullTableName('site_tmplvars');
 if ($action == 27) {
     //editing an existing document
     // check permissions on the document
-    include_once(MODX_MANAGER_PATH.'processors/user_documents_permissions.class.php');
+    include_once(BOLMER_MANAGER_PATH.'processors/user_documents_permissions.class.php');
     $udperms = new udperms();
     $udperms->user = $modx->getLoginUserID();
     $udperms->document = $id;
@@ -80,7 +80,7 @@ if ($action == 27) {
     <p><?php echo $_lang['access_permission_denied']?></p>
 </div>
 <?php
-    include(MODX_MANAGER_PATH.'includes/footer.inc.php');
+    include(BOLMER_MANAGER_PATH.'includes/footer.inc.php');
     exit;
     }
 }
@@ -764,8 +764,8 @@ $page=isset($_REQUEST['page'])?(int)$_REQUEST['page']:'';
                 $limit = $modx->db->getRecordCount($rs);
                 if ($limit > 0) {
                     echo "\t".'<table style="position:relative;" border="0" cellspacing="0" cellpadding="3" width="96%">'."\n";
-                    require_once(MODX_MANAGER_PATH.'includes/tmplvars.inc.php');
-                    require_once(MODX_MANAGER_PATH.'includes/tmplvars.commands.inc.php');
+                    require_once(BOLMER_MANAGER_PATH.'includes/tmplvars.inc.php');
+                    require_once(BOLMER_MANAGER_PATH.'includes/tmplvars.commands.inc.php');
                     for ($i = 0; $i < $limit; $i++) {
                         // Go through and display all Template Variables
                         $row = $modx->db->getRow($rs);

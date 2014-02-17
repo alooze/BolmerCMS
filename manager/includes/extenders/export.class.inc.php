@@ -15,7 +15,7 @@ class EXPORT_SITE
 	{
 		global $modx;
 		
-		if(!defined('MODX_BASE_PATH'))  return false;
+		if(!defined('BOLMER_BASE_PATH'))  return false;
 		$this->exportstart = $this->get_mtime();
 		$this->count = 0;
 		$this->setUrlMode();
@@ -86,7 +86,7 @@ class EXPORT_SITE
 		$directory = rtrim($directory,'/');
 		// if the path is not valid or is not a directory ...
 		if(empty($directory)) return false;
-		if(strpos($directory,MODX_BASE_PATH)===false) return FALSE;
+		if(strpos($directory,BOLMER_BASE_PATH)===false) return FALSE;
 		
 		if(!is_dir($directory))          return FALSE;
 		elseif(!is_readable($directory)) return FALSE;
@@ -118,7 +118,7 @@ class EXPORT_SITE
 			
 			$_lang = $back_lang;
 		}
-		else $src = $this->curl_get_contents(MODX_SITE_URL . "index.php?id={$docid}");
+		else $src = $this->curl_get_contents(BOLMER_SITE_URL . "index.php?id={$docid}");
 		
 		
 		if($src !== false)
@@ -229,7 +229,7 @@ class EXPORT_SITE
 			{ // needs making a folder
 				$end_dir = ($row['alias']!=='') ? $row['alias'] : $row['id'];
 				$dir_path = $dirpath . $end_dir;
-				if(strpos($dir_path,MODX_BASE_PATH)===false) return FALSE;
+				if(strpos($dir_path,BOLMER_BASE_PATH)===false) return FALSE;
 				if (!is_dir($dir_path))
 				{
 					if (is_file($dir_path)) @unlink($dir_path);

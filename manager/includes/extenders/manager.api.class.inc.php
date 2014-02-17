@@ -161,7 +161,7 @@ class ManagerAPI {
 		$check_files = explode("\n", $check_files);
 		foreach($check_files as $file) {
 			$file = trim($file);
-			$file = MODX_BASE_PATH . $file;
+			$file = BOLMER_BASE_PATH . $file;
 			if(!is_file($file)) continue;
 			$_[$file]= md5_file($file);
 		}

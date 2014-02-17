@@ -103,7 +103,7 @@ $_SESSION['itemname'] = $content['name'];
 
 $output = evalModule($content["modulecode"],$parameter);
 echo $output;
-include MODX_MANAGER_PATH."includes/sysalert.display.inc.php";
+include BOLMER_MANAGER_PATH."includes/sysalert.display.inc.php";
 
 // evalModule
 function evalModule($moduleCode,$params){

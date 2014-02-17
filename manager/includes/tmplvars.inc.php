@@ -141,13 +141,13 @@
 								lastImageCtrl = ctrl;
 								var w = screen.width * 0.5;
 								var h = screen.height * 0.5;
-								OpenServerBrowser('".MODX_MANAGER_URL."media/browser/mcpuk/browser.php?Type=images', w, h);
+								OpenServerBrowser('".BOLMER_MANAGER_URL."media/browser/mcpuk/browser.php?Type=images', w, h);
 							}
 							function BrowseFileServer(ctrl) {
 								lastFileCtrl = ctrl;
 								var w = screen.width * 0.5;
 								var h = screen.height * 0.5;
-								OpenServerBrowser('".MODX_MANAGER_URL."media/browser/mcpuk/browser.php?Type=files', w, h);
+								OpenServerBrowser('".BOLMER_MANAGER_URL."media/browser/mcpuk/browser.php?Type=files', w, h);
 							}
 							function SetUrlChange(el) {
 								if ('createEvent' in document) {
@@ -211,13 +211,13 @@
 								lastImageCtrl = ctrl;
 								var w = screen.width * 0.5;
 								var h = screen.height * 0.5;
-								OpenServerBrowser('".MODX_MANAGER_URL."media/browser/mcpuk/browser.php?Type=images', w, h);
+								OpenServerBrowser('".BOLMER_MANAGER_URL."media/browser/mcpuk/browser.php?Type=images', w, h);
 							}
 							function BrowseFileServer(ctrl) {
 								lastFileCtrl = ctrl;
 								var w = screen.width * 0.5;
 								var h = screen.height * 0.5;
-								OpenServerBrowser('".MODX_MANAGER_URL."media/browser/mcpuk/browser.php?Type=files', w, h);
+								OpenServerBrowser('".BOLMER_MANAGER_URL."media/browser/mcpuk/browser.php?Type=files', w, h);
 							}
 							function SetUrlChange(el) {
 								if ('createEvent' in document) {
@@ -259,14 +259,14 @@
                 $custom_output = '';
                 /* If we are loading a file */
                 if(substr($field_elements, 0, 5) == "@FILE") {
-                    $file_name = MODX_BASE_PATH . trim(substr($field_elements, 6));
+                    $file_name = BOLMER_BASE_PATH . trim(substr($field_elements, 6));
                     if( !file_exists($file_name) ) {
                         $custom_output = $file_name . ' does not exist';
                     } else {
                         $custom_output = file_get_contents($file_name);
                     }
                 } elseif(substr($field_elements, 0, 8) == '@INCLUDE') {
-                    $file_name = MODX_BASE_PATH . trim(substr($field_elements, 9));
+                    $file_name = BOLMER_BASE_PATH . trim(substr($field_elements, 9));
                     if( !file_exists($file_name) ) {
                         $custom_output = $file_name . ' does not exist';
                     } else {

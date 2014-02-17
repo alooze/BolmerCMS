@@ -27,7 +27,7 @@ NO NEED TO EDIT BELOW THIS LINE
 ---------------------------------------------- */
 
 // include MagPieRSS
-require_once(MODX_MANAGER_PATH.'media/rss/rss_fetch.inc');
+require_once(BOLMER_MANAGER_PATH.'media/rss/rss_fetch.inc');
 
 $feedData = array();
 

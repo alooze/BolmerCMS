@@ -284,7 +284,7 @@ class DB{
                     return $ds->fetch(\PDO::FETCH_BOTH);
                 }
                 default:{
-                getService('modx')->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
+                getService('core')->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
                 }
             }
         }
@@ -380,7 +380,7 @@ class DB{
         if (is_string($dsq))
             $dsq = $this->query($dsq);
         if ($dsq instanceof \PDOStatement) {
-            include_once MODX_MANAGER_PATH . 'includes/controls/datagrid.class.php';
+            include_once BOLMER_MANAGER_PATH . 'includes/controls/datagrid.class.php';
             $grd = new \DataGrid('', $dsq);
             $grd->noRecordMsg = $params['noRecordMsg'];
 

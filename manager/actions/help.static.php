@@ -11,7 +11,7 @@ if(IN_MANAGER_MODE!="true") die("<b>INCLUDE_ORDERING_ERROR</b><br /><br />Please
             tp = new WebFXTabPane( document.getElementById( "helpPane" ), <?php echo $modx->config['remember_last_tab'] == 1 ? 'true' : 'false'; ?> );
         </script>
 <?php
-if ($handle = opendir(MODX_BASE_PATH . 'assets/templates/help')) {
+if ($handle = opendir(BOLMER_BASE_PATH . 'assets/templates/help')) {
     while (false !== ($file = readdir($handle))) {
         if ($file != "." && $file != ".." && $file != ".svn") {
             $help[] = $file;
@@ -36,7 +36,7 @@ foreach($help as $k=>$v) {
     echo '<div class="tab-page" id="tab'.$v.'Help">';
     echo '<h2 class="tab">'.$helpname.'</h2>';
     echo '<script type="text/javascript">tp.addTabPage( document.getElementById( "tab'.$v.'Help" ) );</script>';
-    include_once(MODX_BASE_PATH . "assets/templates/help/{$v}");
+    include_once(BOLMER_BASE_PATH . "assets/templates/help/{$v}");
     echo '</div>';
 }
 ?>

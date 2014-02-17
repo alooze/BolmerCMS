@@ -70,7 +70,7 @@ class Core {
      */
     public function __construct() {
         $service = \Bolmer\Service::getInstance();
-        $service->collection['modx'] = $this;
+        $service->collection['core'] = $this;
 
         $config = $service->collection['global_config'];
         if(substr(PHP_OS,0,3) === 'WIN' && $config['database_server']==='localhost'){
@@ -95,7 +95,7 @@ class Core {
     }
 
     function __call($name,$args) {
-        include_once(MODX_MANAGER_PATH . 'includes/extenders/deprecated.functions.inc.php');
+        include_once(BOLMER_MANAGER_PATH . 'includes/extenders/deprecated.functions.inc.php');
         if(method_exists($this->old,$name)) return call_user_func_array(array($this->old,$name),$args);
     }
     public function __get($name){
@@ -126,20 +126,20 @@ class Core {
                 break;
             // Manager API
             case 'ManagerAPI' :
-                if (!include_once MODX_MANAGER_PATH . 'includes/extenders/manager.api.class.inc.php')
+                if (!include_once BOLMER_MANAGER_PATH . 'includes/extenders/manager.api.class.inc.php')
                     return false;
                 $this->manager= new \ManagerAPI;
                 return true;
                 break;
             // PHPMailer
             case 'MODxMailer' :
-                include_once(MODX_MANAGER_PATH . 'includes/extenders/modxmailer.class.inc.php');
+                include_once(BOLMER_MANAGER_PATH . 'includes/extenders/modxmailer.class.inc.php');
                 $this->mail= new \MODxMailer;
                 if($this->mail) return true;
                 else            return false;
                 break;
             case 'EXPORT_SITE' :
-                if(include_once(MODX_MANAGER_PATH . 'includes/extenders/export.class.inc.php'))
+                if(include_once(BOLMER_MANAGER_PATH . 'includes/extenders/export.class.inc.php'))
                 {
                     $this->export= new \EXPORT_SITE;
                     return true;
@@ -256,12 +256,12 @@ class Core {
         $out=array();
         if(empty($this->version) || !is_array($this->version)){
             //include for compatibility modx version < 1.0.10
-            include MODX_MANAGER_PATH . "includes/version.inc.php";
+            include BOLMER_MANAGER_PATH . "includes/version.inc.php";
             $this->version=array();
-            $this->version['version']= isset($modx_version) ? $modx_version : '';
-            $this->version['branch']= isset($modx_branch) ? $modx_branch : '';
-            $this->version['release_date']= isset($modx_release_date) ? $modx_release_date : '';
-            $this->version['full_appname']= isset($modx_full_appname) ? $modx_full_appname : '';
+            $this->version['version']= isset($bolmer_version) ? $bolmer_version : '';
+            $this->version['branch']= isset($bolmer_branch) ? $bolmer_branch : '';
+            $this->version['release_date']= isset($bolmer_release_date) ? $bolmer_release_date : '';
+            $this->version['full_appname']= isset($bolmer_full_appname) ? $bolmer_full_appname : '';
             $this->version['new_version'] = $this->getConfig('newversiontext');
         }
         return (!is_null($data) && is_array($this->version) && isset($this->version[$data])) ? $this->version[$data] : $this->version;
@@ -283,18 +283,18 @@ class Core {
      */
     function getSettings() {
         if (!is_array($this->config) || empty ($this->config)) {
-            if ($included= file_exists(MODX_BASE_PATH . 'assets/cache/siteCache.idx.php')) {
-                $included= include_once (MODX_BASE_PATH . 'assets/cache/siteCache.idx.php');
+            if ($included= file_exists(BOLMER_BASE_PATH . 'assets/cache/siteCache.idx.php')) {
+                $included= include_once (BOLMER_BASE_PATH . 'assets/cache/siteCache.idx.php');
             }
             if (!$included || !is_array($this->config) || empty ($this->config)) {
-                include_once(MODX_MANAGER_PATH . 'processors/cache_sync.class.processor.php');
+                include_once(BOLMER_MANAGER_PATH . 'processors/cache_sync.class.processor.php');
                 $cache = new \synccache();
-                $cache->setCachepath(MODX_BASE_PATH . "assets/cache/");
+                $cache->setCachepath(BOLMER_BASE_PATH . "assets/cache/");
                 $cache->setReport(false);
                 $rebuilt = $cache->buildCache($this);
                 $included = false;
-                if($rebuilt && $included= file_exists(MODX_BASE_PATH . 'assets/cache/siteCache.idx.php')) {
-                    $included= include MODX_BASE_PATH . 'assets/cache/siteCache.idx.php';
+                if($rebuilt && $included= file_exists(BOLMER_BASE_PATH . 'assets/cache/siteCache.idx.php')) {
+                    $included= include BOLMER_BASE_PATH . 'assets/cache/siteCache.idx.php';
                 }
                 if(!$included) {
                     $result= $this->db->select('setting_name, setting_value', $this->getFullTableName('system_settings'));
@@ -308,18 +308,18 @@ class Core {
             $this->config['etomite_charset'] = & $this->config['modx_charset'];
 
             // store base_url and base_path inside config array
-            $this->config['base_url'] = MODX_BASE_URL;
-            $this->config['base_path'] = MODX_BASE_PATH;
-            $this->config['site_url'] = MODX_SITE_URL;
+            $this->config['base_url'] = BOLMER_BASE_URL;
+            $this->config['base_path'] = BOLMER_BASE_PATH;
+            $this->config['site_url'] = BOLMER_SITE_URL;
             $this->config['valid_hostnames'] = MODX_SITE_HOSTNAMES;
-            $this->config['site_manager_url'] = MODX_MANAGER_URL;
-            $this->config['site_manager_path'] = MODX_MANAGER_PATH;
+            $this->config['site_manager_url'] = BOLMER_MANAGER_URL;
+            $this->config['site_manager_path'] = BOLMER_MANAGER_PATH;
 
             $this->getUserSettings();
 
             $this->error_reporting = $this->config['error_reporting'];
-            $this->config['filemanager_path'] = str_replace('[(base_path)]',MODX_BASE_PATH,$this->config['filemanager_path']);
-            $this->config['rb_base_dir']      = str_replace('[(base_path)]',MODX_BASE_PATH,$this->config['rb_base_dir']);
+            $this->config['filemanager_path'] = str_replace('[(base_path)]',BOLMER_BASE_PATH,$this->config['filemanager_path']);
+            $this->config['rb_base_dir']      = str_replace('[(base_path)]',BOLMER_BASE_PATH,$this->config['rb_base_dir']);
         }
     }
 
@@ -463,7 +463,7 @@ class Core {
      * @return string The complete URL to the manager folder
      */
     function getManagerPath() {
-        return MODX_MANAGER_URL;
+        return BOLMER_MANAGER_URL;
     }
 
     /**

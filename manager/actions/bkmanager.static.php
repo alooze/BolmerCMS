@@ -9,8 +9,8 @@ $dbase = trim($dbase,'`');
 
 if(!isset($modx->config['snapshot_path']))
 {
-	if(is_dir(MODX_BASE_PATH . 'temp/backup/')) $modx->config['snapshot_path'] = MODX_BASE_PATH . 'temp/backup/';
-	else $modx->config['snapshot_path'] = MODX_BASE_PATH . 'assets/backup/';
+	if(is_dir(BOLMER_BASE_PATH . 'temp/backup/')) $modx->config['snapshot_path'] = BOLMER_BASE_PATH . 'temp/backup/';
+	else $modx->config['snapshot_path'] = BOLMER_BASE_PATH . 'assets/backup/';
 }
 
 // Backup Manager by Raymond:

@@ -85,8 +85,8 @@ function getTVDisplayFormat($name,$value,$format,$paramstring="",$tvtype="",$doc
 
         case "floater":
             $value = parseInput($value," ");
-            $modx->regClientStartupScript(MODX_MANAGER_URL."media/script/mootools/mootools.js", array('name'=>'mootools', 'version'=>'1.1.1', 'plaintext'=>false));
-            $modx->regClientStartupScript(MODX_MANAGER_URL."media/script/mootools/moodx.js", array('name'=>'moodx', 'version'=>'0', 'plaintext'=>false));
+            $modx->regClientStartupScript(BOLMER_MANAGER_URL."media/script/mootools/mootools.js", array('name'=>'mootools', 'version'=>'1.1.1', 'plaintext'=>false));
+            $modx->regClientStartupScript(BOLMER_MANAGER_URL."media/script/mootools/moodx.js", array('name'=>'moodx', 'version'=>'0', 'plaintext'=>false));
             $class = (!empty($params['class']) ? " class=\"".$params['class']."\"" : "");
             $style = (!empty($params['style']) ? " style=\"".$params['style']."\"" : "");
             $o .= "\n<div id=\"".$id."\"".$class.$style.">".$value."</div>\n";
@@ -106,8 +106,8 @@ function getTVDisplayFormat($name,$value,$format,$paramstring="",$tvtype="",$doc
 
         case "marquee":
             $value = parseInput($value," ");
-            $modx->regClientStartupScript(MODX_MANAGER_URL."media/script/mootools/mootools.js", array('name'=>'mootools', 'version'=>'1.1.1', 'plaintext'=>false));
-            $modx->regClientStartupScript(MODX_MANAGER_URL."media/script/mootools/moodx.js", array('name'=>'moodx', 'version'=>'0', 'plaintext'=>false));
+            $modx->regClientStartupScript(BOLMER_MANAGER_URL."media/script/mootools/mootools.js", array('name'=>'mootools', 'version'=>'1.1.1', 'plaintext'=>false));
+            $modx->regClientStartupScript(BOLMER_MANAGER_URL."media/script/mootools/moodx.js", array('name'=>'moodx', 'version'=>'0', 'plaintext'=>false));
             $class = (!empty($params['class']) ? " class=\"".$params['class']."\"" : "");
             $style = (!empty($params['style']) ? " style=\"".$params['style']."\"" : "");
             $o .= "\n<div id=\"".$id."\"".$class.$style."><div id=\"marqueeContent\">".$value."</div></div>\n";
@@ -126,8 +126,8 @@ function getTVDisplayFormat($name,$value,$format,$paramstring="",$tvtype="",$doc
             break;
 
         case "ticker":
-            $modx->regClientStartupScript(MODX_MANAGER_URL."media/script/mootools/mootools.js", array('name'=>'mootools', 'version'=>'1.1.1', 'plaintext'=>false));
-            $modx->regClientStartupScript(MODX_MANAGER_URL."media/script/mootools/moostick.js?init=false", array('name'=>'moostick', 'version'=>'0', 'plaintext'=>false));
+            $modx->regClientStartupScript(BOLMER_MANAGER_URL."media/script/mootools/mootools.js", array('name'=>'mootools', 'version'=>'1.1.1', 'plaintext'=>false));
+            $modx->regClientStartupScript(BOLMER_MANAGER_URL."media/script/mootools/moostick.js?init=false", array('name'=>'moostick', 'version'=>'0', 'plaintext'=>false));
             $class = (!empty($params['class']) ? " class=\"".$params['class']."\"" : "");
             $style = (!empty($params['style']) ? " style=\"".$params['style']."\"" : "");
             $o .= "\n<div id=\"".$id."\"".$class.$style.">\n";
@@ -251,7 +251,7 @@ function getTVDisplayFormat($name,$value,$format,$paramstring="",$tvtype="",$doc
                 $autoMode = "2";	//height only
             }
 
-            $modx->regClientStartupScript(MODX_MANAGER_URL."media/script/bin/viewport.js", array('name'=>'viewport', 'version'=>'0', 'plaintext'=>false));
+            $modx->regClientStartupScript(BOLMER_MANAGER_URL."media/script/bin/viewport.js", array('name'=>'viewport', 'version'=>'0', 'plaintext'=>false));
             $o =  $sTag." id='".$params['vpid']."' name='".$params['vpid']."' ";
             if ($params['class']) $o.= " class='".$params['class']."' ";
             if ($params['style']) $o.= " style='".$params['style']."' ";
@@ -264,7 +264,7 @@ function getTVDisplayFormat($name,$value,$format,$paramstring="",$tvtype="",$doc
             break;
 
         case "datagrid":
-            include_once MODX_MANAGER_PATH."includes/controls/datagrid.class.php";
+            include_once BOLMER_MANAGER_PATH."includes/controls/datagrid.class.php";
             $grd = new DataGrid('',$value);
 
             $grd->noRecordMsg		=$params['egmsg'];
@@ -311,14 +311,14 @@ function getTVDisplayFormat($name,$value,$format,$paramstring="",$tvtype="",$doc
             $o = '';
             /* If we are loading a file */
             if(substr($params['output'], 0, 5) == "@FILE") {
-                $file_name = MODX_BASE_PATH . trim(substr($params['output'], 6));
+                $file_name = BOLMER_BASE_PATH . trim(substr($params['output'], 6));
                 if( !file_exists($file_name) ) {
                     $widget_output = $file_name . ' does not exist';
                 } else {
                     $widget_output = file_get_contents($file_name);
                 }
             } elseif(substr($params['output'], 0, 8) == '@INCLUDE') {
-                $file_name = MODX_BASE_PATH . trim(substr($params['output'], 9));
+                $file_name = BOLMER_BASE_PATH . trim(substr($params['output'], 9));
                 if( !file_exists($file_name) ) {
                     $widget_output = $file_name . ' does not exist';
                 } else {

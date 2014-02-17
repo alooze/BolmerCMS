@@ -48,9 +48,9 @@ var $errors = array();
 		if(strpos($context,'..')!==false) return;
 		
 		if($context === 'common')
-			$lang_path = MODX_MANAGER_PATH . 'includes/lang/';
+			$lang_path = BOLMER_MANAGER_PATH . 'includes/lang/';
 		else
-			$lang_path = MODX_MANAGER_PATH . "includes/lang/{$context}/";
+			$lang_path = BOLMER_MANAGER_PATH . "includes/lang/{$context}/";
 		include_once($lang_path . 'english.inc.php');
 		$manager_language = $modx->config['manager_language'];
 		if(is_file("{$lang_path}{$manager_language}.inc.php"))

@@ -69,16 +69,16 @@ if (!function_exists('getService')){
  * @author   Anton Shevchuk
  * @created  07.09.12 11:29
  */
-if (!function_exists('modx_dump')) {
+if (!function_exists('core_dump')) {
     /**
      * Debug variables
      *
      * @return void
      */
-    function modx_dump()
+    function core_dump()
     {
         // check definition
-        if (!defined('MODX_DEBUG') or !MODX_DEBUG) {
+        if (!defined('BOLMER_DEBUG') or !BOLMER_DEBUG) {
             return;
         }
 
@@ -140,11 +140,14 @@ if(!function_exists('startCMSSession')) {
         global $site_sessionname;
         session_name($site_sessionname);
         session_start();
-        $cookieExpiration= 0;
+        $cookieExpiration = $cookieLifetime = 0;
         if (isset ($_SESSION['mgrValidated']) || isset ($_SESSION['webValidated'])) {
             $contextKey= isset ($_SESSION['mgrValidated']) ? 'mgr' : 'web';
             if (isset ($_SESSION['modx.' . $contextKey . '.session.cookie.lifetime']) && is_numeric($_SESSION['modx.' . $contextKey . '.session.cookie.lifetime'])) {
                 $cookieLifetime= intval($_SESSION['modx.' . $contextKey . '.session.cookie.lifetime']);
+            }
+            if (isset ($_SESSION['bolmer.' . $contextKey . '.session.cookie.lifetime']) && is_numeric($_SESSION['bolmer.' . $contextKey . '.session.cookie.lifetime'])) {
+                $cookieLifetime= intval($_SESSION['bolmer.' . $contextKey . '.session.cookie.lifetime']);
             }
             if ($cookieLifetime) {
                 $cookieExpiration= time() + $cookieLifetime;
@@ -152,7 +155,10 @@ if(!function_exists('startCMSSession')) {
             if (!isset($_SESSION['modx.session.created.time'])) {
                 $_SESSION['modx.session.created.time'] = time();
             }
+            if (!isset($_SESSION['bolmer.session.created.time'])) {
+                $_SESSION['bolmer.session.created.time'] = time();
+            }
         }
-        setcookie(session_name(), session_id(), $cookieExpiration, MODX_BASE_URL);
+        setcookie(session_name(), session_id(), $cookieExpiration, BOLMER_BASE_URL);
     }
 }

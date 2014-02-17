@@ -60,7 +60,7 @@ if (!headers_sent()) {
 <section>
     <h1>Error 503</h1>
     <h2>Server Temporarily Unavailable</h2>
-    <?php if (defined('MODX_DEBUG') && MODX_DEBUG && isset($e)) : ?>
+    <?php if (defined('BOLMER_DEBUG') && BOLMER_DEBUG && isset($e)) : ?>
         <?php if (is_array($e)) : ?>
             <p><?=$e['message']?></p>
             <pre><?=$e['file'].'#'.$e['line']?></pre>

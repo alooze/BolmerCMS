@@ -776,7 +776,7 @@ if (is_array($evtOut))
 			function BrowseServer() {
 				var w = screen.width * 0.7;
 				var h = screen.height * 0.7;
-				OpenServerBrowser("<?php echo MODX_MANAGER_URL; ?>media/browser/mcpuk/browser.php?Type=images", w, h);
+				OpenServerBrowser("<?php echo BOLMER_MANAGER_URL; ?>media/browser/mcpuk/browser.php?Type=images", w, h);
 			}
 			function SetUrl(url, width, height, alt){
 				document.userform.photo.value = url;
@@ -796,7 +796,7 @@ if (is_array($evtOut))
             <td colspan="2"><div class='split'></div></td>
           </tr>
           <tr>
-              <td colspan="2" align="center"><img name="iphoto" src="<?php echo !empty($userdata['photo']) ? MODX_SITE_URL.$userdata['photo'] : $_style['tx']; ?>" /></td>
+              <td colspan="2" align="center"><img name="iphoto" src="<?php echo !empty($userdata['photo']) ? BOLMER_SITE_URL.$userdata['photo'] : $_style['tx']; ?>" /></td>
           </tr>
 		</table>
 	</div>

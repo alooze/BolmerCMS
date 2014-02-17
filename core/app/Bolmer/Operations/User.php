@@ -14,18 +14,18 @@ class User{
      * @return boolean
      */
     public static function isMemberOfWebGroup($groupNames= array ()) {
-        $modx = getService('modx');
+        $core = getService('core');
         if (!is_array($groupNames))
             return false;
         // check cache
         $grpNames= isset ($_SESSION['webUserGroupNames']) ? $_SESSION['webUserGroupNames'] : false;
         if (!is_array($grpNames)) {
-            $tbl= $modx->getFullTableName("webgroup_names");
-            $tbl2= $modx->getFullTableName("web_groups");
+            $tbl= $core->getFullTableName("webgroup_names");
+            $tbl2= $core->getFullTableName("web_groups");
             $sql= "SELECT wgn.name
                     FROM $tbl wgn
                     INNER JOIN $tbl2 wg ON wg.webgroup=wgn.id AND wg.webuser='" . self::getLoginUserID() . "'";
-            $grpNames= $modx->db->getColumn("name", $sql);
+            $grpNames= $core->db->getColumn("name", $sql);
             // save to cache
             $_SESSION['webUserGroupNames']= $grpNames;
         }
@@ -45,14 +45,14 @@ class User{
      *                        message
      */
     public static function changeWebUserPassword($oldPwd, $newPwd) {
-        $modx = getService('modx');
+        $core = getService('core');
         $rt= false;
         if ($_SESSION["webValidated"] == 1) {
-            $tbl= $modx->getFullTableName("web_users");
-            $ds= $modx->db->query("SELECT `id`, `username`, `password` FROM $tbl WHERE `id`='" . self::getLoginUserID() . "'");
-            $limit= $modx->db->getRecordCount($ds);
+            $tbl= $core->getFullTableName("web_users");
+            $ds= $core->db->query("SELECT `id`, `username`, `password` FROM $tbl WHERE `id`='" . self::getLoginUserID() . "'");
+            $limit= $core->db->getRecordCount($ds);
             if ($limit == 1) {
-                $row= $modx->db->getRow($ds);
+                $row= $core->db->getRow($ds);
                 if ($row["password"] == md5($oldPwd)) {
                     if (strlen($newPwd) < 6) {
                         return "Password is too short!";
@@ -60,9 +60,9 @@ class User{
                     elseif ($newPwd == "") {
                         return "You didn't specify a password for this user!";
                     } else {
-                        $modx->db->query("UPDATE $tbl SET password = md5('" . $modx->db->escape($newPwd) . "') WHERE id='" . self::getLoginUserID() . "'");
+                        $core->db->query("UPDATE $tbl SET password = md5('" . $core->db->escape($newPwd) . "') WHERE id='" . self::getLoginUserID() . "'");
                         // invoke OnWebChangePassword event
-                        $modx->invokeEvent("OnWebChangePassword", array (
+                        $core->invokeEvent("OnWebChangePassword", array (
                             "userid" => $row["id"],
                             "username" => $row["username"],
                             "userpassword" => $newPwd
@@ -83,14 +83,14 @@ class User{
      * @return string
      */
     public static function getLoginUserID($context= '') {
-        $modx = getService('modx');
+        $core = getService('core');
         if ($context && isset ($_SESSION[$context . 'Validated'])) {
             return $_SESSION[$context . 'InternalKey'];
         }
-        elseif ($modx->isFrontend() && isset ($_SESSION['webValidated'])) {
+        elseif ($core->isFrontend() && isset ($_SESSION['webValidated'])) {
             return $_SESSION['webInternalKey'];
         }
-        elseif ($modx->isBackend() && isset ($_SESSION['mgrValidated'])) {
+        elseif ($core->isBackend() && isset ($_SESSION['mgrValidated'])) {
             return $_SESSION['mgrInternalKey'];
         }
     }
@@ -102,14 +102,14 @@ class User{
      * @return string
      */
     public static function getLoginUserName($context= '') {
-        $modx = getService('modx');
+        $core = getService('core');
         if (!empty($context) && isset ($_SESSION[$context . 'Validated'])) {
             return $_SESSION[$context . 'Shortname'];
         }
-        elseif ($modx->isFrontend() && isset ($_SESSION['webValidated'])) {
+        elseif ($core->isFrontend() && isset ($_SESSION['webValidated'])) {
             return $_SESSION['webShortname'];
         }
-        elseif ($modx->isBackend() && isset ($_SESSION['mgrValidated'])) {
+        elseif ($core->isBackend() && isset ($_SESSION['mgrValidated'])) {
             return $_SESSION['mgrShortname'];
         }
     }
@@ -120,11 +120,11 @@ class User{
      * @return string
      */
     public static function getLoginUserType() {
-        $modx = getService('modx');
-        if ($modx->isFrontend() && isset ($_SESSION['webValidated'])) {
+        $core = getService('core');
+        if ($core->isFrontend() && isset ($_SESSION['webValidated'])) {
             return 'web';
         }
-        elseif ($modx->isBackend() && isset ($_SESSION['mgrValidated'])) {
+        elseif ($core->isBackend() && isset ($_SESSION['mgrValidated'])) {
             return 'manager';
         } else {
             return '';
@@ -157,17 +157,17 @@ class User{
      * @return boolean|string
      */
     public static function getWebUserInfo($uid) {
-        $modx = getService('modx');
+        $core = getService('core');
         $sql= "
               SELECT wu.username, wu.password, wua.*
-              FROM " . $modx->getFullTableName("web_users") . " wu
-              INNER JOIN " . $modx->getFullTableName("web_user_attributes") . " wua ON wua.internalkey=wu.id
+              FROM " . $core->getFullTableName("web_users") . " wu
+              INNER JOIN " . $core->getFullTableName("web_user_attributes") . " wua ON wua.internalkey=wu.id
               WHERE wu.id='$uid'
               ";
-        $rs= $modx->db->query($sql);
-        $limit= $modx->db->getRecordCount($rs);
+        $rs= $core->db->query($sql);
+        $limit= $core->db->getRecordCount($rs);
         if ($limit == 1) {
-            $row= $modx->db->getRow($rs);
+            $row= $core->db->getRow($rs);
             if (!$row["usertype"])
                 $row["usertype"]= "web";
             return $row;
@@ -184,12 +184,12 @@ class User{
      * @return string|array
      */
     public static function getUserDocGroups($resolveIds= false) {
-        $modx = getService('modx');
-        if ($modx->isFrontend() && isset ($_SESSION['webDocgroups']) && isset ($_SESSION['webValidated'])) {
+        $core = getService('core');
+        if ($core->isFrontend() && isset ($_SESSION['webDocgroups']) && isset ($_SESSION['webValidated'])) {
             $dg= $_SESSION['webDocgroups'];
             $dgn= isset ($_SESSION['webDocgrpNames']) ? $_SESSION['webDocgrpNames'] : false;
         } else
-            if ($modx->isBackend() && isset ($_SESSION['mgrDocgroups']) && isset ($_SESSION['mgrValidated'])) {
+            if ($core->isBackend() && isset ($_SESSION['mgrDocgroups']) && isset ($_SESSION['mgrValidated'])) {
                 $dg= $_SESSION['mgrDocgroups'];
                 $dgn= isset ($_SESSION['mgrDocgrpNames']) ? $_SESSION['mgrDocgrpNames'] : false;
             } else {
@@ -204,12 +204,12 @@ class User{
                 if (is_array($dg)) {
                     // resolve ids to names
                     $dgn= array ();
-                    $tbl= $modx->getFullTableName("documentgroup_names");
-                    $ds= $modx->db->query("SELECT name FROM $tbl WHERE id IN (" . implode(",", $dg) . ")");
-                    while ($row= $modx->db->getRow($ds))
+                    $tbl= $core->getFullTableName("documentgroup_names");
+                    $ds= $core->db->query("SELECT name FROM $tbl WHERE id IN (" . implode(",", $dg) . ")");
+                    while ($row= $core->db->getRow($ds))
                         $dgn[count($dgn)]= $row['name'];
                     // cache docgroup names to session
-                    if ($modx->isFrontend())
+                    if ($core->isFrontend())
                         $_SESSION['webDocgrpNames']= $dgn;
                     else
                         $_SESSION['mgrDocgrpNames']= $dgn;
