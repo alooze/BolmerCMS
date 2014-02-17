@@ -14,7 +14,7 @@ class User{
      * @return boolean
      */
     public static function isMemberOfWebGroup($groupNames= array ()) {
-        $modx = modx();
+        $modx = getService('modx');
         if (!is_array($groupNames))
             return false;
         // check cache
@@ -45,7 +45,7 @@ class User{
      *                        message
      */
     public static function changeWebUserPassword($oldPwd, $newPwd) {
-        $modx = modx();
+        $modx = getService('modx');
         $rt= false;
         if ($_SESSION["webValidated"] == 1) {
             $tbl= $modx->getFullTableName("web_users");
@@ -83,7 +83,7 @@ class User{
      * @return string
      */
     public static function getLoginUserID($context= '') {
-        $modx = modx();
+        $modx = getService('modx');
         if ($context && isset ($_SESSION[$context . 'Validated'])) {
             return $_SESSION[$context . 'InternalKey'];
         }
@@ -102,7 +102,7 @@ class User{
      * @return string
      */
     public static function getLoginUserName($context= '') {
-        $modx = modx();
+        $modx = getService('modx');
         if (!empty($context) && isset ($_SESSION[$context . 'Validated'])) {
             return $_SESSION[$context . 'Shortname'];
         }
@@ -120,7 +120,7 @@ class User{
      * @return string
      */
     public static function getLoginUserType() {
-        $modx = modx();
+        $modx = getService('modx');
         if ($modx->isFrontend() && isset ($_SESSION['webValidated'])) {
             return 'web';
         }
@@ -157,7 +157,7 @@ class User{
      * @return boolean|string
      */
     public static function getWebUserInfo($uid) {
-        $modx = modx();
+        $modx = getService('modx');
         $sql= "
               SELECT wu.username, wu.password, wua.*
               FROM " . $modx->getFullTableName("web_users") . " wu
@@ -184,7 +184,7 @@ class User{
      * @return string|array
      */
     public static function getUserDocGroups($resolveIds= false) {
-        $modx = modx();
+        $modx = getService('modx');
         if ($modx->isFrontend() && isset ($_SESSION['webDocgroups']) && isset ($_SESSION['webValidated'])) {
             $dg= $_SESSION['webDocgroups'];
             $dgn= isset ($_SESSION['webDocgrpNames']) ? $_SESSION['webDocgrpNames'] : false;

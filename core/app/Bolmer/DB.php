@@ -305,7 +305,7 @@ class DB{
                     return $ds->fetch(\PDO::FETCH_BOTH);
                 }
                 default:{
-                modx()->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
+                getService('modx')->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
                 }
             }
         }
@@ -436,7 +436,7 @@ class DB{
     }
 
     function __construct($host='',$dbase='', $uid='',$pwd='',$pre=NULL,$charset='',$connection_method='SET CHARACTER SET') {
-        $MainConfig = modx('global_config');
+        $MainConfig = getService('global_config');
         $this->config['host'] = $host ? $host : getkey($MainConfig, 'database_server');
         $this->config['dbase'] = $dbase ? $dbase : getkey($MainConfig, 'dbase');
         $this->config['user'] = $uid ? $uid : getkey($MainConfig, 'database_user');

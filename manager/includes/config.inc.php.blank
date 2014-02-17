@@ -89,8 +89,7 @@ define('PATH_MODXCORE', realpath($root));
 
 require_once(PATH_MODXCORE."/bootstrap/start.php");
 
-$pimple = \Bolmer\Pimple::getInstance();
-$pimple['global_config'] = array(
+\Bolmer\Service::getInstance()->collection['global_config'] = array(
     'database_type' => $database_type,
     'database_server' => 'localhost',
     'database_user' => 'root',

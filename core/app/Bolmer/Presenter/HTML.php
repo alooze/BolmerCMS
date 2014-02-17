@@ -10,8 +10,12 @@ class HTML{
     /** @var \Bolmer\Pimple $_inj */
     private $_inj = null;
 
+    /** @var \Bolmer\Core $_modx */
+    protected $_modx = null;
+
     public function __construct(\Pimple $inj){
         $this->_inj= $inj;
+        $this->_modx = $inj['modx'];
     }
 
     /**
@@ -29,8 +33,8 @@ class HTML{
             $act= ($url ? "window.location.href='" . addslashes($url) . "';" : "");
         }
         $html= "<script>".$fnc." window.setTimeout(\"alert('".$msg."');".$act."\",100);</script>";
-        if ($this->_inj['modx']->isFrontend())
-            $this->_inj['modx']->regClientScript($html);
+        if ($this->_modx->isFrontend())
+            $this->_modx->regClientScript($html);
         else {
             echo $html;
         }
@@ -44,16 +48,16 @@ class HTML{
      * @param string $media Default: Empty string
      */
     function regClientCSS($src, $media='') {
-        if (empty($src) || isset ($this->_inj['modx']->loadedjscripts[$src]))
+        if (empty($src) || isset ($this->_modx->loadedjscripts[$src]))
             return '';
-        $nextpos= max(array_merge(array(0),array_keys($this->_inj['modx']->sjscripts)))+1;
-        $this->_inj['modx']->loadedjscripts[$src]['startup']= true;
-        $this->_inj['modx']->loadedjscripts[$src]['version']= '0';
-        $this->_inj['modx']->loadedjscripts[$src]['pos']= $nextpos;
+        $nextpos= max(array_merge(array(0),array_keys($this->_modx->sjscripts)))+1;
+        $this->_modx->loadedjscripts[$src]['startup']= true;
+        $this->_modx->loadedjscripts[$src]['version']= '0';
+        $this->_modx->loadedjscripts[$src]['pos']= $nextpos;
         if (strpos(strtolower($src), "<style") !== false || strpos(strtolower($src), "<link") !== false) {
-            $this->_inj['modx']->sjscripts[$nextpos]= $src;
+            $this->_modx->sjscripts[$nextpos]= $src;
         } else {
-            $this->_inj['modx']->sjscripts[$nextpos]= "\t" . '<link rel="stylesheet" type="text/css" href="'.$src.'" '.($media ? 'media="'.$media.'" ' : '').'/>';
+            $this->_modx->sjscripts[$nextpos]= "\t" . '<link rel="stylesheet" type="text/css" href="'.$src.'" '.($media ? 'media="'.$media.'" ' : '').'/>';
         }
     }
 
@@ -64,7 +68,7 @@ class HTML{
      * @param array $options Default: 'name'=>'', 'version'=>'0', 'plaintext'=>false
      */
     function regClientStartupScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false)) {
-        $this->_inj['modx']->regClientScript($src, $options, true);
+        $this->_modx->regClientScript($src, $options, true);
     }
 
     /**
@@ -93,31 +97,31 @@ class HTML{
         unset($overwritepos); // probably unnecessary--just making sure
 
         $useThisVer= true;
-        if (isset($this->_inj['modx']->loadedjscripts[$key])) { // a matching script was found
+        if (isset($this->_modx->loadedjscripts[$key])) { // a matching script was found
             // if existing script is a startup script, make sure the candidate is also a startup script
-            if ($this->_inj['modx']->loadedjscripts[$key]['startup'])
+            if ($this->_modx->loadedjscripts[$key]['startup'])
                 $startup= true;
 
             if (empty($name)) {
                 $useThisVer= false; // if the match was based on identical source code, no need to replace the old one
             } else {
-                $useThisVer = version_compare($this->_inj['modx']->loadedjscripts[$key]['version'], $version, '<');
+                $useThisVer = version_compare($this->_modx->loadedjscripts[$key]['version'], $version, '<');
             }
 
             if ($useThisVer) {
-                if ($startup==true && $this->_inj['modx']->loadedjscripts[$key]['startup']==false) {
+                if ($startup==true && $this->_modx->loadedjscripts[$key]['startup']==false) {
                     // remove old script from the bottom of the page (new one will be at the top)
-                    unset($this->_inj['modx']->jscripts[$this->_inj['modx']->loadedjscripts[$key]['pos']]);
+                    unset($this->_modx->jscripts[$this->_modx->loadedjscripts[$key]['pos']]);
                 } else {
                     // overwrite the old script (the position may be important for dependent scripts)
-                    $overwritepos= $this->_inj['modx']->loadedjscripts[$key]['pos'];
+                    $overwritepos= $this->_modx->loadedjscripts[$key]['pos'];
                 }
             } else { // Use the original version
-                if ($startup==true && $this->_inj['modx']->loadedjscripts[$key]['startup']==false) {
+                if ($startup==true && $this->_modx->loadedjscripts[$key]['startup']==false) {
                     // need to move the exisiting script to the head
-                    $version= $this->_inj['modx']->loadedjscripts[$key][$version];
-                    $src= $this->_inj['modx']->jscripts[$this->_inj['modx']->loadedjscripts[$key]['pos']];
-                    unset($this->_inj['modx']->jscripts[$this->_inj['modx']->loadedjscripts[$key]['pos']]);
+                    $version= $this->_modx->loadedjscripts[$key][$version];
+                    $src= $this->_modx->jscripts[$this->_modx->loadedjscripts[$key]['pos']];
+                    unset($this->_modx->jscripts[$this->_modx->loadedjscripts[$key]['pos']]);
                 } else {
                     return ''; // the script is already in the right place
                 }
@@ -127,15 +131,15 @@ class HTML{
         if ($useThisVer && $plaintext!=true && (strpos(strtolower($src), "<script") === false))
             $src= "\t" . '<script type="text/javascript" src="' . $src . '"></script>';
         if ($startup) {
-            $pos= isset($overwritepos) ? $overwritepos : max(array_merge(array(0),array_keys($this->_inj['modx']->sjscripts)))+1;
-            $this->_inj['modx']->sjscripts[$pos]= $src;
+            $pos= isset($overwritepos) ? $overwritepos : max(array_merge(array(0),array_keys($this->_modx->sjscripts)))+1;
+            $this->_modx->sjscripts[$pos]= $src;
         } else {
-            $pos= isset($overwritepos) ? $overwritepos : max(array_merge(array(0),array_keys($this->_inj['modx']->jscripts)))+1;
-            $this->_inj['modx']->jscripts[$pos]= $src;
+            $pos= isset($overwritepos) ? $overwritepos : max(array_merge(array(0),array_keys($this->_modx->jscripts)))+1;
+            $this->_modx->jscripts[$pos]= $src;
         }
-        $this->_inj['modx']->loadedjscripts[$key]['version']= $version;
-        $this->_inj['modx']->loadedjscripts[$key]['startup']= $startup;
-        $this->_inj['modx']->loadedjscripts[$key]['pos']= $pos;
+        $this->_modx->loadedjscripts[$key]['version']= $version;
+        $this->_modx->loadedjscripts[$key]['startup']= $startup;
+        $this->_modx->loadedjscripts[$key]['pos']= $pos;
     }
 
     /**
@@ -157,9 +161,9 @@ class HTML{
     }
 
     function getRegisteredClientScripts() {
-        return implode("\n", $this->_inj['modx']->jscripts);
+        return implode("\n", $this->_modx->jscripts);
     }
     function getRegisteredClientStartupScripts() {
-        return implode("\n", $this->_inj['modx']->sjscripts);
+        return implode("\n", $this->_modx->sjscripts);
     }
 }

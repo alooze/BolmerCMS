@@ -9,11 +9,7 @@ class Model extends \Granada\Model{
     public function save($CallEvents = false,$clearCache = false) {
         $q = $this->orm->save();
         if($clearCache){
-            /**
-             * @var $modx \Bolmer\Core
-             */
-            $modx = modx();
-            $modx->clearCache('full', false);
+            getService('modx')->clearCache('full', false);
         }
         return $q;
     }

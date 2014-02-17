@@ -10,7 +10,7 @@
 if (!function_exists('errorLog')) {
     function errorLog($message)
     {
-        if (is_dir(PATH_MODXCORE .'/log')
+        if (is_dir(PATH_MODXCORE.'/log')
             && is_writable(PATH_MODXCORE .'/log')) {
             file_put_contents(
                 PATH_MODXCORE .'/log/'.(date('Y-m-d')).'.log',
@@ -57,10 +57,9 @@ if (!function_exists('errorDisplay')) {
     }
 }
 
-if (!function_exists('modx')){
-    function modx($key = 'modx'){
-        $pimple = \Bolmer\Pimple::getInstance();
-        return isset($pimple[$key]) ? $pimple[$key] : null;
+if (!function_exists('getService')){
+    function getService($key, $nop = true){
+        return \Bolmer\Service::getInstance()->get($key, $nop);
     }
 }
 

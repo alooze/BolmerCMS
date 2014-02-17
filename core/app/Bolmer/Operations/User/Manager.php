@@ -47,7 +47,7 @@ class Manager{
      */
     public static function sendAlert($type, $to, $from, $subject, $msg, $private= 0) {
         $private= ($private) ? 1 : 0;
-        $modx = modx();
+        $modx = getService('modx');
         if (!is_numeric($to)) {
             // Query for the To ID
             $sql= "SELECT id FROM " . $modx->getFullTableName("manager_users") . " WHERE username='$to';";
