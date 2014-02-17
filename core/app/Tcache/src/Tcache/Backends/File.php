@@ -176,4 +176,13 @@ class File extends AbstractBackend
         $ret = glob($this->dir.DIRECTORY_SEPARATOR.$expression);
         return $ret;
     }
+
+    /**
+     * Bolmer add: get path to cache folder
+     */
+    public function getCachePath()
+    {
+        $retPath = rtrim($this->dir, DIRECTORY_SEPARATOR);        
+        return $retPath.DIRECTORY_SEPARATOR;
+    }
 }

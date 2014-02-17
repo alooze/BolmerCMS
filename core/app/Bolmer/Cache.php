@@ -22,7 +22,7 @@ class Cache extends Tcache
      * @param int $defaultTTL
      * @param int $ttlVariation
      */
-    public function __construct(\Pimple $inj, $namespace = 'B', $defaultTTL = null, $ttlVariation = 0)
+    public function __construct(\Pimple $inj, $namespace = '', $defaultTTL = null, $ttlVariation = 0)
     {
         $this->_inj= $inj;
         $this->_core = $inj['core'];
@@ -144,7 +144,7 @@ class Cache extends Tcache
         if ($type=='full') {
             include_once(BOLMER_MANAGER_PATH . 'processors/cache_sync.class.processor.php');
             $sync = new \synccache();
-            $sync->setCachepath(BOLMER_BASE_PATH . 'assets/cache/');
+            $sync->setCachepath($this->backend->getCachePath());
             $sync->setReport($report);
             $sync->emptyCache();
             return $this->flushAll();
@@ -156,13 +156,21 @@ class Cache extends Tcache
     /**
      * Returns the cache relative URL/path with respect to the site root.
      *
-     * @global string $base_url
-     * @return string The complete URL to the cache folder
+     * @param string $fullLocalPath
+     * @return string The complete URL/path to the cache folder
      */
-    public function getCachePath() 
+    public function getCachePath($fullLocalPath = false) 
     {
-        // return BOLMER_BASE_URL . 'assets/cache/';
-        return $this->backend->$dir;
+        switch ($fullLocalPath) {
+            case !false:
+                $out = $this->backend->getCachePath();
+                break;
+
+            default:
+                $out = str_replace(BOLMER_BASE_PATH, BOLMER_BASE_URL, $this->backend->getCachePath());
+                break;
+        }
+        return $out;        
     }
 
     /**
@@ -286,7 +294,7 @@ class Cache extends Tcache
             $id.= $this->getIdGivenThe($type, $rules);
         }
 
-        $id = $name.':'.md5($id); // пока искусственно добавляем неймспейс
+        $id = $name.'.'.md5($id); // пока искусственно добавляем "неймспейс"
         
         if (($value = $this->get($id)) === null) {
             //готовим данные для сохранения в кеше
