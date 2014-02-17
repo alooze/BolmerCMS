@@ -53,6 +53,7 @@ class Core {
     var $documentMap;
     var $forwards= 3;
     var $error_reporting;
+    var $dbConfig;
     var $dumpPlugins;
     var $pluginsCode;
     var $pluginsTime=array();
@@ -79,6 +80,8 @@ class Core {
         }
         $this->_service = &$service;
         $this->loadExtension('DBAPI') or die('Could not load DBAPI class.'); // load DBAPI class
+        $this->dbConfig= & $this->db->config;
+
         $this->jscripts = array ();
         $this->sjscripts = array ();
         $this->loadedjscripts = array ();

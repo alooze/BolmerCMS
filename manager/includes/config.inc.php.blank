@@ -85,9 +85,9 @@ define('MODX_DEBUG', true);
 
 //Core path
 $root = dirname(dirname(dirname(__FILE__)))."/core/";
-define('PATH_MODXCORE', realpath($root));
+define('PATH_BOLMER_CORE', realpath($root));
 
-require_once(PATH_MODXCORE."/bootstrap/start.php");
+require_once(PATH_BOLMER_CORE."/bootstrap/start.php");
 
 \Bolmer\Service::getInstance()->collection['global_config'] = array(
     'database_type' => $database_type,

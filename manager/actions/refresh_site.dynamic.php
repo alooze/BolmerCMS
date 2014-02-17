@@ -8,11 +8,11 @@ $sctable = $modx->getFullTableName('site_content');
 
 $sql = "UPDATE $sctable SET published=1 WHERE pub_date < ".$ctime." AND pub_date!=0 AND unpub_date > ".$ctime;
 $rs = $modx->db->query($sql);
-$num_rows_pub = $modx->db->getAffectedRows($modxDBConn);
+$num_rows_pub = $modx->db->getAffectedRows($rs);
 
 $sql = "UPDATE $sctable SET published=0 WHERE unpub_date < ".$ctime." AND unpub_date!=0 AND published=1";
 $rs = $modx->db->query($sql);
-$num_rows_unpub = $modx->db->getAffectedRows($modxDBConn);
+$num_rows_unpub = $modx->db->getAffectedRows($rs);
 
 ?>
 

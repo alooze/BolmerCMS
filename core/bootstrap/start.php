@@ -7,18 +7,18 @@ if (version_compare(phpversion(), '5.3.0', '<')) {
     exit();
 }
 
-if (!defined("MODX_DEBUG")) {
-    define("MODX_DEBUG", false);
+if (!defined("BOLMER_DEBUG")) {
+    define("BOLMER_DEBUG", true);
 }
-if(MODX_DEBUG){
-    error_reporting(0);
-    ini_set('display_errors', 0);
-} else {
+if(BOLMER_DEBUG){
     error_reporting(E_ALL);
     ini_set('display_errors','On');
+} else {
+    error_reporting(0);
+    ini_set('display_errors', 0);
 }
 
-require PATH_MODXCORE . "/bootstrap/functions.php";
+require PATH_BOLMER_CORE . "/bootstrap/functions.php";
 
 //trigger_error("File not found ".$f, E_USER_ERROR);
 if(function_exists('errorHandler')){
@@ -31,7 +31,7 @@ if(function_exists('errorDisplay')){
 /**
  * Autoload files
  */
-$files = require PATH_MODXCORE . "/bootstrap/autoload.php";
+$files = require PATH_BOLMER_CORE . "/bootstrap/autoload.php";
 $logStack = array();
 foreach($files as $i => $f){
     try{
@@ -56,9 +56,9 @@ foreach($files as $i => $f){
         trigger_error($e->getMessage(), E_USER_ERROR);
     }
 }
-require PATH_MODXCORE . "/app/Pimple.class.php";
-require PATH_MODXCORE . "/app/SplClassLoader.class.php";
+require PATH_BOLMER_CORE . "/app/Pimple.class.php";
+require PATH_BOLMER_CORE . "/app/SplClassLoader.class.php";
 
-with(new SplClassLoader('Bolmer', PATH_MODXCORE ."/app/"))->register();
-with(new SplClassLoader('Granada', PATH_MODXCORE ."/app/Granada/src/"))->register();
-with(new SplClassLoader('Tcache', PATH_MODXCORE ."/app/Tcache/src/"))->register();
+with(new SplClassLoader('Bolmer', PATH_BOLMER_CORE ."/app/"))->register();
+with(new SplClassLoader('Granada', PATH_BOLMER_CORE ."/app/Granada/src/"))->register();
+with(new SplClassLoader('Tcache', PATH_BOLMER_CORE ."/app/Tcache/src/"))->register();

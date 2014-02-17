@@ -136,12 +136,12 @@ class Plugin{
 
                 // eval plugin
                 $this->evalPlugin($pluginCode, $parameter);
-                if ($this->dumpPlugins == 1) {
+                if ($this->_modx->dumpPlugins == 1) {
                     $eventtime = $this->_modx->getMicroTime() - $eventtime;
-                    $this->pluginsCode .= '<fieldset><legend><b>' . $evtName . ' / ' . $pluginName . '</b> ('.sprintf('%2.2f ms', $eventtime*1000).')</legend>';
-                    foreach ($parameter as $k=>$v) $this->pluginsCode .= $k . ' => ' . print_r($v, true) . '<br>';
-                    $this->pluginsCode .= '</fieldset><br />';
-                    $this->pluginsTime["$evtName / $pluginName"] += $eventtime;
+                    $this->_modx->pluginsCode .= '<fieldset><legend><b>' . $evtName . ' / ' . $pluginName . '</b> ('.sprintf('%2.2f ms', $eventtime*1000).')</legend>';
+                    foreach ($parameter as $k=>$v) $this->_modx->pluginsCode .= $k . ' => ' . print_r($v, true) . '<br>';
+                    $this->_modx->pluginsCode .= '</fieldset><br />';
+                    $this->_modx->pluginsTime["$evtName / $pluginName"] += $eventtime;
                 }
                 if ($e->_output != "")
                     $results[]= $e->_output;

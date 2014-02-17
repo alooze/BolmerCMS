@@ -200,6 +200,7 @@ class DB{
     }
     function insert($fields, $intotable, $fromfields = "*", $fromtable = "", $where = "", $limit = "") {
         if(empty($intotable)) return false;
+        $sql = '';
         if (!is_array($fields))
             $flds = $fields;
         else {
@@ -218,28 +219,6 @@ class DB{
         $rt = $this->query("INSERT INTO $intotable $flds $sql");
         $lid = $this->getInsertId();
         return $lid ? $lid : $rt;
-        /*if (!$intotable)
-            return false;
-        else {
-            if (!is_array($fields))
-                $flds = $fields;
-            else {
-                $keys = array_keys($fields);
-                $values = array_values($fields);
-                $flds = "(" . implode(",", $keys) . ") " .
-                    (!$fromtable && $values ? "VALUES('" . implode("','", $values) . "')" : "");
-                if ($fromtable) {
-                    $fromtable = $this->replaceFullTableName($fromtable);
-                    $where = ($where != "") ? "WHERE $where" : "";
-                    $limit = ($limit != "") ? "LIMIT $limit" : "";
-                    $sql = "SELECT $fromfields FROM $fromtable $where $limit";
-                }
-            }
-            $intotable = $this->replaceFullTableName($intotable);
-            $rt = $this->query("INSERT INTO $intotable $flds $sql");
-            $lid = $this->getInsertId();
-            return $lid ? $lid : $rt;
-        }*/
     }
     function makeArray($q){
         $out = array();

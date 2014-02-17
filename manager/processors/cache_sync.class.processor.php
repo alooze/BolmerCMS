@@ -257,7 +257,7 @@ class synccache{
         $tmpPHP .= '$e = &$this->pluginEvent;' . "\n";
         for ($i=0; $i<$limit_tmp; $i++) {
             $evt = $modx->db->getRow($rs);
-            if(!$events[$evt['evtname']]) $events[$evt['evtname']] = array();
+            if(!isset($events[$evt['evtname']])) $events[$evt['evtname']] = array();
             $events[$evt['evtname']][] = $evt['name'];
         }
         foreach($events as $evtname => $pluginnames) {
