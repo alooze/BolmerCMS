@@ -26,7 +26,7 @@ class Document{
         // Initialise a static array to index parents->children
         static $documentMap_cache = array();
         if (!count($documentMap_cache)) {
-            foreach ($this->_inj['_modx']->documentMap as $document) {
+            foreach ($this->_inj['modx']->documentMap as $document) {
                 foreach ($document as $p => $c) {
                     $documentMap_cache[$p][] = $c;
                 }
@@ -38,7 +38,7 @@ class Document{
             $depth--;
 
             foreach ($documentMap_cache[$id] as $childId) {
-                $pkey = (strlen($this->_inj['_modx']->aliasListing[$childId]['path']) ? "{$this->_inj['_modx']->aliasListing[$childId]['path']}/" : '') . $this->_inj['_modx']->aliasListing[$childId]['alias'];
+                $pkey = (strlen($this->_inj['modx']->aliasListing[$childId]['path']) ? "{$this->_inj['modx']->aliasListing[$childId]['path']}/" : '') . $this->_inj['modx']->aliasListing[$childId]['alias'];
                 if (!strlen($pkey)) $pkey = "{$childId}";
                 $children[$pkey] = $childId;
 
@@ -61,7 +61,7 @@ class Document{
         $parents= array ();
         while ( $id && $height-- ) {
             $thisid = $id;
-            $id = $this->_inj['_modx']->aliasListing[$id]['parent'];
+            $id = $this->_inj['modx']->aliasListing[$id]['parent'];
             if (!$id) break;
             $parents[$thisid] = $id;
         }
@@ -80,16 +80,16 @@ class Document{
      * @return array
      */
     public function getAllChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        $tblsc= $this->_inj['_modx']->getFullTableName("site_content");
-        $tbldg= $this->_inj['_modx']->getFullTableName("document_groups");
+        $tblsc= $this->_inj['modx']->getFullTableName("site_content");
+        $tbldg= $this->_inj['modx']->getFullTableName("document_groups");
         // modify field names to use sc. table reference
         $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
         $sort= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
         // get document groups for current user
-        if ($docgrp= $this->_inj['_modx']->getUserDocGroups())
+        if ($docgrp= $this->_inj['modx']->getUserDocGroups())
             $docgrp= implode(",", $docgrp);
         // build query
-        $access= ($this->_inj['_modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+        $access= ($this->_inj['modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
             (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
         $sql= "SELECT DISTINCT $fields FROM $tblsc sc
               LEFT JOIN $tbldg dg on dg.document = sc.id
@@ -99,8 +99,8 @@ class Document{
               ORDER BY $sort $dir;";
         $result= $this->db->query($sql);
         $resourceArray= array ();
-        for ($i= 0; $i < @ $this->_inj['_modx']->db->getRecordCount($result); $i++) {
-            array_push($resourceArray, @ $this->_inj['_modx']->db->getRow($result));
+        for ($i= 0; $i < @ $this->_inj['modx']->db->getRecordCount($result); $i++) {
+            array_push($resourceArray, @ $this->_inj['modx']->db->getRow($result));
         }
         return $resourceArray;
     }
@@ -117,17 +117,17 @@ class Document{
      * @return array
      */
     public function getActiveChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        $tblsc= $this->_inj['_modx']->getFullTableName("site_content");
-        $tbldg= $this->_inj['_modx']->getFullTableName("document_groups");
+        $tblsc= $this->_inj['modx']->getFullTableName("site_content");
+        $tbldg= $this->_inj['modx']->getFullTableName("document_groups");
 
         // modify field names to use sc. table reference
         $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
         $sort= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
         // get document groups for current user
-        if ($docgrp= $this->_inj['_modx']->getUserDocGroups())
+        if ($docgrp= $this->_inj['modx']->getUserDocGroups())
             $docgrp= implode(",", $docgrp);
         // build query
-        $access= ($this->_inj['_modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+        $access= ($this->_inj['modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
             (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
         $sql= "SELECT DISTINCT $fields FROM $tblsc sc
               LEFT JOIN $tbldg dg on dg.document = sc.id
@@ -135,10 +135,10 @@ class Document{
               AND ($access)
               GROUP BY sc.id
               ORDER BY $sort $dir;";
-        $result= $this->_inj['_modx']->db->query($sql);
+        $result= $this->_inj['modx']->db->query($sql);
         $resourceArray= array ();
-        for ($i= 0; $i < @ $this->_inj['_modx']->db->getRecordCount($result); $i++) {
-            array_push($resourceArray, @ $this->_inj['_modx']->db->getRow($result));
+        for ($i= 0; $i < @ $this->_inj['modx']->db->getRecordCount($result); $i++) {
+            array_push($resourceArray, @ $this->_inj['modx']->db->getRow($result));
         }
         return $resourceArray;
     }
@@ -166,18 +166,18 @@ class Document{
      */
     public function getDocumentChildren($parentid= 0, $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
         $limit= ($limit != "") ? "LIMIT $limit" : "";
-        $tblsc= $this->_inj['_modx']->getFullTableName("site_content");
-        $tbldg= $this->_inj['_modx']->getFullTableName("document_groups");
+        $tblsc= $this->_inj['modx']->getFullTableName("site_content");
+        $tbldg= $this->_inj['modx']->getFullTableName("document_groups");
         // modify field names to use sc. table reference
         $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
         $sort= ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
         if ($where != '')
             $where= 'AND ' . $where;
         // get document groups for current user
-        if ($docgrp= $this->_inj['_modx']->getUserDocGroups())
+        if ($docgrp= $this->_inj['modx']->getUserDocGroups())
             $docgrp= implode(",", $docgrp);
         // build query
-        $access= ($this->_inj['_modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+        $access= ($this->_inj['modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
             (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
         $sql= "SELECT DISTINCT $fields
               FROM $tblsc sc
@@ -186,10 +186,10 @@ class Document{
               AND ($access)
               GROUP BY sc.id " .
             ($sort ? " ORDER BY $sort $dir " : "") . " $limit ";
-        $result= $this->_inj['_modx']->db->query($sql);
+        $result= $this->_inj['modx']->db->query($sql);
         $resourceArray= array ();
-        for ($i= 0; $i < @ $this->_inj['_modx']->db->getRecordCount($result); $i++) {
-            array_push($resourceArray, @ $this->_inj['_modx']->db->getRow($result));
+        for ($i= 0; $i < @ $this->_inj['modx']->db->getRecordCount($result); $i++) {
+            array_push($resourceArray, @ $this->_inj['modx']->db->getRow($result));
         }
         return $resourceArray;
     }
@@ -228,17 +228,17 @@ class Document{
             return false;
         } else {
             $limit= ($limit != "") ? "LIMIT $limit" : ""; // LIMIT capabilities - rad14701
-            $tblsc= $this->_inj['_modx']->getFullTableName("site_content");
-            $tbldg= $this->_inj['_modx']->getFullTableName("document_groups");
+            $tblsc= $this->_inj['modx']->getFullTableName("site_content");
+            $tbldg= $this->_inj['modx']->getFullTableName("document_groups");
             // modify field names to use sc. table reference
             $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
             $sort= ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
             if ($where != '')
                 $where= 'AND ' . $where;
             // get document groups for current user
-            if ($docgrp= $this->_inj['_modx']->getUserDocGroups())
+            if ($docgrp= $this->_inj['modx']->getUserDocGroups())
                 $docgrp= implode(",", $docgrp);
-            $access= ($this->_inj['_modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+            $access= ($this->_inj['modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
                 (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
             $sql= "SELECT DISTINCT $fields FROM $tblsc sc
                     LEFT JOIN $tbldg dg on dg.document = sc.id
@@ -246,10 +246,10 @@ class Document{
                     AND ($access)
                     GROUP BY sc.id " .
                 ($sort ? " ORDER BY $sort $dir" : "") . " $limit ";
-            $result= $this->_inj['_modx']->db->query($sql);
+            $result= $this->_inj['modx']->db->query($sql);
             $resourceArray= array ();
-            for ($i= 0; $i < @ $this->_inj['_modx']->db->getRecordCount($result); $i++) {
-                array_push($resourceArray, @ $this->_inj['_modx']->db->getRow($result));
+            for ($i= 0; $i < @ $this->_inj['modx']->db->getRecordCount($result); $i++) {
+                array_push($resourceArray, @ $this->_inj['modx']->db->getRow($result));
             }
             return $resourceArray;
         }
@@ -300,15 +300,15 @@ class Document{
         if ($pageid == 0) {
             return false;
         } else {
-            $tblsc= $this->_inj['_modx']->getFullTableName("site_content");
-            $tbldg= $this->_inj['_modx']->getFullTableName("document_groups");
+            $tblsc= $this->_inj['modx']->getFullTableName("site_content");
+            $tbldg= $this->_inj['modx']->getFullTableName("document_groups");
             $activeSql= $active == 1 ? "AND sc.published=1 AND sc.deleted=0" : "";
             // modify field names to use sc. table reference
             $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
             // get document groups for current user
-            if ($docgrp= $this->_inj['_modx']->getUserDocGroups())
+            if ($docgrp= $this->_inj['modx']->getUserDocGroups())
                 $docgrp= implode(",", $docgrp);
-            $access= ($this->_inj['_modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+            $access= ($this->_inj['modx']->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
                 (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
             $sql= "SELECT $fields
                     FROM $tblsc sc
@@ -316,8 +316,8 @@ class Document{
                     WHERE (sc.id=$pageid $activeSql)
                     AND ($access)
                     LIMIT 1 ";
-            $result= $this->_inj['_modx']->db->query($sql);
-            $pageInfo= @ $this->_inj['_modx']->db->getRow($result);
+            $result= $this->_inj['modx']->db->query($sql);
+            $pageInfo= @ $this->_inj['modx']->db->getRow($result);
             return $pageInfo;
         }
     }
@@ -336,7 +336,7 @@ class Document{
      */
     public function getParent($pid= -1, $active= 1, $fields= 'id, pagetitle, description, alias, parent') {
         if ($pid == -1) {
-            $pid= $this->_inj['_modx']->documentObject['parent'];
+            $pid= $this->_inj['modx']->documentObject['parent'];
             return ($pid == 0) ? false : $this->getPageInfo($pid, $active, $fields);
         } else
             if ($pid == 0) {
@@ -358,32 +358,32 @@ class Document{
      * @return array
      */
     public function getDocumentObject($method, $identifier, $isPrepareResponse=false) {
-        $tblsc= $this->_inj['_modx']->getFullTableName("site_content");
-        $tbldg= $this->_inj['_modx']->getFullTableName("document_groups");
+        $tblsc= $this->_inj['modx']->getFullTableName("site_content");
+        $tbldg= $this->_inj['modx']->getFullTableName("document_groups");
         // allow alias to be full path
         if($method == 'alias') {
-            $identifier = $this->_inj['_modx']->cleanDocumentIdentifier($identifier);
-            $method = $this->_inj['_modx']->documentMethod;
+            $identifier = $this->_inj['modx']->cleanDocumentIdentifier($identifier);
+            $method = $this->_inj['modx']->documentMethod;
         }
-        if($method == 'alias' && $this->_inj['_modx']->getConfig('use_alias_path') && array_key_exists($identifier, $this->_inj['_modx']->documentListing)) {
+        if($method == 'alias' && $this->_inj['modx']->getConfig('use_alias_path') && array_key_exists($identifier, $this->_inj['modx']->documentListing)) {
             $method = 'id';
-            $identifier = $this->_inj['_modx']->documentListing[$identifier];
+            $identifier = $this->_inj['modx']->documentListing[$identifier];
         }
         // get document groups for current user
-        if ($docgrp= $this->_inj['_modx']->getUserDocGroups())
+        if ($docgrp= $this->_inj['modx']->getUserDocGroups())
             $docgrp= implode(",", $docgrp);
         // get document
-        $access=  "1='" . $_SESSION['mgrRole'] . "'" . ($this->_inj['_modx']->isFrontend() ? " OR sc.privateweb=0" : " OR sc.privatemgr=0") .
+        $access=  "1='" . $_SESSION['mgrRole'] . "'" . ($this->_inj['modx']->isFrontend() ? " OR sc.privateweb=0" : " OR sc.privatemgr=0") .
             (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
         $sql= "SELECT sc.*
               FROM $tblsc sc
               LEFT JOIN $tbldg dg ON dg.document = sc.id
               WHERE sc." . $method . " = '" . $identifier . "'
               AND ($access) LIMIT 1;";
-        $result= $this->_inj['_modx']->db->query($sql);
-        $rowCount= $this->_inj['_modx']->db->getRecordCount($result);
+        $result= $this->_inj['modx']->db->query($sql);
+        $rowCount= $this->_inj['modx']->db->getRecordCount($result);
         if ($rowCount < 1) {
-            if ($this->_inj['_modx']->getConfig('unauthorized_page')) {
+            if ($this->_inj['modx']->getConfig('unauthorized_page')) {
                 // method may still be alias, while identifier is not full path alias, e.g. id not found above
                 if ($method === 'alias') {
                     $q = "SELECT dg.id FROM $tbldg dg, $tblsc sc WHERE dg.document = sc.id AND sc.alias = '{$identifier}' LIMIT 1;";
@@ -391,36 +391,36 @@ class Document{
                     $q = "SELECT id FROM $tbldg WHERE document = '{$identifier}' LIMIT 1;";
                 }
                 // check if file is not public
-                $secrs= $this->_inj['_modx']->db->query($q);
+                $secrs= $this->_inj['modx']->db->query($q);
                 if ($secrs)
-                    $seclimit= $this->_inj['_modx']->db->getRecordCount($secrs);
+                    $seclimit= $this->_inj['modx']->db->getRecordCount($secrs);
             }
             if ($seclimit > 0) {
                 // match found but not publicly accessible, send the visitor to the unauthorized_page
-                $this->_inj['_modx']->sendUnauthorizedPage();
+                $this->_inj['modx']->sendUnauthorizedPage();
                 exit; // stop here
             } else {
-                $this->_inj['_modx']->sendErrorPage();
+                $this->_inj['modx']->sendErrorPage();
                 exit;
             }
         }
 
         # this is now the document :) #
-        $documentObject= $this->_inj['_modx']->db->getRow($result);
-        if($isPrepareResponse==='prepareResponse') $this->_inj['_modx']->documentObject = & $documentObject;
-        $this->_inj['_modx']->invokeEvent('OnLoadDocumentObject');
+        $documentObject= $this->_inj['modx']->db->getRow($result);
+        if($isPrepareResponse==='prepareResponse') $this->_inj['modx']->documentObject = & $documentObject;
+        $this->_inj['modx']->invokeEvent('OnLoadDocumentObject');
         if ($documentObject['template']) {
             // load TVs and merge with document - Orig by Apodigm - Docvars
             $sql= "SELECT tv.*, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
-            $sql .= "FROM " . $this->_inj['_modx']->getFullTableName("site_tmplvars") . " tv ";
-            $sql .= "INNER JOIN " . $this->_inj['_modx']->getFullTableName("site_tmplvar_templates")." tvtpl ON tvtpl.tmplvarid = tv.id ";
-            $sql .= "LEFT JOIN " . $this->_inj['_modx']->getFullTableName("site_tmplvar_contentvalues")." tvc ON tvc.tmplvarid=tv.id ";
+            $sql .= "FROM " . $this->_inj['modx']->getFullTableName("site_tmplvars") . " tv ";
+            $sql .= "INNER JOIN " . $this->_inj['modx']->getFullTableName("site_tmplvar_templates")." tvtpl ON tvtpl.tmplvarid = tv.id ";
+            $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName("site_tmplvar_contentvalues")." tvc ON tvc.tmplvarid=tv.id ";
             $sql .= "WHERE tvc.contentid = '" . $documentObject['id'] . "' AND tvtpl.templateid = '" . $documentObject['template'] . "'";
-            $rs= $this->_inj['_modx']->db->query($sql);
-            $rowCount= $this->_inj['_modx']->db->getRecordCount($rs);
+            $rs= $this->_inj['modx']->db->query($sql);
+            $rowCount= $this->_inj['modx']->db->getRecordCount($rs);
             if ($rowCount > 0) {
                 for ($i= 0; $i < $rowCount; $i++) {
-                    $row= $this->_inj['_modx']->db->getRow($rs);
+                    $row= $this->_inj['modx']->db->getRow($rs);
                     $tmplvars[$row['name']]= array (
                         $row['name'],
                         $row['value'],
@@ -488,8 +488,8 @@ class Document{
 
             // get document record
             if ($docid == "") {
-                $docid= $this->_inj['_modx']->documentIdentifier;
-                $docRow= $this->_inj['_modx']->documentObject;
+                $docid= $this->_inj['modx']->documentIdentifier;
+                $docRow= $this->_inj['modx']->documentObject;
             } else {
                 $docRow= $this->getDocument($docid, '*', $published);
                 if (!$docRow)
@@ -504,15 +504,15 @@ class Document{
             else
                 $query= (is_numeric($idnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $idnames) . "')";
             $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
-            $sql .= "FROM " . $this->_inj['_modx']->getFullTableName('site_tmplvars')." tv ";
-            $sql .= "INNER JOIN " . $this->_inj['_modx']->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
-            $sql .= "LEFT JOIN " . $this->_inj['_modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id ";
+            $sql .= "FROM " . $this->_inj['modx']->getFullTableName('site_tmplvars')." tv ";
+            $sql .= "INNER JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
+            $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id ";
             $sql .= "WHERE " . $query . " AND tvc.contentid = '" . $docid . "' AND tvtpl.templateid = " . $docRow['template'];
             if ($sort)
                 $sql .= " ORDER BY $sort $dir ";
-            $rs= $this->_inj['_modx']->db->query($sql);
-            for ($i= 0; $i < @ $this->_inj['_modx']->db->getRecordCount($rs); $i++) {
-                array_push($result, @ $this->_inj['_modx']->db->getRow($rs));
+            $rs= $this->_inj['modx']->db->query($sql);
+            for ($i= 0; $i < @ $this->_inj['modx']->db->getRecordCount($rs); $i++) {
+                array_push($result, @ $this->_inj['modx']->db->getRow($rs));
             }
 
             // get default/built-in template variables
@@ -566,7 +566,7 @@ class Document{
                 $query= "tv.id<>0";
             else
                 $query= (is_numeric($tvidnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $tvidnames) . "')";
-            if ($docgrp= $this->_inj['_modx']->getUserDocGroups())
+            if ($docgrp= $this->_inj['modx']->getUserDocGroups())
                 $docgrp= implode(",", $docgrp);
 
             $docCount= count($docs);
@@ -577,16 +577,16 @@ class Document{
                 $docid= $docRow['id'];
 
                 $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
-                $sql .= "FROM " . $this->_inj['_modx']->getFullTableName('site_tmplvars') . " tv ";
-                $sql .= "INNER JOIN " . $this->_inj['_modx']->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
-                $sql .= "LEFT JOIN " . $this->_inj['_modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id ";
+                $sql .= "FROM " . $this->_inj['modx']->getFullTableName('site_tmplvars') . " tv ";
+                $sql .= "INNER JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
+                $sql .= "LEFT JOIN " . $this->_inj['modx']->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id ";
                 $sql .= "WHERE " . $query . " AND tvc.contentid = '" . $docid . "' AND tvtpl.templateid = " . $docRow['template'];
                 if ($tvsort)
                     $sql .= " ORDER BY $tvsort $tvsortdir ";
-                $rs= $this->_inj['_modx']->db->query($sql);
-                $limit= @ $this->_inj['_modx']->db->getRecordCount($rs);
+                $rs= $this->_inj['modx']->db->query($sql);
+                $limit= @ $this->_inj['modx']->db->getRecordCount($rs);
                 for ($x= 0; $x < $limit; $x++) {
-                    array_push($tvs, @ $this->_inj['_modx']->db->getRow($rs));
+                    array_push($tvs, @ $this->_inj['modx']->db->getRow($rs));
                 }
 
                 // get default/built-in template variables
@@ -685,7 +685,7 @@ class Document{
      */
     public function stripAlias($alias) {
         // let add-ons overwrite the default behavior
-        $results = $this->_inj['_modx']->invokeEvent('OnStripAlias', array ('alias'=>$alias));
+        $results = $this->_inj['modx']->invokeEvent('OnStripAlias', array ('alias'=>$alias));
         if (!empty($results)) {
             // if multiple plugins are registered, only the last one is used
             return end($results);
@@ -704,8 +704,8 @@ class Document{
     {
         $children = array();
 
-        $tbl_site_content = $this->_inj['_modx']->getFullTableName('site_content');
-        if($this->_inj['_modx']->getConfig('use_alias_path')==1)
+        $tbl_site_content = $this->_inj['modx']->getFullTableName('site_content');
+        if($this->_inj['modx']->getConfig('use_alias_path')==1)
         {
             if(strpos($alias,'/')!==false) $_a = explode('/', $alias);
             else                           $_a[] = $alias;
@@ -714,10 +714,10 @@ class Document{
             foreach($_a as $alias)
             {
                 if($id===false) break;
-                $alias = $this->_inj['_modx']->db->escape($alias);
-                $rs  = $this->_inj['_modx']->db->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and alias='{$alias}'");
-                if($this->_inj['_modx']->db->getRecordCount($rs)==0) $rs  = $this->_inj['_modx']->db->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and id='{$alias}'");
-                $row = $this->_inj['_modx']->db->getRow($rs);
+                $alias = $this->_inj['modx']->db->escape($alias);
+                $rs  = $this->_inj['modx']->db->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and alias='{$alias}'");
+                if($this->_inj['modx']->db->getRecordCount($rs)==0) $rs  = $this->_inj['modx']->db->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and id='{$alias}'");
+                $row = $this->_inj['modx']->db->getRow($rs);
 
                 if($row) $id = $row['id'];
                 else     $id = false;
@@ -725,8 +725,8 @@ class Document{
         }
         else
         {
-            $rs = $this->_inj['_modx']->db->select('id', $tbl_site_content, "deleted=0 and alias='{$alias}'", 'parent, menuindex');
-            $row = $this->_inj['_modx']->db->getRow($rs);
+            $rs = $this->_inj['modx']->db->select('id', $tbl_site_content, "deleted=0 and alias='{$alias}'", 'parent, menuindex');
+            $row = $this->_inj['modx']->db->getRow($rs);
 
             if($row) $id = $row['id'];
             else     $id = false;

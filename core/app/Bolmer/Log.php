@@ -18,15 +18,15 @@
         {
             if($limit < $trim) $trim = $limit;
 
-            $table_name = $this->_inj['_modx']->getFullTableName($target);
-            $count = $this->_inj['_modx']->db->getValue($this->_inj['_modx']->db->select('COUNT(id)',$table_name));
+            $table_name = $this->_inj['modx']->getFullTableName($target);
+            $count = $this->_inj['modx']->db->getValue($this->_inj['modx']->db->select('COUNT(id)',$table_name));
             $over = $count - $limit;
             if(0 < $over)
             {
                 $trim = ($over + $trim);
-                $this->_inj['_modx']->db->delete($table_name,'','',$trim);
+                $this->_inj['modx']->db->delete($table_name,'','',$trim);
             }
-            $this->_inj['_modx']->db->optimize($table_name);
+            $this->_inj['modx']->db->optimize($table_name);
         }
 
         /**
@@ -39,29 +39,29 @@
          *                       Default: Parser
          */
         function logEvent($evtid, $type, $msg, $source= 'Parser') {
-            $msg= $this->_inj['_modx']->db->escape($msg);
-            $source= $this->_inj['_modx']->db->escape($source);
-            if ($this->_inj['_global_config']['database_connection_charset'] == 'utf8' && extension_loaded('mbstring')) {
+            $msg= $this->_inj['modx']->db->escape($msg);
+            $source= $this->_inj['modx']->db->escape($source);
+            if ($this->_inj['global_config']['database_connection_charset'] == 'utf8' && extension_loaded('mbstring')) {
                 $source = mb_substr($source, 0, 50 , "UTF-8");
             } else {
                 $source = substr($source, 0, 50);
             }
-            $LoginUserID = $this->_inj['_modx']->getLoginUserID();
+            $LoginUserID = $this->_inj['modx']->getLoginUserID();
             if ($LoginUserID == '') $LoginUserID = 0;
             $evtid= intval($evtid);
             $type = intval($type);
             if ($type < 1) $type= 1; // Types: 1 = information, 2 = warning, 3 = error
             if (3 < $type) $type= 3;
-            $sql= "INSERT INTO " . $this->_inj['_modx']->getFullTableName("event_log") . " (eventid,type,createdon,source,description,user) " .
+            $sql= "INSERT INTO " . $this->_inj['modx']->getFullTableName("event_log") . " (eventid,type,createdon,source,description,user) " .
                 "VALUES($evtid,$type," . time() . ",'$source','$msg','" . $LoginUserID . "')";
-            $ds= @$this->_inj['_modx']->db->query($sql);
-            if(!$this->_inj['_modx']->db->conn) $source = 'DB connect error';
-            if($this->_inj['_modx']->getConfig('send_errormail') != '0')
+            $ds= @$this->_inj['modx']->db->query($sql);
+            if(!$this->_inj['modx']->db->conn) $source = 'DB connect error';
+            if($this->_inj['modx']->getConfig('send_errormail') != '0')
             {
-                if($this->_inj['_modx']->getConfig('send_errormail') <= $type)
+                if($this->_inj['modx']->getConfig('send_errormail') <= $type)
                 {
-                    $subject = 'Error mail from ' . $this->_inj['_modx']->getConfig('site_name');
-                    $this->_inj['_modx']->sendmail($subject,$source);
+                    $subject = 'Error mail from ' . $this->_inj['modx']->getConfig('site_name');
+                    $this->_inj['modx']->sendmail($subject,$source);
                 }
             }
             if (!$ds) {

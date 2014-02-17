@@ -2,14 +2,16 @@
 
 class Service{
     protected static $instance;
-    protected $_service = array();
+    public $collection = array();
+
+    /**
+     * @var \Bolmer\Helper\xNop
+     */
+    protected $_nop = null;
 
     private function __construct($data){
-        $this->_service = new Pimple($data);
-    }
-
-    function __call($name,$args) {
-        if(method_exists($this->_service,$name)) return call_user_func_array(array($this->_service,$name),$args);
+        $this->collection = new Pimple($data);
+        $this->_nop = new \Bolmer\Helper\xNop();
     }
 
     final public static function getInstance(array $data = array()){
@@ -18,25 +20,12 @@ class Service{
         return static::$instance;
     }
 
-    public function register($key, $data){
-        $flag = false;
-        if(is_scalar($key)){
-            $key = $this->_service->getFullName($key);
-            //if(isset($this->_service[$key])){
-               // $this->_service[$key] = $this->_service->extend($key, $data);
-            //}else{
-                $this->_service[$key] = $data;
-            //}
-            $flag = true;
+    public function get($key, $nop = true){
+        if(isset($this->collection[$key])){
+            $out = $this->collection[$key];
+        }else{
+            $out = $nop ? $this->_nop : null;
         }
-        return $flag;
-    }
-
-    public function full(){
-        return $this->_service;
-    }
-
-    public function get($key){
-        return $this->_service->$key;
+        return $out;
     }
 }

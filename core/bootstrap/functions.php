@@ -58,8 +58,8 @@ if (!function_exists('errorDisplay')) {
 }
 
 if (!function_exists('modx')){
-    function modx($key = 'modx'){
-        return \Bolmer\Service::getInstance()->get($key);
+    function modx($key = 'modx', $nop = true){
+        return \Bolmer\Service::getInstance()->get($key, $nop);
     }
 }
 

@@ -28,8 +28,8 @@ class Parser{
      * @return string
      */
     function registerEvalInfo($type, $name) {
-        $hash = $this->_inj['_debugger']->addToEvalStack($type, $name);
-        $this->_inj['_debugger']->setDataEvalStack($hash, 'owner', $this->eval_hash);
+        $hash = $this->_inj['debug']->addToEvalStack($type, $name);
+        $this->_inj['debug']->setDataEvalStack($hash, 'owner', $this->eval_hash);
         $this->eval_stack[] = array('type'=>$this->eval_type, 'name'=>$this->eval_name, 'hash'=>$this->eval_hash);
         $this->eval_type = $type;
         $this->eval_name = $name;
@@ -47,7 +47,7 @@ class Parser{
      * @return void
      */
     function unregisterEvalInfo($time = 0.0) {
-        $this->_inj['_debugger']->setDataEvalStack($this->eval_hash, 'time', $time);
+        $this->_inj['debug']->setDataEvalStack($this->eval_hash, 'time', $time);
         $tmp = array_pop($this->eval_stack);
         if(is_array($tmp)){
             $this->eval_type = $tmp['type'];
@@ -74,7 +74,7 @@ class Parser{
                 if ($matches[1][$i]) {
                     $key = $matches[1][$i];
                     $key = substr($key, 0, 1) == '#' ? substr($key, 1) : $key; // remove # for QuickEdit format
-                    $value = $this->_inj['_modx']->documentObject[$key];
+                    $value = $this->_inj['modx']->documentObject[$key];
                     if (is_array($value)) {
                         include_once MODX_MANAGER_PATH . 'includes/tmplvars.format.inc.php';
                         include_once MODX_MANAGER_PATH . 'includes/tmplvars.commands.inc.php';
@@ -101,8 +101,8 @@ class Parser{
         $matches = self::getTagsFromContent($content, '[(', ')]');
         if ($matches) {
             for ($i = 0; $i < count($matches[1]); $i++) {
-                if ($matches[1][$i] && array_key_exists($matches[1][$i], $this->_inj['_modx']->config))
-                    $replace[$i] = $this->_inj['_modx']->getConfig($matches[1][$i]);
+                if ($matches[1][$i] && array_key_exists($matches[1][$i], $this->_inj['modx']->config))
+                    $replace[$i] = $this->_inj['modx']->getConfig($matches[1][$i]);
             }
 
             $content = str_replace($matches[0], $replace, $content);
@@ -124,18 +124,18 @@ class Parser{
         if ($matches) {
             for ($i = 0; $i < count($matches[1]); $i++) {
                 if ($matches[1][$i]) {
-                    if (isset($this->_inj['_modx']->chunkCache[$matches[1][$i]])) {
-                        $replace[$i] = $this->_inj['_modx']->chunkCache[$matches[1][$i]];
+                    if (isset($this->_inj['modx']->chunkCache[$matches[1][$i]])) {
+                        $replace[$i] = $this->_inj['modx']->chunkCache[$matches[1][$i]];
                     } else {
-                        $sql = 'SELECT `snippet` FROM ' . $this->getFullTableName('site_htmlsnippets') . ' WHERE ' . $this->_inj['_modx']->getFullTableName('site_htmlsnippets') . '.`name`="' . $this->_inj['_modx']->db->escape($matches[1][$i]) . '";';
-                        $result = $this->_inj['_modx']->db->query($sql);
-                        $limit = $this->_inj['_modx']->db->getRecordCount($result);
+                        $sql = 'SELECT `snippet` FROM ' . $this->getFullTableName('site_htmlsnippets') . ' WHERE ' . $this->_inj['modx']->getFullTableName('site_htmlsnippets') . '.`name`="' . $this->_inj['modx']->db->escape($matches[1][$i]) . '";';
+                        $result = $this->_inj['modx']->db->query($sql);
+                        $limit = $this->_inj['modx']->db->getRecordCount($result);
                         if ($limit < 1) {
-                            $this->_inj['_modx']->chunkCache[$matches[1][$i]] = '';
+                            $this->_inj['modx']->chunkCache[$matches[1][$i]] = '';
                             $replace[$i] = '';
                         } else {
-                            $row = $this->_inj['_modx']->db->getRow($result);
-                            $this->_inj['_modx']->chunkCache[$matches[1][$i]] = $row['snippet'];
+                            $row = $this->_inj['modx']->db->getRow($result);
+                            $this->_inj['modx']->chunkCache[$matches[1][$i]] = $row['snippet'];
                             $replace[$i] = $row['snippet'];
                         }
                     }
@@ -163,8 +163,8 @@ class Parser{
             for ($i = 0; $i < count($matches[1]); $i++) {
                 $v = '';
                 $key = $matches[1][$i];
-                if ($key && is_array($this->_inj['_modx']->placeholders) && array_key_exists($key, $this->_inj['_modx']->placeholders))
-                    $v = $this->_inj['_modx']->placeholders[$key];
+                if ($key && is_array($this->_inj['modx']->placeholders) && array_key_exists($key, $this->_inj['modx']->placeholders))
+                    $v = $this->_inj['modx']->placeholders[$key];
                 if ($v === '')
                     unset($matches[0][$i]); // here we'll leave empty placeholders for last.
                 else
@@ -373,21 +373,21 @@ class Parser{
      */
     function parseDocumentSource($source, $uncached_snippets = false) {
         // set the number of times we are to parse the document source
-        $this->_inj['_modx']->minParserPasses= empty ($this->_inj['_modx']->minParserPasses) ? 2 : $this->_inj['_modx']->minParserPasses;
-        $this->_inj['_modx']->maxParserPasses= empty ($this->_inj['_modx']->maxParserPasses) ? 10 : $this->_inj['_modx']->maxParserPasses;
-        $passes= $this->_inj['_modx']->minParserPasses;
+        $this->_inj['modx']->minParserPasses= empty ($this->_inj['modx']->minParserPasses) ? 2 : $this->_inj['modx']->minParserPasses;
+        $this->_inj['modx']->maxParserPasses= empty ($this->_inj['modx']->maxParserPasses) ? 10 : $this->_inj['modx']->maxParserPasses;
+        $passes= $this->_inj['modx']->minParserPasses;
         for ($i= 0; $i < $passes; $i++) {
             // get source length if this is the final pass
             if ($i == ($passes -1))
                 $st= strlen($source);
-            if ($this->_inj['_modx']->dumpSnippets == 1) {
-                $this->_inj['_modx']->snippetsCode .= "<fieldset><legend><b style='color: #821517;'>PARSE PASS " . ($i +1) . "</b></legend><p>The following snippets (if any) were parsed during this pass.</p>";
+            if ($this->_inj['modx']->dumpSnippets == 1) {
+                $this->_inj['modx']->snippetsCode .= "<fieldset><legend><b style='color: #821517;'>PARSE PASS " . ($i +1) . "</b></legend><p>The following snippets (if any) were parsed during this pass.</p>";
             }
 
             // invoke OnParseDocument event
-            $this->_inj['_modx']->documentOutput= $source; // store source code so plugins can
-            $this->_inj['_modx']->invokeEvent("OnParseDocument"); // work on it via $modx->documentOutput
-            $source= $this->_inj['_modx']->documentOutput;
+            $this->_inj['modx']->documentOutput= $source; // store source code so plugins can
+            $this->_inj['modx']->invokeEvent("OnParseDocument"); // work on it via $modx->documentOutput
+            $source= $this->_inj['modx']->documentOutput;
 
             $source = $this->mergeSettingsContent($source);
 
@@ -398,8 +398,8 @@ class Parser{
             // replace HTMLSnippets in document
             $source= $this->mergeChunkContent($source);
             // insert META tags & keywords
-            if($this->_inj['_modx']->getConfig('show_meta')==1) {
-                $source= $this->_inj['_modx']->mergeDocumentMETATags($source);
+            if($this->_inj['modx']->getConfig('show_meta')==1) {
+                $source= $this->_inj['modx']->mergeDocumentMETATags($source);
             }
             if($uncached_snippets){
                 $source = str_replace(array('[!', '!]'), array('[[', ']]'), $source);
@@ -411,10 +411,10 @@ class Parser{
 
             $source = $this->mergeSettingsContent($source);
 
-            if ($this->_inj['_modx']->dumpSnippets == 1) {
-                $this->_inj['_modx']->snippetsCode .= "</fieldset><br />";
+            if ($this->_inj['modx']->dumpSnippets == 1) {
+                $this->_inj['modx']->snippetsCode .= "</fieldset><br />";
             }
-            if ($i == ($passes -1) && $i < ($this->_inj['_modx']->maxParserPasses - 1)) {
+            if ($i == ($passes -1) && $i < ($this->_inj['modx']->maxParserPasses - 1)) {
                 // check if source length was changed
                 $et= strlen($source);
                 if ($st != $et)
@@ -425,7 +425,7 @@ class Parser{
     }
 
     public function mergeSnippetsContent($content){
-        return $this->_inj['_snippet']->evalSnippets($content);
+        return $this->_inj['snippet']->evalSnippets($content);
     }
 
     /**
@@ -436,23 +436,23 @@ class Parser{
      */
     function rewriteUrls($documentSource) {
         // rewrite the urls
-        if ($this->_inj['_modx']->getConfig('friendly_urls') == 1) {
+        if ($this->_inj['modx']->getConfig('friendly_urls') == 1) {
             $aliases= array ();
             /* foreach ($this->aliasListing as $item) {
                 $aliases[$item['id']]= (strlen($item['path']) > 0 ? $item['path'] . '/' : '') . $item['alias'];
                 $isfolder[$item['id']]= $item['isfolder'];
             } */
-            foreach($this->_inj['_modx']->documentListing as $key=>$val){
+            foreach($this->_inj['modx']->documentListing as $key=>$val){
                 $aliases[$val] = $key;
-                $isfolder[$val] = $this->_inj['_modx']->aliasListing[$val]['isfolder'];
+                $isfolder[$val] = $this->_inj['modx']->aliasListing[$val]['isfolder'];
             }
             $in= '!\[\~([0-9]+)\~\]!ise'; // Use preg_replace with /e to make it evaluate PHP
-            $isfriendly= ($this->_inj['_modx']->getConfig('friendly_alias_urls') == 1 ? 1 : 0);
-            $pref= $this->_inj['_modx']->getConfig('friendly_url_prefix');
-            $suff= $this->_inj['_modx']->getConfig('friendly_url_suffix');
+            $isfriendly= ($this->_inj['modx']->getConfig('friendly_alias_urls') == 1 ? 1 : 0);
+            $pref= $this->_inj['modx']->getConfig('friendly_url_prefix');
+            $suff= $this->_inj['modx']->getConfig('friendly_url_suffix');
             $thealias= '$aliases[\\1]';
             $thefolder= '$isfolder[\\1]';
-            if ($this->_inj['_modx']->getConfig('seostrict')=='1'){
+            if ($this->_inj['modx']->getConfig('seostrict')=='1'){
 
                 $found_friendlyurl= "\$this->toAlias(\$this->makeFriendlyURL('$pref','$suff',$thealias,$thefolder,'\\1'))";
             }else{
@@ -471,16 +471,16 @@ class Parser{
         return $documentSource;
     }
     function makeFriendlyURL($pre, $suff, $alias, $isfolder=0, $id=0) {
-        if ($id == $this->_inj['_modx']->getConfig('site_start') && $this->_inj['_modx']->getConfig('seostrict')==='1') {return '/';}
+        if ($id == $this->_inj['modx']->getConfig('site_start') && $this->_inj['modx']->getConfig('seostrict')==='1') {return '/';}
         $Alias = explode('/',$alias);
         $alias = array_pop($Alias);
         $dir = implode('/', $Alias);
         unset($Alias);
-        if($this->_inj['_modx']->getConfig('make_folders')==='1' && $isfolder==1) $suff = '/';
+        if($this->_inj['modx']->getConfig('make_folders')==='1' && $isfolder==1) $suff = '/';
         return ($dir != '' ? "$dir/" : '') . $pre . $alias . $suff;
     }
     function toAlias($text) {
-        $suff= $this->_inj['_modx']->getConfig('friendly_url_suffix');
+        $suff= $this->_inj['modx']->getConfig('friendly_url_suffix');
         return str_replace(array('.xml'.$suff,'.rss'.$suff,'.js'.$suff,'.css'.$suff),array('.xml','.rss','.js','.css'),$text);
     }
 }

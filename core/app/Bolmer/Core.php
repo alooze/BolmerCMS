@@ -68,16 +68,16 @@ class Core {
      * @return \Bolmer\Core
      */
     public function __construct() {
-        $this->_service = \Bolmer\Service::getInstance();
-        $this->_service->register('modx', $this);
-        //$pimple['modx'] = $this;
+        $service = \Bolmer\Service::getInstance();
+        $service->collection['modx'] = $this;
 
-        $config = $this->_service->get('global_config');
+        $config = $service->collection['global_config'];
         if(substr(PHP_OS,0,3) === 'WIN' && $config['database_server']==='localhost'){
             //Global config as Object
             $config['database_server'] = '127.0.0.1';
-            $this->_service->register('global_config', $config);
+            $service->collection['global_config'] = $config;
         }
+        $this->_service = &$service;
         $this->loadExtension('DBAPI') or die('Could not load DBAPI class.'); // load DBAPI class
         $this->jscripts = array ();
         $this->sjscripts = array ();
@@ -96,13 +96,10 @@ class Core {
         if(method_exists($this->old,$name)) return call_user_func_array(array($this->old,$name),$args);
     }
     public function __get($name){
+        $out = null;
         switch($name){
             case 'queryCode':{
                 $out = \Bolmer\Debug::showQuery();
-                break;
-            }
-            default:{
-                $out = $this->_service->get($name);
                 break;
             }
         }
@@ -623,13 +620,13 @@ class Core {
         return \Bolmer\Helper::htmlchars($text, $flags);
     }
     function checkCache($id) {
-        return $this->cache->checkCache($id);
+        return $this->_service->collection['cache']->checkCache($id);
     }
     function clearCache($type='', $report=false) {
-        return $this->cache->clearCache($type, $report);
+        return $this->_service->collection['cache']->clearCache($type, $report);
     }
     function getCachePath() {
-        return $this->cache->getCachePath();
+        return $this->_service->collection['cache']->getCachePath();
     }
     function getTableName($className){
         return \Bolmer\Model::getFullTableName($className);
@@ -638,121 +635,121 @@ class Core {
         return \Bolmer\Helper::getFullTableName($tbl, $this->db->config);
     }
     function rewriteUrls($documentSource) {
-        return $this->parser->rewriteUrls($documentSource);
+        return $this->_service->collection['parser']->rewriteUrls($documentSource);
     }
     function isBackend() {
-        return $this->response->isBackend();
+        return $this->_service->collection['response']->isBackend();
     }
     function isFrontend() {
-        return $this->response->isFrontend();
+        return $this->_service->collection['response']->isFrontend();
     }
     function insideManager() {
-        return $this->response->insideManager();
+        return $this->_service->collection['response']->insideManager();
     }
     function sendStrictURI(){
-        return $this->response->sendStrictURI();
+        return $this->_service->collection['response']->sendStrictURI();
     }
     function outputContent($noEvent= false) {
-        return $this->response->outputContent($noEvent);
+        return $this->_service->collection['response']->outputContent($noEvent);
     }
     function checkSiteStatus() {
-        return $this->response->checkSiteStatus();
+        return $this->_service->collection['response']->checkSiteStatus();
     }
     function checkPublishStatus() {
-        return $this->response->checkPublishStatus();
+        return $this->_service->collection['response']->checkPublishStatus();
     }
     function phpError($nr, $text, $file, $line) {
-        $this->debugger->phpError($nr, $text, $file, $line);
+        $this->_service->collection['debug']->phpError($nr, $text, $file, $line);
     }
     function detectError($error) {
-        $this->debugger->detectError($error);
+        $this->_service->collection['debug']->detectError($error);
     }
     function messageQuit($msg= 'unspecified error', $query= '', $is_error= true, $nr= '', $file= '', $source= '', $text= '', $line= '', $output='') {
-        $this->debugger->messageQuit($msg, $query, $is_error, $nr, $file, $source, $text, $line, $output);
+        $this->_service->collection['debug']->messageQuit($msg, $query, $is_error, $nr, $file, $source, $text, $line, $output);
     }
     function get_backtrace($backtrace) {
-        return $this->debugger->get_backtrace($backtrace);
+        return $this->_service->collection['debug']->get_backtrace($backtrace);
     }
     function postProcess() {
-        $this->response->postProcess();
+        $this->_service->collection['response']->postProcess();
     }
     function parseDocumentSource($source) {
-        return $this->parser->parseDocumentSource($source, false);
+        return $this->_service->collection['parser']->parseDocumentSource($source, false);
     }
     function prepareResponse() {
-        $this->response->prepareResponse();
+        $this->_service->collection['response']->prepareResponse();
     }
     function evalPlugin($pluginCode, $params) {
-        $this->plugin->evalPlugin($pluginCode, $params);
+        $this->_service->collection['plugin']->evalPlugin($pluginCode, $params);
     }
     function addEventListener($evtName, $pluginName) {
-        return $this->plugin->addEventListener($evtName, $pluginName);
+        return $this->_service->collection['plugin']->addEventListener($evtName, $pluginName);
     }
     function removeEventListener($evtName) {
-        return $this->plugin->removeEventListener($evtName);
+        return $this->_service->collection['plugin']->removeEventListener($evtName);
     }
     function removeAllEventListener() {
-        $this->plugin->removeAllEventListener();
+        $this->_service->collection['plugin']->removeAllEventListener();
     }
     function invokeEvent($evtName, $extParams= array ()) {
-        return $this->plugin->invokeEvent($evtName, $extParams);
+        return $this->_service->collection['plugin']->invokeEvent($evtName, $extParams);
     }
     function mergeDocumentContent($content) {
-        return $this->parser->mergeDocumentContent($content);
+        return $this->_service->collection['parser']->mergeDocumentContent($content);
     }
     function mergeSettingsContent($content) {
-        return $this->parser->mergeSettingsContent($content);
+        return $this->_service->collection['parser']->mergeSettingsContent($content);
     }
     function mergeChunkContent($content) {
-        return $this->parser->mergeChunkContent($content);
+        return $this->_service->collection['parser']->mergeChunkContent($content);
     }
     function mergePlaceholderContent($content){
-        return $this->parser->mergePlaceholderContent($content);
+        return $this->_service->collection['parser']->mergePlaceholderContent($content);
     }
     function getRegisteredClientStartupScripts() {
-        return $this->HTML->getRegisteredClientStartupScripts();
+        return $this->_service->collection['HTML']->getRegisteredClientStartupScripts();
     }
     function getDocumentIdentifier($method) {
-        return  $this->request->getDocumentIdentifier($method);
+        return  $this->_service->collection['request']->getDocumentIdentifier($method);
     }
     function sendAlert($type, $to, $from, $subject, $msg, $private= 0) {
         return \Bolmer\Operations\User\Manager::sendAlert($type, $to, $from, $subject, $msg, $private);
     }
     function getIdFromAlias($alias){
-        return $this->document->getIdFromAlias($alias);
+        return $this->_service->collection['document']->getIdFromAlias($alias);
     }
     function stripAlias($alias) {
-        return $this->document->stripAlias($alias);
+        return $this->_service->collection['document']->stripAlias($alias);
     }
     function getDocumentMethod() {
-        return $this->request->getDocumentMethod();
+        return $this->_service->collection['request']->getDocumentMethod();
     }
     function logEvent($evtid, $type, $msg, $source= 'Parser') {
-        $this->log->logEvent($evtid, $type, $msg, $source);
+        $this->_service->collection['log']->logEvent($evtid, $type, $msg, $source);
     }
     function rotate_log($target='event_log',$limit=3000, $trim=100){
-        $this->log->rotate_log($target, $limit, $trim);
+        $this->_service->collection['log']->rotate_log($target, $limit, $trim);
     }
     function getRegisteredClientScripts() {
-        return $this->HTML->getRegisteredClientScripts();
+        return $this->_service->collection['HTML']->getRegisteredClientScripts();
     }
     function getDocumentChildrenTVars($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC", $tvfields= "*", $tvsort= "rank", $tvsortdir= "ASC") {
-        return $this->document->getDocumentChildrenTVars($parentid, $tvidnames, $published, $docsort, $docsortdir, $tvfields, $tvsort, $tvsortdir);
+        return $this->_service->collection['document']->getDocumentChildrenTVars($parentid, $tvidnames, $published, $docsort, $docsortdir, $tvfields, $tvsort, $tvsortdir);
     }
     function getDocumentChildrenTVarOutput($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC") {
-        return $this->document->getDocumentChildrenTVarOutput($parentid, $tvidnames, $published, $docsort, $docsortdir);
+        return $this->_service->collection['document']->getDocumentChildrenTVarOutput($parentid, $tvidnames, $published, $docsort, $docsortdir);
     }
     function getTemplateVar($idname= "", $fields= "*", $docid= "", $published= 1) {
-        return $this->document->getTemplateVar($idname, $fields, $docid, $published);
+        return $this->_service->collection['document']->getTemplateVar($idname, $fields, $docid, $published);
     }
     function getTemplateVars($idnames= array (), $fields= "*", $docid= "", $published= 1, $sort= "rank", $dir= "ASC") {
-        return $this->document->getTemplateVar($idnames, $fields, $docid, $published, $sort, $dir);
+        return $this->_service->collection['document']->getTemplateVar($idnames, $fields, $docid, $published, $sort, $dir);
     }
     function getTemplateVarOutput($idnames= array (), $docid= "", $published= 1, $sep='') {
-        return $this->document->getTemplateVarOutput($idnames, $docid, $published, $sep);
+        return $this->_service->collection['document']->getTemplateVarOutput($idnames, $docid, $published, $sep);
     }
     function getDocumentObject($method, $identifier, $isPrepareResponse=false) {
-        return $this->document->getDocumentObject($method, $identifier, $isPrepareResponse);
+        return $this->_service->collection['document']->getDocumentObject($method, $identifier, $isPrepareResponse);
     }
     function toDateFormat($timestamp = 0, $mode = '') {
         return \Bolmer\Helper::toDateFormat($timestamp, $mode);
@@ -761,49 +758,49 @@ class Core {
         return \Bolmer\Helper::toTimeStamp($str);
     }
     function regClientCSS($src, $media='') {
-        return $this->HTML->regClientCSS($src, $media);
+        return $this->_service->collection['HTML']->regClientCSS($src, $media);
     }
     function regClientStartupScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false)) {
-        return $this->HTML->regClientCSS($src, $options);
+        return $this->_service->collection['HTML']->regClientCSS($src, $options);
     }
     function regClientScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false), $startup= false) {
-        return $this->HTML->regClientScript($src, $options, $startup);
+        return $this->_service->collection['HTML']->regClientScript($src, $options, $startup);
     }
     function regClientStartupHTMLBlock($html) {
-        return $this->HTML->regClientStartupHTMLBlock($html);
+        return $this->_service->collection['HTML']->regClientStartupHTMLBlock($html);
     }
     function regClientHTMLBlock($html) {
-        return $this->HTML->regClientHTMLBlock($html);
+        return $this->_service->collection['HTML']->regClientHTMLBlock($html);
     }
     function getAllChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        return $this->document->getAllChildren($id, $sort, $dir, $fields);
+        return $this->_service->collection['document']->getAllChildren($id, $sort, $dir, $fields);
     }
     function getActiveChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        return $this->document->getActiveChildren($id, $sort, $dir, $fields);
+        return $this->_service->collection['document']->getActiveChildren($id, $sort, $dir, $fields);
     }
     function getDocumentChildren($parentid= 0, $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
-        return $this->document->getDocumentChildren($parentid, $published, $deleted, $fields, $where, $sort, $dir, $limit);
+        return $this->_service->collection['document']->getDocumentChildren($parentid, $published, $deleted, $fields, $where, $sort, $dir, $limit);
     }
     function getDocuments($ids= array (), $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
-        return $this->document->getDocuments($ids, $published, $deleted, $fields, $where, $sort, $dir, $limit);
+        return $this->_service->collection['document']->getDocuments($ids, $published, $deleted, $fields, $where, $sort, $dir, $limit);
     }
     function getDocument($id= 0, $fields= "*", $published= 1, $deleted= 0) {
-        return $this->document->getDocument($id, $fields, $published, $deleted);
+        return $this->_service->collection['document']->getDocument($id, $fields, $published, $deleted);
     }
     function getPageInfo($pageid= -1, $active= 1, $fields= 'id, pagetitle, description, alias') {
-        return $this->document->getPageInfo($pageid, $active, $fields);
+        return $this->_service->collection['document']->getPageInfo($pageid, $active, $fields);
     }
     function getParent($pid= -1, $active= 1, $fields= 'id, pagetitle, description, alias, parent') {
-        return $this->document->getParent($pid, $active, $fields);
+        return $this->_service->collection['document']->getParent($pid, $active, $fields);
     }
     function getSnippetId() {
-        return $this->snippet->getSnippetId();
+        return $this->_service->collection['snippet']->getSnippetId();
     }
     function getSnippetName() {
-        return $this->snippet->getSnippetName();
+        return $this->_service->collection['snippet']->getSnippetName();
     }
     function runSnippet($snippetName, $params= array ()) {
-        return $this->snippet->runSnippet($snippetName, $params);
+        return $this->_service->collection['snippet']->runSnippet($snippetName, $params);
     }
     // deprecated
     function putChunk($chunkName) {
@@ -870,22 +867,22 @@ class Core {
         return \Bolmer\Parser::parseProperties($propertyString);
     }
     function getParentIds($id, $height= 10) {
-        return $this->document->getParentIds($id, $height);
+        return $this->_service->collection['document']->getParentIds($id, $height);
     }
     function getChildIds($id, $depth= 10, $children= array ()) {
-        return $this->document->getChildIds($id, $depth, $children);
+        return $this->_service->collection['document']->getChildIds($id, $depth, $children);
     }
     function webAlert($msg, $url= "") {
-        return $this->HTML->webAlert($msg, $url);
+        return $this->_service->collection['HTML']->webAlert($msg, $url);
     }
     function hasPermission($pm) {
         return \Bolmer\Operations\User\Manager::hasPermission($pm);
     }
     function evalSnippet($snippet, $params) {
-        return $this->snippet->evalSnippet($snippet, $params);
+        return $this->_service->collection['snippet']->evalSnippet($snippet, $params);
     }
     function evalSnippets($documentSource) {
-        return $this->snippet->evalSnippets($documentSource);
+        return $this->_service->collection['snippet']->evalSnippets($documentSource);
     }
     function checkSession() {
         return \Bolmer\Operations\User\Manager::checkSession();
@@ -897,15 +894,15 @@ class Core {
         return \Bolmer\Helper::getMicroTime();
     }
     function sendRedirect($url, $count_attempts= 0, $type= '', $responseCode= '') {
-        return $this->response->sendRedirect($url, $count_attempts, $type, $responseCode);
+        return $this->_service->collection['response']->sendRedirect($url, $count_attempts, $type, $responseCode);
     }
     function sendForward($id, $responseCode= '') {
-        return $this->response->sendForward($id, $responseCode);
+        return $this->_service->collection['response']->sendForward($id, $responseCode);
     }
     function sendErrorPage() {
-        return $this->response->sendErrorPage();
+        return $this->_service->collection['response']->sendErrorPage();
     }
     function sendUnauthorizedPage() {
-        $this->response->sendUnauthorizedPage();
+        $this->_service->collection['response']->sendUnauthorizedPage();
     }
 }
