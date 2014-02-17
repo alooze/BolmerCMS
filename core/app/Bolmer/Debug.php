@@ -7,13 +7,18 @@
  */
 
 class Debug{
-    /** @var \Bolmer\Pimple $_inj */
-    private static $_inj = null;
     protected static $_queryCode = array();
     protected $_evalStack = array();
 
+    /** @var \Bolmer\Pimple $_inj */
+    private $_inj = null;
+
+    /** @var \Bolmer\Core $_modx */
+    protected $_modx = null;
+
     public function __construct(\Pimple $inj){
-        static::$_inj = $inj;
+        $this->_inj= $inj;
+        $this->_modx = $inj['modx'];
     }
 
     public function getEvalStack(){
@@ -48,9 +53,8 @@ class Debug{
     }
 
     public static function addQuery($q, $time=0){
-
-        static::$_inj['modx']->queryTime += $time;
-        static::$_inj['modx']->executedQueries += 1;
+        getService('modx')->queryTime += $time;
+        getService('modx')->executedQueries += 1;
 
         static::$_queryCode[] = '['.sprintf("%2.5f", $time).'] '.$q;
     }
@@ -76,19 +80,19 @@ class Debug{
         if (error_reporting() == 0 || $nr == 0) {
             return true;
         }
-        if(static::$_inj['modx']->stopOnNotice == false)
+        if($this->_modx->stopOnNotice == false)
         {
             switch($nr)
             {
                 case E_NOTICE:
-                    if(static::$_inj['modx']->error_reporting <= 2) return true;
+                    if($this->_modx->error_reporting <= 2) return true;
                     break;
                 case E_STRICT:
                 case E_DEPRECATED:
-                    if(static::$_inj['modx']->error_reporting <= 1) return true;
+                    if($this->_modx->error_reporting <= 1) return true;
                     break;
                 default:
-                    if(static::$_inj['modx']->error_reporting === 0) return true;
+                    if($this->_modx->error_reporting === 0) return true;
             }
         }
         if (is_readable($file)) {
@@ -107,21 +111,21 @@ class Debug{
      */
     function detectError($error) {
         $detected = FALSE;
-        if (static::$_inj['modx']->getConfig('error_reporting') == 99 && $error)
+        if ($this->_modx->getConfig('error_reporting') == 99 && $error)
             $detected = TRUE;
-        elseif (static::$_inj['modx']->getConfig('error_reporting') == 2 && ($error & ~E_NOTICE))
+        elseif ($this->_modx->getConfig('error_reporting') == 2 && ($error & ~E_NOTICE))
             $detected = TRUE;
-        elseif (static::$_inj['modx']->getConfig('error_reporting') == 1 && ($error & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT))
+        elseif ($this->_modx->getConfig('error_reporting') == 1 && ($error & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT))
             $detected = TRUE;
         return $detected;
     }
     function messageQuit($msg= 'unspecified error', $query= '', $is_error= true, $nr= '', $file= '', $source= '', $text= '', $line= '', $output='') {
-        $version = static::$_inj['modx']->getVersionData('version');
-        $release_date= static::$_inj['modx']->getVersionData('release_date');
+        $version = $this->_modx->getVersionData('version');
+        $release_date= $this->_modx->getVersionData('release_date');
         $request_uri = "http://".$_SERVER['HTTP_HOST'].($_SERVER["SERVER_PORT"]==80?"":(":".$_SERVER["SERVER_PORT"])).$_SERVER['REQUEST_URI'];
-        $request_uri = htmlspecialchars($request_uri, ENT_QUOTES, static::$_inj['modx']->getConfig('modx_charset'));
-        $ua          = htmlspecialchars($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, static::$_inj['modx']->getConfig('modx_charset'));
-        $referer     = htmlspecialchars($_SERVER['HTTP_REFERER'], ENT_QUOTES, static::$_inj['modx']->getConfig('modx_charset'));
+        $request_uri = htmlspecialchars($request_uri, ENT_QUOTES, $this->_modx->getConfig('modx_charset'));
+        $ua          = htmlspecialchars($_SERVER['HTTP_USER_AGENT'], ENT_QUOTES, $this->_modx->getConfig('modx_charset'));
+        $referer     = htmlspecialchars($_SERVER['HTTP_REFERER'], ENT_QUOTES, $this->_modx->getConfig('modx_charset'));
         if ($is_error) {
             $str = '<h3 style="color:red">&laquo; MODX Parse Error &raquo;</h3>
 	                <table border="0" cellpadding="1" cellspacing="0">
@@ -198,24 +202,24 @@ class Debug{
             $str .= '</tr>';
         }
 
-        if(preg_match('@^[0-9]+@',static::$_inj['modx']->documentIdentifier))
+        if(preg_match('@^[0-9]+@',$this->_modx->documentIdentifier))
         {
-            $resource  = static::$_inj['modx']->getDocumentObject('id',static::$_inj['modx']->documentIdentifier);
-            $url = static::$_inj['modx']->makeUrl(static::$_inj['modx']->documentIdentifier,'','','full');
+            $resource  = $this->_modx->getDocumentObject('id',$this->_modx->documentIdentifier);
+            $url = $this->_modx->makeUrl($this->_modx->documentIdentifier,'','','full');
             $link = '<a href="' . $url . '" target="_blank">' . $resource['pagetitle'] . '</a>';
             $str .= '<tr><td valign="top">Resource : </td>';
-            $str .= '<td>[' . static::$_inj['modx']->documentIdentifier . ']' . $link . '</td></tr>';
+            $str .= '<td>[' . $this->_modx->documentIdentifier . ']' . $link . '</td></tr>';
         }
-        if(!empty(static::$_inj['modx']->currentSnippet))
+        if(!empty($this->_modx->currentSnippet))
         {
             $str .= "<tr><td>Current Snippet : </td>";
-            $str .= '<td>' . static::$_inj['modx']->currentSnippet . '</td></tr>';
+            $str .= '<td>' . $this->_modx->currentSnippet . '</td></tr>';
         }
 
-        if(!empty(static::$_inj['modx']->event->activePlugin))
+        if(!empty($this->_modx->event->activePlugin))
         {
             $str .= "<tr><td>Current Plugin : </td>";
-            $str .= '<td>' . static::$_inj['modx']->event->activePlugin . '(' . static::$_inj['modx']->event->name . ')' . '</td></tr>';
+            $str .= '<td>' . $this->_modx->event->activePlugin . '(' . $this->_modx->event->name . ')' . '</td></tr>';
         }
 
         $str .= "<tr><td>Referer : </td><td>{$referer}</td></tr>";
@@ -245,15 +249,15 @@ class Debug{
 
         $str .= "</table>\n";
 
-        $totalTime= (static::$_inj['modx']->getMicroTime() - static::$_inj['modx']->tstart);
+        $totalTime= ($this->_modx->getMicroTime() - $this->_modx->tstart);
 
         $mem = memory_get_peak_usage(true);
-        $total_mem = $mem - static::$_inj['modx']->mstart;
+        $total_mem = $mem - $this->_modx->mstart;
         $total_mem = ($total_mem / 1024 / 1024) . ' mb';
 
-        $queryTime= static::$_inj['modx']->queryTime;
+        $queryTime= $this->_modx->queryTime;
         $phpTime= $totalTime - $queryTime;
-        $queries= isset (static::$_inj['modx']->executedQueries) ? static::$_inj['modx']->executedQueries : 0;
+        $queries= isset ($this->_modx->executedQueries) ? $this->_modx->executedQueries : 0;
         $queryTime= sprintf("%2.4f s", $queryTime);
         $totalTime= sprintf("%2.4f s", $totalTime);
         $phpTime= sprintf("%2.4f s", $phpTime);
@@ -268,8 +272,8 @@ class Debug{
         $str .= '<br />' . $this->get_backtrace(debug_backtrace()) . "\n";
 
         // Log error
-        if(!empty(static::$_inj['modx']->currentSnippet)) $source = 'Snippet - ' . static::$_inj['modx']->currentSnippet;
-        elseif(!empty(static::$_inj['modx']->event->activePlugin)) $source = 'Plugin - ' . static::$_inj['modx']->event->activePlugin;
+        if(!empty($this->_modx->currentSnippet)) $source = 'Snippet - ' . $this->_modx->currentSnippet;
+        elseif(!empty($this->_modx->event->activePlugin)) $source = 'Plugin - ' . $this->_modx->event->activePlugin;
         elseif($source!=='') $source = 'Parser - ' . $source;
         elseif($query!=='')  $source = 'SQL Query';
         else             $source = 'Parser';
@@ -287,10 +291,10 @@ class Debug{
                 $error_level = 3;
         }
 
-        static::$_inj['modx']->logEvent(0, $error_level, $str,$source);
+        $this->_modx->logEvent(0, $error_level, $str,$source);
 
-        if($error_level === 2 && static::$_inj['modx']->error_reporting!=='99') return true;
-        if(static::$_inj['modx']->error_reporting==='99' && !isset($_SESSION['mgrValidated'])) return true;
+        if($error_level === 2 && $this->_modx->error_reporting!=='99') return true;
+        if($this->_modx->error_reporting==='99' && !isset($_SESSION['mgrValidated'])) return true;
 
         // Set 500 response header
         if($error_level !== 2) header('HTTP/1.1 500 Internal Server Error');
@@ -300,7 +304,7 @@ class Debug{
         {
             echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"><html><head><title>MODX Content Manager ' . $version . ' &raquo; ' . $release_date . '</title>
 	             <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	             <link rel="stylesheet" type="text/css" href="' . static::$_inj['modx']->getConfig('site_manager_url') . 'media/style/' . static::$_inj['modx']->getConfig('manager_theme') . '/style.css" />
+	             <link rel="stylesheet" type="text/css" href="' . $this->_modx->getConfig('site_manager_url') . 'media/style/' . $this->_modx->getConfig('manager_theme') . '/style.css" />
 	             <style type="text/css">body { padding:10px; } td {font:inherit;}</style>
 	             </head><body>
 	             ' . $str . '</body></html>';

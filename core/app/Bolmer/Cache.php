@@ -13,6 +13,9 @@ class Cache extends Tcache
     /** @var \Bolmer\Pimple $_inj */
     private $_inj = null;
 
+    /** @var \Bolmer\Core $_modx */
+    protected $_modx = null;
+
     /**
      * @param Pimple $inj
      * @param string $namespace
@@ -22,6 +25,8 @@ class Cache extends Tcache
     public function __construct(\Pimple $inj, $namespace = 'B', $defaultTTL = null, $ttlVariation = 0)
     {
         $this->_inj= $inj;
+        $this->_modx = $inj['modx'];
+        
         // создаем основной кеш
         $options = array('dir'=>MODX_BASE_PATH.'assets/cache',
                         'sub_dirs'=>false,
@@ -50,14 +55,14 @@ class Cache extends Tcache
      */
     public function checkCache($id) 
     {
-        $tbl_document_groups= $this->_inj['modx']->getFullTableName("document_groups");
+        $tbl_document_groups= $this->_modx->getFullTableName("document_groups");
         
         $cacheId = $this->getCacheId($id);
 
         $cacheContent = $this->get($cacheId);
 
         if ($cacheContent !== NULL) {
-            $this->_inj['modx']->documentGenerated= 0;
+            $this->_modx->documentGenerated = 0;
             $cacheContent = substr($flContent, 37); // remove php header
             $a = explode("<!--__MODxCacheSpliter__-->", $cacheContent, 2);
             if (count($a) == 1) {
@@ -66,7 +71,7 @@ class Cache extends Tcache
                 $docObj= unserialize($a[0]); // rebuild document object
                 if ($docObj['privateweb'] && isset ($docObj['__MODxDocGroups__'])) {
                     $pass= false;
-                    $usrGrps= $this->_inj['modx']->getUserDocGroups();
+                    $usrGrps= $this->_modx->getUserDocGroups();
                     $docGrps= explode(",", $docObj['__MODxDocGroups__']);
                     // check is user has access to doc groups
                     if (is_array($usrGrps)) {
@@ -78,35 +83,35 @@ class Cache extends Tcache
                     }
                     // diplay error pages if user has no access to cached doc
                     if (!$pass) {
-                        if ($this->_inj['modx']->getConfig('unauthorized_page')) {
+                        if ($this->_modx->getConfig('unauthorized_page')) {
                             // check if file is not public
-                            $secrs= $this->_inj['modx']->db->select('id', $tbl_document_groups, "document='{$id}'", '', '1');
+                            $secrs= $this->_modx->db->select('id', $tbl_document_groups, "document='{$id}'", '', '1');
                             if ($secrs)
-                                $seclimit= $this->_inj['modx']->db->getRecordCount($secrs);
+                                $seclimit= $this->_modx->db->getRecordCount($secrs);
                         }
                         if ($seclimit > 0) {
                             // match found but not publicly accessible, send the visitor to the unauthorized_page
-                            $this->_inj['modx']->sendUnauthorizedPage();
+                            $this->_modx->sendUnauthorizedPage();
                             exit; // stop here
                         } else {
                             // no match found, send the visitor to the error_page
-                            $this->_inj['modx']->sendErrorPage();
+                            $this->_modx->sendErrorPage();
                             exit; // stop here
                         }
                     }
                 }
                 // Grab the Scripts
-                if (isset($docObj['__MODxSJScripts__'])) $this->_inj['modx']->sjscripts = $docObj['__MODxSJScripts__'];
-                if (isset($docObj['__MODxJScripts__']))  $this->_inj['modx']->jscripts = $docObj['__MODxJScripts__'];
+                if (isset($docObj['__MODxSJScripts__'])) $this->_modx->sjscripts = $docObj['__MODxSJScripts__'];
+                if (isset($docObj['__MODxJScripts__']))  $this->_modx->jscripts = $docObj['__MODxJScripts__'];
 
                 // Remove intermediate variables
                 unset($docObj['__MODxDocGroups__'], $docObj['__MODxSJScripts__'], $docObj['__MODxJScripts__']);
 
-                $this->_inj['modx']->documentObject= $docObj;
+                $this->_modx->documentObject= $docObj;
                 return $a[1]; // return document content
             }                
         } else {
-            $this->_inj['modx']->documentGenerated= 1;
+            $this->_modx->documentGenerated= 1;
             return "";
         }
     }
@@ -116,7 +121,7 @@ class Cache extends Tcache
      */
     public function getCacheId($id)
     {
-        if ($this->_inj['modx']->getConfig('cache_type') == 2) {
+        if ($this->_modx->getConfig('cache_type') == 2) {
             $cacheId = 'docid_'.$id.'_'.$this->getIdGivenThe('GET','*');
             // $md5_hash = '';
             // if(!empty($_GET)) $md5_hash = '_' . md5(http_build_query($_GET));
@@ -233,11 +238,11 @@ class Cache extends Tcache
             case 'Document':
             case 'Resource':
                 if ($rules[0] == '*') {
-                    $id = http_build_query($this->_inj['modx']->documentObject);
+                    $id = http_build_query($this->_modx->documentObject);
                 } else {
                     foreach ($rules as $rule) {
-                        if (isset($this->_inj['modx']->documentObject[$rule])) {
-                            $id.= serialize($this->_inj['modx']->documentObject[$rule]);
+                        if (isset($this->_modx->documentObject[$rule])) {
+                            $id.= serialize($this->_modx->documentObject[$rule]);
                         }
                     }
                 }
@@ -271,7 +276,7 @@ class Cache extends Tcache
      */
     public function runSnippet($name, array $options=array(), array $consider=array())
     {
-        $modx = $this->_inj['modx'];
+        $modx = $this->_modx;
 
         // получаем ключ кеша
         $id = serialize($name).serialize($options);

@@ -77,7 +77,7 @@ class Helper{
         $str = trim($str);
         if (empty($str)) {return '';}
 
-        switch(with(modx())->getConfig('datetime_format')) {
+        switch(getService('modx')->getConfig('datetime_format')) {
             case 'YYYY/mm/dd':
                 if (!preg_match('/^[0-9]{4}\/[0-9]{2}\/[0-9]{2}[0-9 :]*$/', $str)) {return '';}
                 list ($Y, $m, $d, $H, $M, $S) = sscanf($str, '%4d/%2d/%2d %2d:%2d:%2d');
@@ -115,7 +115,7 @@ class Helper{
         if($mode !== 'formatOnly' && empty($timestamp)) return '-';
         $timestamp = intval($timestamp);
 
-        switch(with(modx())->getConfig('datetime_format')) {
+        switch(getService('modx')->getConfig('datetime_format')) {
             case 'YYYY/mm/dd':
                 $dateFormat = '%Y/%m/%d';
                 break;
@@ -143,7 +143,7 @@ class Helper{
     }
 
     public static function htmlchars($str, $flags = ENT_COMPAT){
-        $charset = getkey(modx('config'), 'modx_charset', 'UTF-8');
+        $charset = getkey(getService('config'), 'modx_charset', 'UTF-8');
         if(!is_scalar($str)){
             $str = '';
         }

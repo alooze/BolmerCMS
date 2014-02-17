@@ -10,8 +10,12 @@ class Request{
     /** @var \Bolmer\Pimple $_inj */
     private $_inj = null;
 
+    /** @var \Bolmer\Core $_modx */
+    protected $_modx = null;
+
     public function __construct(\Pimple $inj){
         $this->_inj= $inj;
+        $this->_modx = $inj['modx'];
     }
 
     /**
@@ -39,18 +43,18 @@ class Request{
      */
     function getDocumentIdentifier($method) {
         // function to test the query and find the retrieval method
-        $docIdentifier= $this->_inj['modx']->getConfig('site_start');
+        $docIdentifier= $this->_modx->getConfig('site_start');
         switch ($method) {
             case 'alias' :
                 if (!is_scalar($_REQUEST['q'])) {
-                    $this->_inj['modx']->sendErrorPage();
+                    $this->_modx->sendErrorPage();
                 }else{
-                    $docIdentifier= $this->_inj['modx']->db->escape($_REQUEST['q']);
+                    $docIdentifier= $this->_modx->db->escape($_REQUEST['q']);
                 }
                 break;
             case 'id' :
                 if (!is_numeric($_REQUEST['id'])) {
-                    $this->_inj['modx']->sendErrorPage();
+                    $this->_modx->sendErrorPage();
                 } else {
                     $docIdentifier= intval($_REQUEST['id']);
                 }
