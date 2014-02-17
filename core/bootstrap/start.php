@@ -1,6 +1,4 @@
 <?php
-header('X-Powered-By: MODX 2');
-
 // Check PHP version
 if (version_compare(phpversion(), '5.3.0', '<')) {
     printf("PHP 5.3.0 is required, you have %s\n", phpversion());
@@ -12,6 +10,9 @@ if (!defined('BOLMER_BASE_URL')) define('BOLMER_BASE_URL', MODX_BASE_URL);
 if (!defined('BOLMER_SITE_URL')) define('BOLMER_SITE_URL', MODX_SITE_URL);
 if (!defined('BOLMER_MANAGER_PATH')) define('BOLMER_MANAGER_PATH', MODX_MANAGER_PATH);
 if (!defined('BOLMER_MANAGER_URL')) define('BOLMER_MANAGER_URL', MODX_MANAGER_URL);
+
+include_once(BOLMER_MANAGER_PATH."includes/version.inc.php");
+header('X-Powered-By: '.CMS_NAME);
 
 if (!defined("BOLMER_DEBUG")) {
     define("BOLMER_DEBUG", false);

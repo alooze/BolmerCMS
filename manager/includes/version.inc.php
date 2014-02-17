@@ -1,5 +1,17 @@
 <?php
-$bolmer_version = '0.1.0'; // Current version number
-$bolmer_release_date = 'Jan 30, 2014';
-$bolmer_branch = 'BolmerCMS';        // Codebase name
-$bolmer_full_appname = $bolmer_branch.' '.$bolmer_version.' ('.$bolmer_release_date.')';
+define('CMS_NAME', 'BolmerCMS');
+
+define('CMS_RELEASE_VERSION', '0.1.0');
+define('CMS_RELEASE_NAME', 'alpha');
+define('CMS_RELEASE_DATE', '17 Feb 2014');
+
+define('CMS_FULL_APPNAME', CMS_NAME.' '.CMS_RELEASE_VERSION.' '.CMS_RELEASE_NAME.' ('.CMS_RELEASE_DATE.')');
+
+// For backwards compatability
+// ---------------------------
+
+$modx_version = CMS_RELEASE_VERSION;
+$modx_release_date = CMS_RELEASE_DATE;
+$modx_branch = CMS_NAME;
+
+$modx_full_appname = CMS_FULL_APPNAME;

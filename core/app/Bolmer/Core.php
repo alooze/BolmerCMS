@@ -256,12 +256,12 @@ class Core {
         $out=array();
         if(empty($this->version) || !is_array($this->version)){
             //include for compatibility modx version < 1.0.10
-            include BOLMER_MANAGER_PATH . "includes/version.inc.php";
+            include_once BOLMER_MANAGER_PATH . "includes/version.inc.php";
             $this->version=array();
-            $this->version['version']= isset($bolmer_version) ? $bolmer_version : '';
-            $this->version['branch']= isset($bolmer_branch) ? $bolmer_branch : '';
-            $this->version['release_date']= isset($bolmer_release_date) ? $bolmer_release_date : '';
-            $this->version['full_appname']= isset($bolmer_full_appname) ? $bolmer_full_appname : '';
+            $this->version['version']= CMS_RELEASE_VERSION;
+            $this->version['branch']= CMS_NAME;
+            $this->version['release_date']= CMS_RELEASE_DATE;
+            $this->version['full_appname']= CMS_FULL_APPNAME;
             $this->version['new_version'] = $this->getConfig('newversiontext');
         }
         return (!is_null($data) && is_array($this->version) && isset($this->version[$data])) ? $this->version[$data] : $this->version;
