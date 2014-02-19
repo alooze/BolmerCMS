@@ -172,7 +172,6 @@ class Snippet{
         $key = $snip_call['name'];
 
         $snippetObject = $this->_get_snip_properties($snip_call);
-        $params   = array ();
         $this->_core->currentSnippet = $snippetObject['name'];
 
         if(isset($snippetObject['properties'])) $params = $this->_core->parseProperties($snippetObject['properties']);
@@ -234,6 +233,8 @@ class Snippet{
                 $i++;
             }
             unset($temp_params);
+        } else {
+            $params = array ();        
         }
         $value = $this->evalSnippet($snippetObject['content'], $params, $snip_name);
 
