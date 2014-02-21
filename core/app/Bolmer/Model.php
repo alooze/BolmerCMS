@@ -110,14 +110,34 @@ class Model extends \Granada\Model
      * @param string $method метод которым стоит получить данные
      * @return \Granada\Orm
      */
-    public static function cached(ORMWrapper $orm, $method = 'find_one'){
+    public static function cached(ORMWrapper $orm, $method = 'find_one')
+    {
         $isCached = $orm->get_config('caching');
-        if(!$isCached){
+        if (!$isCached) {
             $orm->configure('caching', true);
         }
         $out = $orm->$method();
-        if(!$isCached){
+        if (!$isCached) {
             $orm->configure('caching', $isCached);
+        }
+        return $out;
+    }
+
+    /**
+     * Формирование массива с данными из одной колонки
+     *
+     * @param ORMWrapper $orm
+     * @param string $field имя поля по которому нужно сформировать результатирующий массив
+     * @return array
+     */
+    public static function makeArray(ORMWrapper $orm, $field)
+    {
+        $out = array();
+        if (is_scalar($field)) {
+            $q = $orm->find_many();
+            foreach ($q as $item) {
+                $out[] = $item->get($field);
+            }
         }
         return $out;
     }

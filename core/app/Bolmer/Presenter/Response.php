@@ -249,11 +249,11 @@ class Response
 
             // get and store document groups inside document object.
             // Document groups will be used to check security on cache pages
-            $sql = "SELECT document_group FROM " . $this->_core->getTableName("BDocGroupList") . " WHERE document='" . $this->_core->documentIdentifier . "'";
-            $docGroups = $this->_core->db->getColumn("document_group", $sql);
+            $docGroups = \Bolmer\Model\BDocGroupList::where('document', $this->_core->documentIdentifier)
+                ->filter('makeArray', 'document_group');
 
             // Attach Document Groups and Scripts
-            if (is_array($docGroups)) $this->_core->documentObject['__MODxDocGroups__'] = implode(",", $docGroups);
+            if (!empty($docGroups)) $this->_core->documentObject['__MODxDocGroups__'] = implode(",", $docGroups);
 
             $docObjSerial = serialize($this->_core->documentObject);
             $cacheContent = $docObjSerial . "<!--__MODxCacheSpliter__-->" . $this->_core->documentContent;
