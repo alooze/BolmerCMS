@@ -2,30 +2,44 @@
 
 class Log
 {
-    /** @var \Bolmer\Pimple $_inj */
+    /** @var \Pimple $_inj коллекция зависимостей */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+    /**
+     * Конструктор класса \Bolmer\Log
+     *
+     * @param \Pimple $inj коллекция зависимостей
+     */
     public function __construct(\Pimple $inj)
     {
         $this->_inj = $inj;
         $this->_core = $inj['core'];
     }
 
+    /**
+     * Удаление данных из таблицы при приближении общего числа записей к максимальному порогу
+     *
+     * @param string $target имя таблицы без префикса
+     * @param int $limit максимальное число записей в таблице
+     * @param int $trim число записей которое стоит удалить если таблица превысила максимальный порог
+     * @return bool этот метод всегда возвращает true
+     */
     public function rotate_log($target = 'event_log', $limit = 3000, $trim = 100)
     {
         if ($limit < $trim) $trim = $limit;
 
         $table_name = $this->_core->getFullTableName($target);
-        $count = $this->_core->db->getValue($this->_core->db->select('COUNT(id)', $table_name));
+        $count = $this->_core->db->getValue($this->_core->db->select('COUNT(*)', $table_name));
         $over = $count - $limit;
         if (0 < $over) {
             $trim = ($over + $trim);
             $this->_core->db->delete($table_name, '', '', $trim);
         }
         $this->_core->db->optimize($table_name);
+        return true;
     }
 
     /**

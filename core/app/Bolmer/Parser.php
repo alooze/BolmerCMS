@@ -19,14 +19,14 @@ class Parser
      */
     protected $_eval_hash = null;
 
-    /** @var \Bolmer\Pimple $_inj коллекция зависимостей */
+    /** @var \Pimple $_inj коллекция зависимостей */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
     /**
-     * @param \Pimple $inj
+     * @param \Pimple $inj коллекция зависимостей
      */
     public function __construct(\Pimple $inj)
     {
