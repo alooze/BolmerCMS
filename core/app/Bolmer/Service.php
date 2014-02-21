@@ -21,6 +21,12 @@ class Service{
         return static::$instance;
     }
 
+    /**
+     * @param $key
+     * @param $nop
+     * @return null|Helper\xNop|array|Operations\User|Operations\User\Manager|Cache|Debug|Log|Parser|Presenter\Request|Operations\Document|Parser\Snippet|Parser\Plugin|Presenter\HTML|Presenter\Response    object of class $key
+     */
+
     public function get($key, $nop = true){
         if(isset($this->collection[$key])){
             $out = $this->collection[$key];

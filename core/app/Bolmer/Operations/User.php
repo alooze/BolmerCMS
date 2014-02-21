@@ -7,25 +7,35 @@
  */
 
 class User{
+    /** @var \Bolmer\Pimple $_inj */
+    private $_inj = null;
+
+    /** @var \Bolmer\Core $_core */
+    protected $_core = null;
+
+    public function __construct(\Pimple $inj){
+        $this->_inj= $inj;
+        $this->_core = $inj['core'];
+    }
+
     /**
      * Returns true if the current web user is a member the specified groups
      *
      * @param array $groupNames
      * @return boolean
      */
-    public static function isMemberOfWebGroup($groupNames= array ()) {
-        $core = getService('core');
+    public function isMemberOfWebGroup($groupNames= array ()) {
         if (!is_array($groupNames))
             return false;
         // check cache
         $grpNames= isset ($_SESSION['webUserGroupNames']) ? $_SESSION['webUserGroupNames'] : false;
         if (!is_array($grpNames)) {
-            $tbl= $core->getFullTableName("webgroup_names");
-            $tbl2= $core->getFullTableName("web_groups");
+            $tbl= $this->_core->getFullTableName("webgroup_names");
+            $tbl2= $this->_core->getFullTableName("web_groups");
             $sql= "SELECT wgn.name
                     FROM $tbl wgn
-                    INNER JOIN $tbl2 wg ON wg.webgroup=wgn.id AND wg.webuser='" . self::getLoginUserID() . "'";
-            $grpNames= $core->db->getColumn("name", $sql);
+                    INNER JOIN $tbl2 wg ON wg.webgroup=wgn.id AND wg.webuser='" . $this->getLoginUserID() . "'";
+            $grpNames= $this->_core->db->getColumn("name", $sql);
             // save to cache
             $_SESSION['webUserGroupNames']= $grpNames;
         }
@@ -44,15 +54,14 @@ class User{
      * @return string|boolean Returns true if successful, oterhwise return error
      *                        message
      */
-    public static function changeWebUserPassword($oldPwd, $newPwd) {
-        $core = getService('core');
+    public function changeWebUserPassword($oldPwd, $newPwd) {
         $rt= false;
         if ($_SESSION["webValidated"] == 1) {
-            $tbl= $core->getFullTableName("web_users");
-            $ds= $core->db->query("SELECT `id`, `username`, `password` FROM $tbl WHERE `id`='" . self::getLoginUserID() . "'");
-            $limit= $core->db->getRecordCount($ds);
+            $tbl= $this->_core->getFullTableName("web_users");
+            $ds= $this->_core->db->query("SELECT `id`, `username`, `password` FROM $tbl WHERE `id`='" . $this->getLoginUserID() . "'");
+            $limit= $this->_core->db->getRecordCount($ds);
             if ($limit == 1) {
-                $row= $core->db->getRow($ds);
+                $row= $this->_core->db->getRow($ds);
                 if ($row["password"] == md5($oldPwd)) {
                     if (strlen($newPwd) < 6) {
                         return "Password is too short!";
@@ -60,9 +69,9 @@ class User{
                     elseif ($newPwd == "") {
                         return "You didn't specify a password for this user!";
                     } else {
-                        $core->db->query("UPDATE $tbl SET password = md5('" . $core->db->escape($newPwd) . "') WHERE id='" . self::getLoginUserID() . "'");
+                        $this->_core->db->query("UPDATE $tbl SET password = md5('" . $this->_core->db->escape($newPwd) . "') WHERE id='" . $this->getLoginUserID() . "'");
                         // invoke OnWebChangePassword event
-                        $core->invokeEvent("OnWebChangePassword", array (
+                        $this->_core->invokeEvent("OnWebChangePassword", array (
                             "userid" => $row["id"],
                             "username" => $row["username"],
                             "userpassword" => $newPwd
@@ -82,15 +91,14 @@ class User{
      * @param string $context. Default is an empty string which indicates the method should automatically pick 'web (frontend) or 'mgr' (backend)
      * @return string
      */
-    public static function getLoginUserID($context= '') {
-        $core = getService('core');
+    public function getLoginUserID($context= '') {
         if ($context && isset ($_SESSION[$context . 'Validated'])) {
             return $_SESSION[$context . 'InternalKey'];
         }
-        elseif ($core->isFrontend() && isset ($_SESSION['webValidated'])) {
+        elseif ($this->_core->isFrontend() && isset ($_SESSION['webValidated'])) {
             return $_SESSION['webInternalKey'];
         }
-        elseif ($core->isBackend() && isset ($_SESSION['mgrValidated'])) {
+        elseif ($this->_core->isBackend() && isset ($_SESSION['mgrValidated'])) {
             return $_SESSION['mgrInternalKey'];
         }
     }
@@ -101,15 +109,14 @@ class User{
      * @param string $context. Default is an empty string which indicates the method should automatically pick 'web (frontend) or 'mgr' (backend)
      * @return string
      */
-    public static function getLoginUserName($context= '') {
-        $core = getService('core');
+    public function getLoginUserName($context= '') {
         if (!empty($context) && isset ($_SESSION[$context . 'Validated'])) {
             return $_SESSION[$context . 'Shortname'];
         }
-        elseif ($core->isFrontend() && isset ($_SESSION['webValidated'])) {
+        elseif ($this->_core->isFrontend() && isset ($_SESSION['webValidated'])) {
             return $_SESSION['webShortname'];
         }
-        elseif ($core->isBackend() && isset ($_SESSION['mgrValidated'])) {
+        elseif ($this->_core->isBackend() && isset ($_SESSION['mgrValidated'])) {
             return $_SESSION['mgrShortname'];
         }
     }
@@ -119,12 +126,11 @@ class User{
      *
      * @return string
      */
-    public static function getLoginUserType() {
-        $core = getService('core');
-        if ($core->isFrontend() && isset ($_SESSION['webValidated'])) {
+    public function getLoginUserType() {
+        if ($this->_core->isFrontend() && isset ($_SESSION['webValidated'])) {
             return 'web';
         }
-        elseif ($core->isBackend() && isset ($_SESSION['mgrValidated'])) {
+        elseif ($this->_core->isBackend() && isset ($_SESSION['mgrValidated'])) {
             return 'manager';
         } else {
             return '';
@@ -137,7 +143,7 @@ class User{
      * @param int $uid
      * @return boolean|string
      */
-    public static function getUserInfo($uid) {
+    public function getUserInfo($uid) {
         $row = \Bolmer\Model\BManagerUser::filter('fullProfile', $uid);
         if(!empty($row)){
             $row = $row->as_array();
@@ -156,18 +162,17 @@ class User{
      * @param int $uid
      * @return boolean|string
      */
-    public static function getWebUserInfo($uid) {
-        $core = getService('core');
+    public function getWebUserInfo($uid) {
         $sql= "
               SELECT wu.username, wu.password, wua.*
-              FROM " . $core->getFullTableName("web_users") . " wu
-              INNER JOIN " . $core->getFullTableName("web_user_attributes") . " wua ON wua.internalkey=wu.id
+              FROM " . $this->_core->getFullTableName("web_users") . " wu
+              INNER JOIN " . $this->_core->getFullTableName("web_user_attributes") . " wua ON wua.internalkey=wu.id
               WHERE wu.id='$uid'
               ";
-        $rs= $core->db->query($sql);
-        $limit= $core->db->getRecordCount($rs);
+        $rs= $this->_core->db->query($sql);
+        $limit= $this->_core->db->getRecordCount($rs);
         if ($limit == 1) {
-            $row= $core->db->getRow($rs);
+            $row= $this->_core->db->getRow($rs);
             if (!$row["usertype"])
                 $row["usertype"]= "web";
             return $row;
@@ -183,13 +188,12 @@ class User{
      *                            Default: false
      * @return string|array
      */
-    public static function getUserDocGroups($resolveIds= false) {
-        $core = getService('core');
-        if ($core->isFrontend() && isset ($_SESSION['webDocgroups']) && isset ($_SESSION['webValidated'])) {
+    public function getUserDocGroups($resolveIds= false) {
+        if ($this->_core->isFrontend() && isset ($_SESSION['webDocgroups']) && isset ($_SESSION['webValidated'])) {
             $dg= $_SESSION['webDocgroups'];
             $dgn= isset ($_SESSION['webDocgrpNames']) ? $_SESSION['webDocgrpNames'] : false;
         } else
-            if ($core->isBackend() && isset ($_SESSION['mgrDocgroups']) && isset ($_SESSION['mgrValidated'])) {
+            if ($this->_core->isBackend() && isset ($_SESSION['mgrDocgroups']) && isset ($_SESSION['mgrValidated'])) {
                 $dg= $_SESSION['mgrDocgroups'];
                 $dgn= isset ($_SESSION['mgrDocgrpNames']) ? $_SESSION['mgrDocgrpNames'] : false;
             } else {
@@ -204,12 +208,12 @@ class User{
                 if (is_array($dg)) {
                     // resolve ids to names
                     $dgn= array ();
-                    $tbl= $core->getFullTableName("documentgroup_names");
-                    $ds= $core->db->query("SELECT name FROM $tbl WHERE id IN (" . implode(",", $dg) . ")");
-                    while ($row= $core->db->getRow($ds))
+                    $tbl= $this->_core->getFullTableName("documentgroup_names");
+                    $ds= $this->_core->db->query("SELECT name FROM $tbl WHERE id IN (" . implode(",", $dg) . ")");
+                    while ($row= $this->_core->db->getRow($ds))
                         $dgn[count($dgn)]= $row['name'];
                     // cache docgroup names to session
-                    if ($core->isFrontend())
+                    if ($this->_core->isFrontend())
                         $_SESSION['webDocgrpNames']= $dgn;
                     else
                         $_SESSION['mgrDocgrpNames']= $dgn;

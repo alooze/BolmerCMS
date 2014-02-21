@@ -58,5 +58,11 @@ class Pimple extends \Pimple{
         $this['response'] = function ($inj) {
             return new \Bolmer\Presenter\Response($inj);
         };
+        $this['user'] = function($inj){
+            return new \Bolmer\Operations\User($inj);
+        };
+        $this['manager'] = function($inj){
+            return new \Bolmer\Operations\User\Manager($inj);
+        };
     }
 }

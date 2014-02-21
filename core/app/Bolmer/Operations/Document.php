@@ -90,7 +90,7 @@ class Document{
         $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
         $sort= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
         // get document groups for current user
-        if ($docgrp= $this->_core->getUserDocGroups())
+        if ($docgrp= $this->_inj['user']->getUserDocGroups())
             $docgrp= implode(",", $docgrp);
         // build query
         $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
@@ -128,7 +128,7 @@ class Document{
         $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
         $sort= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
         // get document groups for current user
-        if ($docgrp= $this->_core->getUserDocGroups())
+        if ($docgrp= $this->_inj['user']->getUserDocGroups())
             $docgrp= implode(",", $docgrp);
         // build query
         $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
@@ -178,7 +178,7 @@ class Document{
         if ($where != '')
             $where= 'AND ' . $where;
         // get document groups for current user
-        if ($docgrp= $this->_core->getUserDocGroups())
+        if ($docgrp= $this->_inj['user']->getUserDocGroups())
             $docgrp= implode(",", $docgrp);
         // build query
         $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
@@ -240,7 +240,7 @@ class Document{
             if ($where != '')
                 $where= 'AND ' . $where;
             // get document groups for current user
-            if ($docgrp= $this->_core->getUserDocGroups())
+            if ($docgrp= $this->_inj['user']->getUserDocGroups())
                 $docgrp= implode(",", $docgrp);
             $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
                 (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
@@ -310,7 +310,7 @@ class Document{
             // modify field names to use sc. table reference
             $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
             // get document groups for current user
-            if ($docgrp= $this->_core->getUserDocGroups())
+            if ($docgrp= $this->_inj['user']->getUserDocGroups())
                 $docgrp= implode(",", $docgrp);
             $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
                 (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
@@ -374,7 +374,7 @@ class Document{
             $identifier = $this->_core->documentListing[$identifier];
         }
         // get document groups for current user
-        if ($docgrp= $this->_core->getUserDocGroups())
+        if ($docgrp= $this->_inj['user']->getUserDocGroups())
             $docgrp= implode(",", $docgrp);
         // get document
         $access=  "1='" . $_SESSION['mgrRole'] . "'" . ($this->_core->isFrontend() ? " OR sc.privateweb=0" : " OR sc.privatemgr=0") .
@@ -484,7 +484,7 @@ class Document{
      *                        Default: ASC
      * @return boolean|array
      */
-    function getTemplateVars($idnames= array (), $fields= "*", $docid= "", $published= 1, $sort= "rank", $dir= "ASC") {
+    public function getTemplateVars($idnames= array (), $fields= "*", $docid= "", $published= 1, $sort= "rank", $dir= "ASC") {
         if (($idnames != '*' && !is_array($idnames)) || count($idnames) == 0) {
             return false;
         } else {
@@ -557,7 +557,7 @@ class Document{
      *                      Default: ASC
      * @return boolean|array
      */
-    function getDocumentChildrenTVars($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC", $tvfields= "*", $tvsort= "rank", $tvsortdir= "ASC") {
+    public function getDocumentChildrenTVars($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC", $tvfields= "*", $tvsort= "rank", $tvsortdir= "ASC") {
         $docs= $this->getDocumentChildren($parentid, $published, 0, '*', '', $docsort, $docsortdir);
         if (!$docs)
             return false;
@@ -570,7 +570,7 @@ class Document{
                 $query= "tv.id<>0";
             else
                 $query= (is_numeric($tvidnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $tvidnames) . "')";
-            if ($docgrp= $this->_core->getUserDocGroups())
+            if ($docgrp= $this->_inj['user']->getUserDocGroups())
                 $docgrp= implode(",", $docgrp);
 
             $docCount= count($docs);
@@ -629,7 +629,7 @@ class Document{
      *                        Default: ASC
      * @return boolean|array
      */
-    function getDocumentChildrenTVarOutput($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC") {
+    public function getDocumentChildrenTVarOutput($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC") {
         $docs= $this->getDocumentChildren($parentid, $published, 0, '*', '', $docsort, $docsortdir);
         if (!$docs)
             return false;
@@ -656,7 +656,7 @@ class Document{
      * @param string $sep
      * @return boolean|array
      */
-    function getTemplateVarOutput($idnames= array (), $docid= "", $published= 1, $sep='') {
+    public function getTemplateVarOutput($idnames= array (), $docid= "", $published= 1, $sep='') {
         if (count($idnames) == 0) {
             return false;
         } else {

@@ -39,7 +39,7 @@ class Snippet{
      *
      * @return string
      */
-    function getSnippetName() {
+    public function getSnippetName() {
         $out = $this->_inj['parser']->getCurrentEval();
         return $out['name'];
         //return $this->_core->currentSnippet;
@@ -69,7 +69,7 @@ class Snippet{
             }
         }
         // load default params/properties
-        $parameters= $this->_core->parseProperties($properties);
+        $parameters= $this->_inj['parser']->parseProperties($properties);
         $parameters= array_merge($parameters, $params);
         // run snippet
         return $this->evalSnippet($snippet, $parameters, $snippetName);
@@ -91,13 +91,13 @@ class Snippet{
             }
             $___hash = $this->_inj['parser']->registerEvalInfo('snippet', $___name);
             $this->_inj['debug']->setDataEvalStack($___hash, 'params', $___params);
-            $time = \Bolmer\Helper::getMicroTime();
+            $time = $this->_core->getMicroTime();
             ob_start();
             $___snip = eval($___code);
             $___msg = ob_get_contents();
             ob_end_clean();
 
-            $this->_inj['parser']->unregisterEvalInfo(sprintf("%2.5f", (\Bolmer\Helper::getMicroTime() - $time)));
+            $this->_inj['parser']->unregisterEvalInfo(sprintf("%2.5f", ($this->_core->getMicroTime() - $time)));
 
             if (0 < $this->_core->getConfig('error_reporting')) {
                 $error_info = error_get_last();
@@ -126,7 +126,7 @@ class Snippet{
      * @param string $documentSource
      * @return string
      */
-    function evalSnippets($documentSource) {
+    public function evalSnippets($documentSource) {
         if(strpos($documentSource,'[[')===false) return $documentSource;
         $etomite= & $this;
 

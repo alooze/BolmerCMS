@@ -6,15 +6,42 @@
  * Time: 6:36
  */
 class Manager{
+    /** @var \Bolmer\Pimple $_inj */
+    private $_inj = null;
+
+    /** @var \Bolmer\Core $_core */
+    protected $_core = null;
+
+    public function __construct(\Pimple $inj){
+        $this->_inj= $inj;
+        $this->_core = $inj['core'];
+    }
 
     /**
      * Check for manager login session
      *
      * @return boolean
      */
-    public static function checkSession() {
+    public function checkSession() {
         if (isset ($_SESSION['mgrValidated'])) {
             return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Checks, if a the result is a preview
+     *
+     * @return boolean
+     */
+    public function checkPreview() {
+        if ($this->checkSession() == true) {
+            if (isset ($_REQUEST['z']) && $_REQUEST['z'] == 'manprev') {
+                return true;
+            } else {
+                return false;
+            }
         } else {
             return false;
         }
@@ -26,7 +53,7 @@ class Manager{
      * @param string $pm Permission name
      * @return int
      */
-    public static function hasPermission($pm) {
+    public function hasPermission($pm) {
         $state= false;
         $pms= $_SESSION['mgrPermissions'];
         if ($pms)
@@ -45,30 +72,29 @@ class Manager{
      * @param int $private Whether it is a private message, or not
      *                     Default : 0
      */
-    public static function sendAlert($type, $to, $from, $subject, $msg, $private= 0) {
+    public function sendAlert($type, $to, $from, $subject, $msg, $private= 0) {
         $private= ($private) ? 1 : 0;
-        $core = getService('core');
         if (!is_numeric($to)) {
             // Query for the To ID
-            $sql= "SELECT id FROM " . $core->getFullTableName("manager_users") . " WHERE username='$to';";
-            $rs= $core->db->query($sql);
-            if ($core->db->getRecordCount($rs)) {
-                $rs= $core->db->getRow($rs);
+            $sql= "SELECT id FROM " . $this->_core->getFullTableName("manager_users") . " WHERE username='$to';";
+            $rs= $this->_core->db->query($sql);
+            if ($this->_core->db->getRecordCount($rs)) {
+                $rs= $this->_core->db->getRow($rs);
                 $to= $rs['id'];
             }
         }
         if (!is_numeric($from)) {
             // Query for the From ID
-            $sql= "SELECT id FROM " . $core->getFullTableName("manager_users") . " WHERE username='$from';";
-            $rs= $core->db->query($sql);
-            if ($core->db->getRecordCount($rs)) {
-                $rs= $core->db->getRow($rs);
+            $sql= "SELECT id FROM " . $this->_core->getFullTableName("manager_users") . " WHERE username='$from';";
+            $rs= $this->_core->db->query($sql);
+            if ($this->_core->db->getRecordCount($rs)) {
+                $rs= $this->_core->db->getRow($rs);
                 $from= $rs['id'];
             }
         }
         // insert a new message into user_messages
-        $sql= "INSERT INTO " . $core->getFullTableName("user_messages") . " ( id , type , subject , message , sender , recipient , private , postdate , messageread ) VALUES ( '', '$type', '$subject', '$msg', '$from', '$to', '$private', '" . time() . "', '0' );";
-        $rs= $core->db->query($sql);
+        $sql= "INSERT INTO " . $this->_core->getFullTableName("user_messages") . " ( id , type , subject , message , sender , recipient , private , postdate , messageread ) VALUES ( '', '$type', '$subject', '$msg', '$from', '$to', '$private', '" . time() . "', '0' );";
+        $rs= $this->_core->db->query($sql);
         return true;
     }
 }

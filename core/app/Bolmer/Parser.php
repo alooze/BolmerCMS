@@ -32,7 +32,7 @@ class Parser{
      * @param string $name
      * @return string
      */
-    function registerEvalInfo($type, $name) {
+    public function registerEvalInfo($type, $name) {
         $hash = $this->_inj['debug']->addToEvalStack($type, $name);
         $this->_inj['debug']->setDataEvalStack($hash, 'owner', $this->eval_hash);
         $this->eval_stack[] = array('type'=>$this->eval_type, 'name'=>$this->eval_name, 'hash'=>$this->eval_hash);
@@ -51,7 +51,7 @@ class Parser{
      * @param float $time
      * @return void
      */
-    function unregisterEvalInfo($time = 0.0) {
+    public function unregisterEvalInfo($time = 0.0) {
         $this->_inj['debug']->setDataEvalStack($this->eval_hash, 'time', $time);
         $tmp = array_pop($this->eval_stack);
         if(is_array($tmp)){
@@ -69,11 +69,11 @@ class Parser{
      * @param string $content
      * @return string
      */
-    function mergeDocumentContent($content) {
+    public function mergeDocumentContent($content) {
         if (strpos($content, '[*') === false)
             return $content;
         $replace = array();
-        $matches = self::getTagsFromContent($content, '[*', '*]');
+        $matches = $this->getTagsFromContent($content, '[*', '*]');
         if ($matches) {
             for ($i = 0; $i < count($matches[1]); $i++) {
                 if ($matches[1][$i]) {
@@ -96,14 +96,14 @@ class Parser{
     /**
      * Merge system settings
      *
-     * @param string $template
+     * @param string $content
      * @return string
      */
-    function mergeSettingsContent($content) {
+    public function mergeSettingsContent($content) {
         if (strpos($content, '[(') === false)
             return $content;
         $replace = array();
-        $matches = self::getTagsFromContent($content, '[(', ')]');
+        $matches = $this->getTagsFromContent($content, '[(', ')]');
         if ($matches) {
             for ($i = 0; $i < count($matches[1]); $i++) {
                 if ($matches[1][$i] && array_key_exists($matches[1][$i], $this->_core->config))
@@ -121,11 +121,11 @@ class Parser{
      * @param string $content
      * @return string
      */
-    function mergeChunkContent($content) {
+    public function mergeChunkContent($content) {
         if (strpos($content, '{{') === false)
             return $content;
         $replace = array();
-        $matches = self::getTagsFromContent($content, '{{', '}}');
+        $matches = $this->getTagsFromContent($content, '{{', '}}');
         if ($matches) {
             for ($i = 0; $i < count($matches[1]); $i++) {
                 if ($matches[1][$i]) {
@@ -163,7 +163,7 @@ class Parser{
             return $content;
         $replace = array();
         $content = $this->mergeSettingsContent($content);
-        $matches = self::getTagsFromContent($content, '[+', '+]');
+        $matches = $this->getTagsFromContent($content, '[+', '+]');
         if ($matches) {
             for ($i = 0; $i < count($matches[1]); $i++) {
                 $v = '';
@@ -186,7 +186,7 @@ class Parser{
      * @param string $propertyString
      * @return array Associative array in the form property name => property value
      */
-    public static function parseProperties($propertyString) {
+    public function parseProperties($propertyString) {
         $parameter= array ();
         if (!empty ($propertyString)) {
             $tmpParams= explode("&", $propertyString);
@@ -205,7 +205,7 @@ class Parser{
         return $parameter;
     }
 
-    public static function getTagsFromContent($content,$left='[+',$right='+]') {
+    public function getTagsFromContent($content,$left='[+',$right='+]') {
         $hash = explode($left,$content);
         foreach($hash as $i=>$v) {
             if(0<$i) $hash[$i] = $left.$v;
@@ -259,9 +259,8 @@ class Parser{
      * @param string $chunkName
      * @return boolean|string
      */
-    public static function getChunk($chunkName) {
-        $core = getService('core');
-        return isset($core->chunkCache[$chunkName]) ? $core->chunkCache[$chunkName] : null;
+    public function getChunk($chunkName) {
+        return isset($this->_core->chunkCache[$chunkName]) ? $this->_core->chunkCache[$chunkName] : null;
     }
 
     /**
@@ -277,7 +276,7 @@ class Parser{
      *
      * @return {string} - Parsed text.
      */
-    public static function parseText($chunk, $chunkArr, $prefix = '[+', $suffix = '+]'){
+    public function parseText($chunk, $chunkArr, $prefix = '[+', $suffix = '+]'){
         if (!is_array($chunkArr)){
             return $chunk;
         }
@@ -302,25 +301,26 @@ class Parser{
      *
      * @return {string; false} - Parsed chunk or false if $chunkArr is not array.
      */
-    public static function parseChunk($chunkName, $chunkArr, $prefix = '{', $suffix = '}'){
+    public function parseChunk($chunkName, $chunkArr, $prefix = '{', $suffix = '}'){
         //TODO: Wouldn't it be more practical to return the contents of a chunk instead of false?
         if (!is_array($chunkArr)){
             return false;
         }
 
-        return self::parseText(self::getChunk($chunkName), $chunkArr, $prefix, $suffix);
+        return $this->parseText($this->getChunk($chunkName), $chunkArr, $prefix, $suffix);
     }
 
-
+    public function getPlaceholders(){
+        return is_array($this->_core->placeholders) ? $this->_core->placeholders : array();
+    }
     /**
      * Returns the placeholder value
      *
      * @param string $name Placeholder name
      * @return string Placeholder value
      */
-    public static function getPlaceholder($name) {
-        $core = getService('core');
-        return isset($core->placeholders[$name]) ? $core->placeholders[$name] : null;
+    public function getPlaceholder($name) {
+        return (is_array($this->_core->placeholders) && isset($this->_core->placeholders[$name])) ? $this->_core->placeholders[$name] : null;
     }
 
     /**
@@ -329,8 +329,8 @@ class Parser{
      * @param string $name The name of the placeholder
      * @param string $value The value of the placeholder
      */
-    public static function setPlaceholder($name, $value) {
-        return getService('core')->placeholders[$name]= $value;
+    public function setPlaceholder($name, $value) {
+        return $this->_core->placeholders[$name]= $value;
     }
 
     /**
@@ -339,13 +339,13 @@ class Parser{
      * @param object|array $subject
      * @param string $prefix
      */
-    public static function toPlaceholders($subject, $prefix= '') {
+    public function toPlaceholders($subject, $prefix= '') {
         if (is_object($subject)) {
             $subject= get_object_vars($subject);
         }
         if (is_array($subject)) {
             foreach ($subject as $key => $value) {
-                self::toPlaceholder($key, $value, $prefix);
+                $this->toPlaceholder($key, $value, $prefix);
             }
         }
     }
@@ -357,11 +357,11 @@ class Parser{
      * @param object|array $value
      * @param string $prefix
      */
-    public static function toPlaceholder($key, $value, $prefix= '') {
+    public function toPlaceholder($key, $value, $prefix= '') {
         if (is_array($value) || is_object($value)) {
-            self::toPlaceholders($value, "{$prefix}{$key}.");
+            $this->toPlaceholders($value, "{$prefix}{$key}.");
         } else {
-            self::setPlaceholder("{$prefix}{$key}", $value);
+            $this->setPlaceholder("{$prefix}{$key}", $value);
         }
     }
 
@@ -376,7 +376,7 @@ class Parser{
      * @param bool $uncached_snippets
      * @return string
      */
-    function parseDocumentSource($source, $uncached_snippets = false) {
+    public function parseDocumentSource($source, $uncached_snippets = false) {
         // set the number of times we are to parse the document source
         $this->_core->minParserPasses= empty ($this->_core->minParserPasses) ? 2 : $this->_core->minParserPasses;
         $this->_core->maxParserPasses= empty ($this->_core->maxParserPasses) ? 10 : $this->_core->maxParserPasses;
@@ -439,7 +439,7 @@ class Parser{
      * @param string $documentSource
      * @return string
      */
-    function rewriteUrls($documentSource) {
+    public function rewriteUrls($documentSource) {
         // rewrite the urls
         if ($this->_core->getConfig('friendly_urls') == 1) {
             $aliases= array ();
@@ -475,7 +475,7 @@ class Parser{
 
         return $documentSource;
     }
-    function makeFriendlyURL($pre, $suff, $alias, $isfolder=0, $id=0) {
+    public function makeFriendlyURL($pre, $suff, $alias, $isfolder=0, $id=0) {
         if ($id == $this->_core->getConfig('site_start') && $this->_core->getConfig('seostrict')==='1') {return '/';}
         $Alias = explode('/',$alias);
         $alias = array_pop($Alias);
@@ -484,7 +484,7 @@ class Parser{
         if($this->_core->getConfig('make_folders')==='1' && $isfolder==1) $suff = '/';
         return ($dir != '' ? "$dir/" : '') . $pre . $alias . $suff;
     }
-    function toAlias($text) {
+    public function toAlias($text) {
         $suff= $this->_core->getConfig('friendly_url_suffix');
         return str_replace(array('.xml'.$suff,'.rss'.$suff,'.js'.$suff,'.css'.$suff),array('.xml','.rss','.js','.css'),$text);
     }

@@ -23,7 +23,7 @@ class Request{
      *
      * @return string 'alias' (friendly url alias) or 'id'
      */
-    public static function getDocumentMethod() {
+    public function getDocumentMethod() {
         // function to test the query and find the retrieval method
         if (!empty ($_REQUEST['q'])) { //LANG
             return "alias";
@@ -41,7 +41,7 @@ class Request{
      * @param string $method id and alias are allowed
      * @return int
      */
-    function getDocumentIdentifier($method) {
+    public function getDocumentIdentifier($method) {
         // function to test the query and find the retrieval method
         $docIdentifier= $this->_core->getConfig('site_start');
         switch ($method) {

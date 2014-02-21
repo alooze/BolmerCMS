@@ -29,7 +29,7 @@
          * @param type $responseCode
          * @return boolean
          */
-        function sendRedirect($url, $count_attempts= 0, $type= '', $responseCode= '') {
+        public function sendRedirect($url, $count_attempts= 0, $type= '', $responseCode= '') {
             if (empty ($url)) {
                 return false;
             } else {
@@ -81,7 +81,7 @@
          * @param int $id
          * @param string $responseCode
          */
-        function sendForward($id, $responseCode= '') {
+        public function sendForward($id, $responseCode= '') {
             if ($this->_core->forwards > 0) {
                 $this->_core->forwards= $this->_core->forwards - 1;
                 $this->_core->documentIdentifier= $id;
@@ -101,7 +101,7 @@
         /**
          * Redirect to the error page, by calling sendForward(). This is called for example when the page was not found.
          */
-        function sendErrorPage() {
+        public function sendErrorPage() {
             // invoke OnPageNotFound event
             $this->_core->invokeEvent('OnPageNotFound');
             $url = $this->_core->getConfig('error_page', $this->_core->getConfig('site_start'));
@@ -109,7 +109,7 @@
             exit();
         }
 
-        function sendUnauthorizedPage() {
+        public function sendUnauthorizedPage() {
             // invoke OnPageUnauthorized event
             $_REQUEST['refurl'] = $this->_core->documentIdentifier;
             $this->_core->invokeEvent('OnPageUnauthorized');
@@ -133,7 +133,7 @@
          * - gets template and parses it
          * - ensures that postProcess is called when PHP is finished
          */
-        function prepareResponse() {
+        public function prepareResponse() {
             // we now know the method and identifier, let's check the cache
             $this->_core->documentContent= $this->_core->checkCache($this->_core->documentIdentifier);
 
@@ -156,13 +156,13 @@
                 if ($this->_core->documentObject['published'] == 0) {
 
                     // Can't view unpublished pages
-                    if (!$this->_core->hasPermission('view_unpublished')) {
+                    if (!$this->_inj['manager']->hasPermission('view_unpublished')) {
                         $this->_core->sendErrorPage();
                     } else {
                         // Inculde the necessary files to check document permissions
                         include_once (BOLMER_MANAGER_PATH . 'processors/user_documents_permissions.class.php');
                         $udperms= new \udperms();
-                        $udperms->user= $this->_core->getLoginUserID();
+                        $udperms->user= $this->_inj['user']->getLoginUserID();
                         $udperms->document= $this->_core->documentIdentifier;
                         $udperms->role= $_SESSION['mgrRole'];
                         // Doesn't have access to this document
@@ -239,7 +239,7 @@
          *
          * - cache page
          */
-        function postProcess() {
+        public function postProcess() {
             // if the current document was generated, cache it!
             if ($this->_core->documentGenerated == 1 && $this->_core->documentObject['cacheable'] == 1 && $this->_core->documentObject['type'] == 'document' && $this->_core->documentObject['published'] == 1) {
                 
@@ -274,7 +274,7 @@
          *
          * @return boolean
          */
-        function isBackend() {
+        public function isBackend() {
             return $this->insideManager() ? true : false;
         }
 
@@ -283,12 +283,12 @@
          *
          * @return boolean
          */
-        function isFrontend() {
+        public function isFrontend() {
             return !$this->insideManager() ? true : false;
         }
 
         # Returns true, install or interact when inside manager
-        function insideManager() {
+        public function insideManager() {
             $m= false;
             if (defined('IN_MANAGER_MODE') && IN_MANAGER_MODE == 'true') {
                 $m= true;
@@ -301,7 +301,7 @@
             return $m;
         }
 
-        function sendStrictURI(){
+        public function sendStrictURI(){
             // FIX URLs
             if (empty($this->_core->documentIdentifier) || $this->_core->getConfig('seostrict')=='0' || $this->_core->getConfig('friendly_urls')=='0')
                 return;
@@ -367,7 +367,7 @@
          *
          * @param boolean $noEvent Default: false
          */
-        function outputContent($noEvent= false) {
+        public function outputContent($noEvent= false) {
             $this->_core->documentOutput= $this->_core->documentContent;
             if ($this->_core->documentGenerated == 1 && $this->_core->documentObject['cacheable'] == 1 && $this->_core->documentObject['type'] == 'document' && $this->_core->documentObject['published'] == 1) {
                 if (!empty($this->_core->sjscripts)) $this->_core->documentObject['__MODxSJScripts__'] = $this->_core->sjscripts;
@@ -413,7 +413,7 @@
                 header('Content-Type: ' . $type . '; charset=' . $this->_core->getConfig('modx_charset'));
 //            if (($this->documentIdentifier == $this->config['error_page']) || $redirect_error)
 //                header('HTTP/1.0 404 Not Found');
-                if (!$this->_core->checkPreview() && $this->_core->documentObject['content_dispo'] == 1) {
+                if (!$this->_inj['manager']->checkPreview() && $this->_core->documentObject['content_dispo'] == 1) {
                     if ($this->_core->documentObject['alias'])
                         $name= $this->_core->documentObject['alias'];
                     else {
@@ -454,7 +454,7 @@
 
             echo $this->_core->documentOutput;
             if ($this->_core->dumpSQL) {
-                echo \Bolmer\Debug::showQuery();
+                echo $this->_inj['debug']->showQuery();
             }
             if ($this->_core->dumpSnippets) {
                 $sc = "";
@@ -484,13 +484,13 @@
          *
          * @return boolean
          */
-        function checkSiteStatus() {
+        public function checkSiteStatus() {
             $siteStatus= $this->_core->getConfig('site_status');
             if ($siteStatus == 1) {
                 // site online
                 return true;
             }
-            elseif ($siteStatus == 0 && $this->_core->checkSession()) {
+            elseif ($siteStatus == 0 && $this->_inj['manager']->checkSession()) {
                 // site offline but launched via the manager
                 return true;
             } else {
@@ -502,7 +502,7 @@
         /**
          * Checks the publish state of page
          */
-        function checkPublishStatus() {
+        public function checkPublishStatus() {
             $cacheRefreshTime= 0;
             @include BOLMER_BASE_PATH . "assets/cache/sitePublishing.idx.php";
             $timeNow= time() + $this->_core->getConfig('server_offset_time');

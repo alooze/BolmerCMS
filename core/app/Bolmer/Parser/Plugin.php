@@ -7,7 +7,7 @@
  */
 
 class Plugin{
-    /** @var \Bolmer\Pimple $_inj */
+    /** @var \Bolmer\Service $_inj */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
@@ -24,7 +24,7 @@ class Plugin{
      * @param string $pluginCode Code to run
      * @param array $params
      */
-    function evalPlugin($pluginCode, $params) {
+    public function evalPlugin($pluginCode, $params) {
         if($pluginCode){
             $etomite = $modx = $core = &$this->_core;
             $this->_core->event->params = & $params; // store params inside event object
@@ -60,7 +60,7 @@ class Plugin{
      * @param string $pluginName
      * @return boolean|int
      */
-    function addEventListener($evtName, $pluginName) {
+    public function addEventListener($evtName, $pluginName) {
         if (!$evtName || !$pluginName)
             return false;
         if (!array_key_exists($evtName,$this->_core->pluginEvent))
@@ -74,7 +74,7 @@ class Plugin{
      * @param string $evtName
      * @return boolean
      */
-    function removeEventListener($evtName) {
+    public function removeEventListener($evtName) {
         if (!$evtName)
             return false;
         unset ($this->_core->pluginEvent[$evtName]);
@@ -82,7 +82,7 @@ class Plugin{
     /**
      * Remove all event listners - only for use within the current execution cycle
      */
-    function removeAllEventListener() {
+    public function removeAllEventListener() {
         unset ($this->_core->pluginEvent);
         $this->_core->pluginEvent= array ();
     }
@@ -93,7 +93,7 @@ class Plugin{
      * @param array $extParams Parameters available to plugins. Each array key will be the PHP variable name, and the array value will be the variable value.
      * @return boolean|array
      */
-    function invokeEvent($evtName, $extParams= array ()) {
+    public function invokeEvent($evtName, $extParams= array ()) {
         if (!$evtName)
             return false;
         if (!isset ($this->_core->pluginEvent[$evtName]))
@@ -130,7 +130,7 @@ class Plugin{
                 }
 
                 // load default params/properties
-                $parameter= \Bolmer\Parser::parseProperties($pluginProperties);
+                $parameter= $this->_inj['parser']->parseProperties($pluginProperties);
                 if (!empty ($extParams))
                     $parameter= array_merge($parameter, $extParams);
 

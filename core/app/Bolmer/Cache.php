@@ -71,7 +71,7 @@ class Cache extends Tcache
                 $docObj= unserialize($a[0]); // rebuild document object
                 if ($docObj['privateweb'] && isset ($docObj['__MODxDocGroups__'])) {
                     $pass= false;
-                    $usrGrps= $this->_core->getUserDocGroups();
+                    $usrGrps= $this->_inj['user']->getUserDocGroups();
                     $docGrps= explode(",", $docObj['__MODxDocGroups__']);
                     // check is user has access to doc groups
                     if (is_array($usrGrps)) {
@@ -284,8 +284,6 @@ class Cache extends Tcache
      */
     public function runSnippet($name, array $options=array(), array $consider=array())
     {
-        $core = $this->_core;
-
         // получаем ключ кеша
         $id = serialize($name).serialize($options);
 
@@ -300,20 +298,12 @@ class Cache extends Tcache
             //готовим данные для сохранения в кеше
 
             //получаем все установленные плейсхолдеры ДО вызова сниппета
-            if (!is_array($core->placeholders)) {
-                $tmpAr = array();
-            } else {
-                $tmpAr = $core->placeholders;
-            }
+            $tmpAr = $this->_inj['parser']->getPlaceholders();
 
-            $value = $core->runSnippet($name, $options);
+            $value = $this->_inj['snippet']->runSnippet($name, $options);
 
             // отделяем плейсхолдеры, которые установил вызванный сниппет
-            if (!is_array($core->placeholders)) {
-                $phAr = array();
-            } else {
-                $phAr = array_diff($core->placeholders, $tmpAr);
-            }
+            $phAr = array_diff($this->_inj['parser']->getPlaceholders(), $tmpAr);
 
             //дописываем плейсхолдеры в кеш
             $res = serialize($phAr).'~~~SPLITTER~~~'.$value;
@@ -322,7 +312,7 @@ class Cache extends Tcache
         }
 
         $tmpAr = explode('~~~SPLITTER~~~', $value);
-        $core->toPlaceholders(unserialize($tmpAr[0]));
+        $this->_inj['parser']->toPlaceholders(unserialize($tmpAr[0]));
 
         return $tmpAr[1];
     }

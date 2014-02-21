@@ -27,7 +27,7 @@ class SystemEvent{
      * @global array $SystemAlertMsgQueque
      * @param string $msg The message
      */
-    function alert($msg) {
+    public function alert($msg) {
         global $SystemAlertMsgQueque;
         if ($msg == "")
             return;
@@ -43,18 +43,18 @@ class SystemEvent{
      *
      * @param string $msg
      */
-    function output($msg) {
+    public function output($msg) {
         $this->_output .= $msg;
     }
 
     /**
      * Stop event propogation
      */
-    function stopPropagation() {
+    public function stopPropagation() {
         $this->_propagate= false;
     }
 
-    function _resetEventObject() {
+    public function _resetEventObject() {
         unset ($this->returnedValues);
         $this->name= "";
         $this->_output= "";

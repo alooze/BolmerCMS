@@ -18,7 +18,7 @@
             $this->_core = $inj['core'];
         }
 
-        function rotate_log($target='event_log',$limit=3000, $trim=100)
+        public function rotate_log($target='event_log',$limit=3000, $trim=100)
         {
             if($limit < $trim) $trim = $limit;
 
@@ -42,7 +42,7 @@
          * @param string $source source of the event (module, snippet name, etc.)
          *                       Default: Parser
          */
-        function logEvent($evtid, $type, $msg, $source= 'Parser') {
+        public function logEvent($evtid, $type, $msg, $source= 'Parser') {
             $msg= $this->_core->db->escape($msg);
             $source= $this->_core->db->escape($source);
             if ($this->_inj['global_config']['database_connection_charset'] == 'utf8' && extension_loaded('mbstring')) {
@@ -50,7 +50,7 @@
             } else {
                 $source = substr($source, 0, 50);
             }
-            $LoginUserID = $this->_core->getLoginUserID();
+            $LoginUserID = $this->_inj['user']->getLoginUserID();
             if ($LoginUserID == '') $LoginUserID = 0;
             $evtid= intval($evtid);
             $type = intval($type);

@@ -7,7 +7,7 @@
  */
 
 class Debug{
-    protected static $_queryCode = array();
+    protected $_queryCode = array();
     protected $_evalStack = array();
 
     /** @var \Bolmer\Pimple $_inj */
@@ -29,7 +29,7 @@ class Debug{
     }
 
     public function setDataEvalStack($hash, $data, $value = 0){
-        $stack = static::findEvalStack($hash);
+        $stack = $this->findEvalStack($hash);
         if(!empty($stack)){
             $this->_evalStack[$hash][$data] = $stack[$data] = $value;
         }
@@ -46,22 +46,21 @@ class Debug{
     }
 
     public function buildTreeEvalStack(){
-        $tree = static::getEvalStack();
+        $tree = $this->getEvalStack();
         $tree = \Bolmer\Helper\Tree::build($tree, 'self', 'owner', 0, 'level', 'stack');
 
         return $tree;
     }
 
-    public static function addQuery($q, $time=0){
-        $core = getService('core');
-        $core->queryTime += $time;
-        $core->executedQueries += 1;
+    public function addQuery($q, $time=0){
+        $this->_core->queryTime += $time;
+        $this->_core->executedQueries += 1;
 
-        static::$_queryCode[] = '['.sprintf("%2.5f", $time).'] '.$q;
+        $this->_queryCode[] = '['.sprintf("%2.5f", $time).'] '.$q;
     }
 
-    public static function showQuery(){
-        return implode("<br />", static::$_queryCode);
+    public function showQuery(){
+        return implode("<br />", $this->_queryCode);
     }
     /**
      * PHP error handler set by http://www.php.net/manual/en/function.set-error-handler.php

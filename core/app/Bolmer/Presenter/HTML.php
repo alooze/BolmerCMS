@@ -47,7 +47,7 @@ class HTML{
      * @param string $src
      * @param string $media Default: Empty string
      */
-    function regClientCSS($src, $media='') {
+    public function regClientCSS($src, $media='') {
         if (empty($src) || isset ($this->_core->loadedjscripts[$src]))
             return '';
         $nextpos= max(array_merge(array(0),array_keys($this->_core->sjscripts)))+1;
@@ -67,7 +67,7 @@ class HTML{
      * @param string $src
      * @param array $options Default: 'name'=>'', 'version'=>'0', 'plaintext'=>false
      */
-    function regClientStartupScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false)) {
+    public function regClientStartupScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false)) {
         $this->_core->regClientScript($src, $options, true);
     }
 
@@ -79,7 +79,7 @@ class HTML{
      * @param boolean $startup Default: false
      * @return string
      */
-    function regClientScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false), $startup= false) {
+    public function regClientScript($src, $options= array('name'=>'', 'version'=>'0', 'plaintext'=>false), $startup= false) {
         if (empty($src))
             return ''; // nothing to register
         if (!is_array($options)) {
@@ -147,7 +147,7 @@ class HTML{
      *
      * @return string
      */
-    function regClientStartupHTMLBlock($html) {
+    public function regClientStartupHTMLBlock($html) {
         $this->regClientScript($html, true, true);
     }
 
@@ -156,14 +156,14 @@ class HTML{
      *
      * @return string
      */
-    function regClientHTMLBlock($html) {
+    public function regClientHTMLBlock($html) {
         $this->regClientScript($html, true);
     }
 
-    function getRegisteredClientScripts() {
+    public function getRegisteredClientScripts() {
         return implode("\n", $this->_core->jscripts);
     }
-    function getRegisteredClientStartupScripts() {
+    public function getRegisteredClientStartupScripts() {
         return implode("\n", $this->_core->sjscripts);
     }
 }

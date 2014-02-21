@@ -442,7 +442,7 @@ class DB{
             'prefix' => $prefix,
             'driver_options' => array(\PDO::MYSQL_ATTR_INIT_COMMAND => $connection_method.' '.$charset),
             'logger' => function($q, $time) {
-                    \Bolmer\Debug::addQuery($q, $time);
+                    getService('debug')->addQuery($q, $time);
                 },
             'logging' => true
         ));
