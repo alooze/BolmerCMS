@@ -76,7 +76,7 @@ class Manager{
         $private= ($private) ? 1 : 0;
         if (!is_numeric($to)) {
             // Query for the To ID
-            $sql= "SELECT id FROM " . $this->_core->getFullTableName("manager_users") . " WHERE username='$to';";
+            $sql= "SELECT id FROM " . $this->_core->getTableName("BManagerUser") . " WHERE username='$to';";
             $rs= $this->_core->db->query($sql);
             if ($this->_core->db->getRecordCount($rs)) {
                 $rs= $this->_core->db->getRow($rs);
@@ -85,7 +85,7 @@ class Manager{
         }
         if (!is_numeric($from)) {
             // Query for the From ID
-            $sql= "SELECT id FROM " . $this->_core->getFullTableName("manager_users") . " WHERE username='$from';";
+            $sql= "SELECT id FROM " . $this->_core->getTableName("BManagerUser") . " WHERE username='$from';";
             $rs= $this->_core->db->query($sql);
             if ($this->_core->db->getRecordCount($rs)) {
                 $rs= $this->_core->db->getRow($rs);
@@ -93,7 +93,7 @@ class Manager{
             }
         }
         // insert a new message into user_messages
-        $sql= "INSERT INTO " . $this->_core->getFullTableName("user_messages") . " ( id , type , subject , message , sender , recipient , private , postdate , messageread ) VALUES ( '', '$type', '$subject', '$msg', '$from', '$to', '$private', '" . time() . "', '0' );";
+        $sql= "INSERT INTO " . $this->_core->getTableName("BManagerUserMessage") . " ( id , type , subject , message , sender , recipient , private , postdate , messageread ) VALUES ( '', '$type', '$subject', '$msg', '$from', '$to', '$private', '" . time() . "', '0' );";
         $rs= $this->_core->db->query($sql);
         return true;
     }

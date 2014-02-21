@@ -69,7 +69,7 @@
                 'description' => $msg,
                 'user' => $LoginUserID,
                 'usertype' => $usertype
-            ), $this->_core->getFullTableName("event_log"));
+            ), $this->_core->getTableName("BEventLog"));
 
             if($this->_core->getConfig('send_errormail') != '0')
             {

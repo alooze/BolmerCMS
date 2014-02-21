@@ -139,7 +139,7 @@ class Parser{
                     if (isset($this->_core->chunkCache[$matches[1][$i]])) {
                         $replace[$i] = $this->_core->chunkCache[$matches[1][$i]];
                     } else {
-                        $sql = 'SELECT `snippet` FROM ' . $this->getFullTableName('site_htmlsnippets') . ' WHERE ' . $this->_core->getFullTableName('site_htmlsnippets') . '.`name`="' . $this->_core->db->escape($matches[1][$i]) . '";';
+                        $sql = 'SELECT `snippet` FROM ' . $this->getTableName('BChunk') . ' WHERE ' . $this->_core->getTableName('BChunk') . '.`name`="' . $this->_core->db->escape($matches[1][$i]) . '";';
                         $result = $this->_core->db->query($sql);
                         $limit = $this->_core->db->getRecordCount($result);
                         if ($limit < 1) {

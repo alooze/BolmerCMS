@@ -30,8 +30,8 @@ class User{
         // check cache
         $grpNames= isset ($_SESSION['webUserGroupNames']) ? $_SESSION['webUserGroupNames'] : false;
         if (!is_array($grpNames)) {
-            $tbl= $this->_core->getFullTableName("webgroup_names");
-            $tbl2= $this->_core->getFullTableName("web_groups");
+            $tbl= $this->_core->getTableName("BWebGroup");
+            $tbl2= $this->_core->getTableName("BWebUserGroupList");
             $sql= "SELECT wgn.name
                     FROM $tbl wgn
                     INNER JOIN $tbl2 wg ON wg.webgroup=wgn.id AND wg.webuser='" . $this->getLoginUserID() . "'";
@@ -57,7 +57,7 @@ class User{
     public function changeWebUserPassword($oldPwd, $newPwd) {
         $rt= false;
         if ($_SESSION["webValidated"] == 1) {
-            $tbl= $this->_core->getFullTableName("web_users");
+            $tbl= $this->_core->getTableName("BWebUser");
             $ds= $this->_core->db->query("SELECT `id`, `username`, `password` FROM $tbl WHERE `id`='" . $this->getLoginUserID() . "'");
             $limit= $this->_core->db->getRecordCount($ds);
             if ($limit == 1) {
@@ -165,8 +165,8 @@ class User{
     public function getWebUserInfo($uid) {
         $sql= "
               SELECT wu.username, wu.password, wua.*
-              FROM " . $this->_core->getFullTableName("web_users") . " wu
-              INNER JOIN " . $this->_core->getFullTableName("web_user_attributes") . " wua ON wua.internalkey=wu.id
+              FROM " . $this->_core->getTableName("BWebUser") . " wu
+              INNER JOIN " . $this->_core->getTableName("BWebUserAttr") . " wua ON wua.internalkey=wu.id
               WHERE wu.id='$uid'
               ";
         $rs= $this->_core->db->query($sql);
@@ -208,7 +208,7 @@ class User{
                 if (is_array($dg)) {
                     // resolve ids to names
                     $dgn= array ();
-                    $tbl= $this->_core->getFullTableName("documentgroup_names");
+                    $tbl= $this->_core->getTableName("BDocGroup");
                     $ds= $this->_core->db->query("SELECT name FROM $tbl WHERE id IN (" . implode(",", $dg) . ")");
                     while ($row= $this->_core->db->getRow($ds))
                         $dgn[count($dgn)]= $row['name'];

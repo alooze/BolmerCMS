@@ -196,7 +196,7 @@
                 if (!$this->_core->documentObject['template'])
                     $this->_core->documentContent= "[*content*]"; // use blank template
                 else {
-                    $sql= "SELECT `content` FROM " . $this->_core->getFullTableName("site_templates") . " WHERE " . $this->_core->getFullTableName("site_templates") . ".`id` = '" . $this->_core->documentObject['template'] . "';";
+                    $sql= "SELECT `content` FROM " . $this->_core->getTableName("BTemplate") . " WHERE " . $this->_core->getTableName("BTemplate") . ".`id` = '" . $this->_core->documentObject['template'] . "';";
                     $result= $this->_core->db->query($sql);
                     $rowCount= $this->_core->db->getRecordCount($result);
 
@@ -251,7 +251,7 @@
 
                 // get and store document groups inside document object. 
                 // Document groups will be used to check security on cache pages
-                $sql = "SELECT document_group FROM " . $this->_core->getFullTableName("document_groups") . " WHERE document='" . $this->_core->documentIdentifier . "'";
+                $sql = "SELECT document_group FROM " . $this->_core->getTableName("BDocGroupList") . " WHERE document='" . $this->_core->documentIdentifier . "'";
                 $docGroups= $this->_core->db->getColumn("document_group", $sql);
 
                 // Attach Document Groups and Scripts
@@ -508,13 +508,13 @@
             $timeNow= time() + $this->_core->getConfig('server_offset_time');
             if ($cacheRefreshTime <= $timeNow && $cacheRefreshTime != 0) {
                 // now, check for documents that need publishing
-                $sql = "UPDATE ".$this->_core->getFullTableName("site_content")." SET published=1, publishedon=".time()." WHERE ".$this->_core->getFullTableName("site_content").".pub_date <= $timeNow AND ".$this->_core->getFullTableName("site_content").".pub_date!=0 AND published=0";
+                $sql = "UPDATE ".$this->_core->getTableName("BDoc")." SET published=1, publishedon=".time()." WHERE ".$this->_core->getTableName("BDoc").".pub_date <= $timeNow AND ".$this->_core->getTableName("BDoc").".pub_date!=0 AND published=0";
                 if (@ !$result= $this->_core->db->query($sql)) {
                     $this->_core->messageQuit("Execution of a query to the database failed", $sql);
                 }
 
                 // now, check for documents that need un-publishing
-                $sql= "UPDATE " . $this->_core->getFullTableName("site_content") . " SET published=0, publishedon=0 WHERE " . $this->_core->getFullTableName("site_content") . ".unpub_date <= $timeNow AND " . $this->_core->getFullTableName("site_content") . ".unpub_date!=0 AND published=1";
+                $sql= "UPDATE " . $this->_core->getTableName("BDoc") . " SET published=0, publishedon=0 WHERE " . $this->_core->getTableName("BDoc") . ".unpub_date <= $timeNow AND " . $this->_core->getTableName("BDoc") . ".unpub_date!=0 AND published=1";
                 if (@ !$result= $this->_core->db->query($sql)) {
                     $this->_core->messageQuit("Execution of a query to the database failed", $sql);
                 }
@@ -524,7 +524,7 @@
 
                 // update publish time file
                 $timesArr= array ();
-                $sql= "SELECT MIN(pub_date) AS minpub FROM " . $this->_core->getFullTableName("site_content") . " WHERE pub_date>$timeNow";
+                $sql= "SELECT MIN(pub_date) AS minpub FROM " . $this->_core->getTableName("BDoc") . " WHERE pub_date>$timeNow";
                 if (@ !$result= $this->_core->db->query($sql)) {
                     $this->_core->messageQuit("Failed to find publishing timestamps", $sql);
                 }
@@ -534,7 +534,7 @@
                     $timesArr[]= $minpub;
                 }
 
-                $sql= "SELECT MIN(unpub_date) AS minunpub FROM " . $this->_core->getFullTableName("site_content") . " WHERE unpub_date>$timeNow";
+                $sql= "SELECT MIN(unpub_date) AS minunpub FROM " . $this->_core->getTableName("BDoc") . " WHERE unpub_date>$timeNow";
                 if (@ !$result= $this->_core->db->query($sql)) {
                     $this->_core->messageQuit("Failed to find publishing timestamps", $sql);
                 }

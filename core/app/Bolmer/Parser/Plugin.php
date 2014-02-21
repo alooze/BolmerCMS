@@ -117,7 +117,7 @@ class Plugin{
                     $pluginCode= $this->_core->pluginCache[$pluginName];
                     $pluginProperties= isset($this->_core->pluginCache[$pluginName . "Props"]) ? $this->_core->pluginCache[$pluginName . "Props"] : '';
                 } else {
-                    $sql= "SELECT `name`, `plugincode`, `properties` FROM " . $this->_core->getFullTableName("site_plugins") . " WHERE `name`='" . $pluginName . "' AND `disabled`=0;";
+                    $sql= "SELECT `name`, `plugincode`, `properties` FROM " . $this->_core->getTableName("BPlugin") . " WHERE `name`='" . $pluginName . "' AND `disabled`=0;";
                     $result= $this->_core->db->query($sql);
                     if ($this->_core->db->getRecordCount($result) == 1) {
                         $row= $this->_core->db->getRow($result);

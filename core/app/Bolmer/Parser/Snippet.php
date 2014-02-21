@@ -25,7 +25,7 @@ class Snippet{
      */
     public function getSnippetId() {
         if ($this->_core->currentSnippet) {
-            $tbl= $this->_core->getFullTableName("site_snippets");
+            $tbl= $this->_core->getTableName("BSnippet");
             $rs= $this->_core->db->query("SELECT id FROM $tbl WHERE name='" . $this->_core->db->escape($this->_core->currentSnippet) . "' LIMIT 1");
             $row= @ $this->_core->db->getRow($rs);
             if ($row['id'])
@@ -55,7 +55,7 @@ class Snippet{
             $snippet= $this->_core->snippetCache[$snippetName];
             $properties= $this->_core->snippetCache[$snippetName . "Props"];
         } else { // not in cache so let's check the db
-            $sql= "SELECT `name`, `snippet`, `properties` FROM " . $this->_core->getFullTableName("site_snippets") . " WHERE " . $this->_core->getFullTableName("site_snippets") . ".`name`='" . $this->_core->db->escape($snippetName) . "';";
+            $sql= "SELECT `name`, `snippet`, `properties` FROM " . $this->_core->getTableName("BSnippet") . " WHERE " . $this->_core->getTableName("BSnippet") . ".`name`='" . $this->_core->db->escape($snippetName) . "';";
             $result= $this->_core->db->query($sql);
             if ($this->_core->db->getRecordCount($result) == 1) {
                 $row= $this->_core->db->getRow($result);
@@ -300,7 +300,7 @@ class Snippet{
         }
         else
         {
-            $tbl_snippets  = $this->_core->getFullTableName('site_snippets');
+            $tbl_snippets  = $this->_core->getTableName('BSnippet');
             $esc_snip_name = $this->_core->db->escape($snip_name);
             // get from db and store a copy inside cache
             $result= $this->_core->db->select('name,snippet,properties',$tbl_snippets,"name='{$esc_snip_name}'");

@@ -109,8 +109,8 @@ class Document{
      * @return array
      */
     public function getAllChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        $tblsc= $this->_core->getFullTableName("site_content");
-        $tbldg= $this->_core->getFullTableName("document_groups");
+        $tblsc= $this->_core->getTableName("BDoc");
+        $tbldg= $this->_core->getTableName("BDocGroupList");
         // modify field names to use sc. table reference
         $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
         $sort= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
@@ -146,8 +146,8 @@ class Document{
      * @return array
      */
     public function getActiveChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        $tblsc= $this->_core->getFullTableName("site_content");
-        $tbldg= $this->_core->getFullTableName("document_groups");
+        $tblsc= $this->_core->getTableName("BDoc");
+        $tbldg= $this->_core->getTableName("BDocGroupList");
 
         // modify field names to use sc. table reference
         $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
@@ -195,8 +195,8 @@ class Document{
      */
     public function getDocumentChildren($parentid= 0, $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
         $limit= ($limit != "") ? "LIMIT $limit" : "";
-        $tblsc= $this->_core->getFullTableName("site_content");
-        $tbldg= $this->_core->getFullTableName("document_groups");
+        $tblsc= $this->_core->getTableName("BDoc");
+        $tbldg= $this->_core->getTableName("BDocGroupList");
         // modify field names to use sc. table reference
         $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
         $sort= ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
@@ -257,8 +257,8 @@ class Document{
             return false;
         } else {
             $limit= ($limit != "") ? "LIMIT $limit" : ""; // LIMIT capabilities - rad14701
-            $tblsc= $this->_core->getFullTableName("site_content");
-            $tbldg= $this->_core->getFullTableName("document_groups");
+            $tblsc= $this->_core->getTableName("BDoc");
+            $tbldg= $this->_core->getTableName("BDocGroupList");
             // modify field names to use sc. table reference
             $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
             $sort= ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
@@ -327,8 +327,8 @@ class Document{
         if ($pageid == 0) {
             return false;
         } else {
-            $tblsc= $this->_core->getFullTableName("site_content");
-            $tbldg= $this->_core->getFullTableName("document_groups");
+            $tblsc= $this->_core->getTableName("BDoc");
+            $tbldg= $this->_core->getTableName("BDocGroupList");
             $activeSql = (int)$active == 1 ? "AND sc.published=1 AND sc.deleted=0" : "";
             // modify field names to use sc. table reference
             $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
@@ -385,8 +385,8 @@ class Document{
      * @return array
      */
     public function getDocumentObject($method, $identifier, $isPrepareResponse=false) {
-        $tblsc= $this->_core->getFullTableName("site_content");
-        $tbldg= $this->_core->getFullTableName("document_groups");
+        $tblsc= $this->_core->getTableName("BDoc");
+        $tbldg= $this->_core->getTableName("BDocGroupList");
         // allow alias to be full path
         if($method == 'alias') {
             $identifier = $this->_core->cleanDocumentIdentifier($identifier);
@@ -439,9 +439,9 @@ class Document{
         if ($documentObject['template']) {
             // load TVs and merge with document - Orig by Apodigm - Docvars
             $sql= "SELECT tv.*, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
-            $sql .= "FROM " . $this->_core->getFullTableName("site_tmplvars") . " tv ";
-            $sql .= "INNER JOIN " . $this->_core->getFullTableName("site_tmplvar_templates")." tvtpl ON tvtpl.tmplvarid = tv.id ";
-            $sql .= "LEFT JOIN " . $this->_core->getFullTableName("site_tmplvar_contentvalues")." tvc ON tvc.tmplvarid=tv.id ";
+            $sql .= "FROM " . $this->_core->getTableName("BTv") . " tv ";
+            $sql .= "INNER JOIN " . $this->_core->getTableName("BTvTemplate")." tvtpl ON tvtpl.tmplvarid = tv.id ";
+            $sql .= "LEFT JOIN " . $this->_core->getTableName("BTvValue")." tvc ON tvc.tmplvarid=tv.id ";
             $sql .= "WHERE tvc.contentid = '" . $documentObject['id'] . "' AND tvtpl.templateid = '" . $documentObject['template'] . "'";
             $rs= $this->_core->db->query($sql);
             $rowCount= $this->_core->db->getRecordCount($rs);
@@ -531,9 +531,9 @@ class Document{
             else
                 $query= (is_numeric($idnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $idnames) . "')";
             $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
-            $sql .= "FROM " . $this->_core->getFullTableName('site_tmplvars')." tv ";
-            $sql .= "INNER JOIN " . $this->_core->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
-            $sql .= "LEFT JOIN " . $this->_core->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id ";
+            $sql .= "FROM " . $this->_core->getTableName('BTv')." tv ";
+            $sql .= "INNER JOIN " . $this->_core->getTableName('BTvTemplate')." tvtpl ON tvtpl.tmplvarid = tv.id ";
+            $sql .= "LEFT JOIN " . $this->_core->getTableName('BTvValue')." tvc ON tvc.tmplvarid=tv.id ";
             $sql .= "WHERE " . $query . " AND tvc.contentid = '" . $docid . "' AND tvtpl.templateid = " . $docRow['template'];
             if ($sort)
                 $sql .= " ORDER BY $sort $dir ";
@@ -604,9 +604,9 @@ class Document{
                 $docid= $docRow['id'];
 
                 $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
-                $sql .= "FROM " . $this->_core->getFullTableName('site_tmplvars') . " tv ";
-                $sql .= "INNER JOIN " . $this->_core->getFullTableName('site_tmplvar_templates')." tvtpl ON tvtpl.tmplvarid = tv.id ";
-                $sql .= "LEFT JOIN " . $this->_core->getFullTableName('site_tmplvar_contentvalues')." tvc ON tvc.tmplvarid=tv.id ";
+                $sql .= "FROM " . $this->_core->getTableName('BTv') . " tv ";
+                $sql .= "INNER JOIN " . $this->_core->getTableName('BTvTemplate')." tvtpl ON tvtpl.tmplvarid = tv.id ";
+                $sql .= "LEFT JOIN " . $this->_core->getTableName('BTvValue')." tvc ON tvc.tmplvarid=tv.id ";
                 $sql .= "WHERE " . $query . " AND tvc.contentid = '" . $docid . "' AND tvtpl.templateid = " . $docRow['template'];
                 if ($tvsort)
                     $sql .= " ORDER BY $tvsort $tvsortdir ";
@@ -641,8 +641,8 @@ class Document{
     function getTemplateTVs($template)
     {
         $rs = $this->_inj['db']->query('SELECT tv.*
-                                    FROM '.$this->_inj['core']->getFullTableName('site_tmplvars').' tv
-                                    INNER JOIN '.$this->_inj['core']->getFullTableName('site_tmplvar_templates').' tvtpl ON tvtpl.tmplvarid = tv.id
+                                    FROM '.$this->_inj['core']->getTableName('BTv').' tv
+                                    INNER JOIN '.$this->_inj['core']->getTableName('BTvTemplate').' tvtpl ON tvtpl.tmplvarid = tv.id
                                     WHERE tvtpl.templateid = '.$template);
         return $this->_inj['db']->makeArray($rs);
     }
@@ -745,7 +745,7 @@ class Document{
     {
         $children = array();
 
-        $tbl_site_content = $this->_core->getFullTableName('site_content');
+        $tbl_site_content = $this->_core->getTableName('BDoc');
         if($this->_core->getConfig('use_alias_path')==1)
         {
             if(strpos($alias,'/')!==false) $_a = explode('/', $alias);
@@ -783,7 +783,7 @@ class Document{
      */
     function getDocumentAllowedChildTemplates($docid) {
         $rs = $this->_core->db->query('SELECT te.restrict_children, te.allowed_child_templates
-                                    FROM '.$this->_core->getFullTableName('site_content').' sc, '.$this->_core->getFullTableName('site_templates').' te
+                                    FROM '.$this->_core->getTableName('BDoc').' sc, '.$this->_core->getTableName('BTemplate').' te
                                     WHERE sc.template = te.id
                                     AND sc.id = '.$docid);
         $row = $this->_core->db->getRow($rs);
@@ -792,7 +792,7 @@ class Document{
             $allowed_child_templates = trim($row['allowed_child_templates']);
             return $allowed_child_templates ? explode(',', $allowed_child_templates) : array();
         } else {
-            $rs2 = $this->_core->db->select('id', $this->_core->getFullTableName('site_templates'));
+            $rs2 = $this->_core->db->select('id', $this->_core->getTableName('BTemplate'));
             return $this->_core->db->getColumn('id', $rs2);
         }
     }

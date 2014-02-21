@@ -55,7 +55,7 @@ class Cache extends Tcache
      */
     public function checkCache($id) 
     {
-        $tbl_document_groups= $this->_core->getFullTableName("document_groups");
+        $tbl_document_groups= $this->_core->getTableName("BDocGroupList");
         
         $cacheId = $this->getCacheId($id);
 

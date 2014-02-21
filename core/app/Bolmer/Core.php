@@ -297,7 +297,7 @@ class Core {
                     $included= include BOLMER_BASE_PATH . 'assets/cache/siteCache.idx.php';
                 }
                 if(!$included) {
-                    $result= $this->db->select('setting_name, setting_value', $this->getFullTableName('system_settings'));
+                    $result= $this->db->select('setting_name, setting_value', $this->getTableName('BSystemSetting'));
                     while ($row= $this->db->getRow($result, 'both')) {
                         $this->config[$row[0]]= $row[1];
                     }
@@ -342,9 +342,9 @@ class Core {
                 $usrSettings= & $_SESSION[$usrType . 'UsrConfigSet'];
             } else {
                 if ($usrType == 'web')
-                    $query= $this->getFullTableName('web_user_settings') . ' WHERE webuser=\'' . $id . '\'';
+                    $query= $this->getTableName('BWebUserSetting') . ' WHERE webuser=\'' . $id . '\'';
                 else
-                    $query= $this->getFullTableName('user_settings') . ' WHERE user=\'' . $id . '\'';
+                    $query= $this->getTableName('BManagerUserSetting') . ' WHERE user=\'' . $id . '\'';
                 $result= $this->db->query('SELECT setting_name, setting_value FROM ' . $query);
                 while ($row= $this->db->getRow($result, 'both'))
                     $usrSettings[$row[0]]= $row[1];
@@ -357,7 +357,7 @@ class Core {
             if (isset ($_SESSION['mgrUsrConfigSet'])) {
                 $musrSettings= & $_SESSION['mgrUsrConfigSet'];
             } else {
-                $query= $this->getFullTableName('user_settings') . ' WHERE user=\'' . $mgrid . '\'';
+                $query= $this->getTableName('BManagerUserSetting') . ' WHERE user=\'' . $mgrid . '\'';
                 if ($result= $this->db->query('SELECT setting_name, setting_value FROM ' . $query)) {
                     while ($row= $this->db->getRow($result, 'both')) {
                         $usrSettings[$row[0]]= $row[1];
