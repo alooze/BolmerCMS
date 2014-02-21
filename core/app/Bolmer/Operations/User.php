@@ -1,10 +1,4 @@
 <?php namespace Bolmer\Operations;
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 10.02.14
- * Time: 6:21
- */
 
 class User
 {

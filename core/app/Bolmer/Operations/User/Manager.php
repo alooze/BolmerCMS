@@ -1,10 +1,5 @@
 <?php namespace Bolmer\Operations\User;
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 10.02.14
- * Time: 6:36
- */
+
 class Manager
 {
     /** @var \Bolmer\Pimple $_inj */

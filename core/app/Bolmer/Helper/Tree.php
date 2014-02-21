@@ -1,10 +1,4 @@
 <?php namespace Bolmer\Helper;
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 16.02.14
- * Time: 4:52
- */
 
 class Tree
 {

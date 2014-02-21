@@ -1,10 +1,4 @@
 <?php namespace Bolmer;
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 10.02.14
- * Time: 6:15
- */
 
 class Parser
 {
@@ -19,6 +13,9 @@ class Parser
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+    /**
+     * @param \Pimple $inj
+     */
     public function __construct(\Pimple $inj)
     {
         $this->_inj = $inj;
@@ -48,6 +45,9 @@ class Parser
         return $hash;
     }
 
+    /**
+     * @return array
+     */
     public function getCurrentEval()
     {
         return array('type' => $this->_eval_type, 'name' => $this->_eval_name, 'hash' => $this->_eval_hash);
@@ -223,6 +223,12 @@ class Parser
         return $parameter;
     }
 
+    /**
+     * @param $content
+     * @param string $left
+     * @param string $right
+     * @return array
+     */
     public function getTagsFromContent($content, $left = '[+', $right = '+]')
     {
         $hash = explode($left, $content);
@@ -286,12 +292,12 @@ class Parser
      *
      * @desc Replaces placeholders in text with required values.
      *
-     * @param $chunk {string} - String to parse. @required
-     * @param $chunkArr {array} - Array of values. Key — placeholder name, value — value. @required
-     * @param $prefix {string} - Placeholders prefix. Default: '[+'.
-     * @param $suffix {string} - Placeholders suffix. Default: '+]'.
+     * @param string $chunk - String to parse. @required
+     * @param array $chunkArr - Array of values. Key — placeholder name, value — value. @required
+     * @param string $prefix - Placeholders prefix. Default: '[+'.
+     * @param string $suffix  - Placeholders suffix. Default: '+]'.
      *
-     * @return {string} - Parsed text.
+     * @return string - Parsed text.
      */
     public function parseText($chunk, $chunkArr, $prefix = '[+', $suffix = '+]')
     {
@@ -312,12 +318,12 @@ class Parser
      *
      * @desc Replaces placeholders in a chunk with required values.
      *
-     * @param $chunkName {string} - Name of chunk to parse. @required
-     * @param $chunkArr {array} - Array of values. Key — placeholder name, value — value. @required
-     * @param $prefix {string} - Placeholders prefix. Default: '{'.
-     * @param $suffix {string} - Placeholders suffix. Default: '}'.
+     * @param string $chunkName Name of chunk to parse. @required
+     * @param array $chunkArr Array of values. Key — placeholder name, value — value. @required
+     * @param string $prefix Placeholders prefix. Default: '{'.
+     * @param string $suffix Placeholders suffix. Default: '}'.
      *
-     * @return {string; false} - Parsed chunk or false if $chunkArr is not array.
+     * @return string|bool Parsed chunk or false if $chunkArr is not array.
      */
     public function parseChunk($chunkName, $chunkArr, $prefix = '{', $suffix = '}')
     {
@@ -329,6 +335,9 @@ class Parser
         return $this->parseText($this->getChunk($chunkName), $chunkArr, $prefix, $suffix);
     }
 
+    /**
+     * @return array
+     */
     public function getPlaceholders()
     {
         return is_array($this->_core->placeholders) ? $this->_core->placeholders : array();
@@ -350,6 +359,7 @@ class Parser
      *
      * @param string $name The name of the placeholder
      * @param string $value The value of the placeholder
+     * @return string
      */
     public function setPlaceholder($name, $value)
     {
@@ -455,6 +465,10 @@ class Parser
         return $source;
     }
 
+    /**
+     * @param $content
+     * @return mixed
+     */
     public function mergeSnippetsContent($content)
     {
         return $this->_inj['snippet']->evalSnippets($content);
@@ -504,6 +518,14 @@ class Parser
         return $documentSource;
     }
 
+    /**
+     * @param $pre
+     * @param $suff
+     * @param $alias
+     * @param int $isfolder
+     * @param int $id
+     * @return string
+     */
     public function makeFriendlyURL($pre, $suff, $alias, $isfolder = 0, $id = 0)
     {
         if ($id == $this->_core->getConfig('site_start') && $this->_core->getConfig('seostrict') === '1') {
@@ -517,6 +539,10 @@ class Parser
         return ($dir != '' ? "$dir/" : '') . $pre . $alias . $suff;
     }
 
+    /**
+     * @param $text
+     * @return mixed
+     */
     public function toAlias($text)
     {
         $suff = $this->_core->getConfig('friendly_url_suffix');

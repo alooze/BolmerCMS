@@ -1,12 +1,6 @@
 <?php
 namespace Bolmer;
 
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 11.02.14
- * Time: 4:50
- */
 use Tcache\Cache as Tcache;
 
 class Cache extends Tcache

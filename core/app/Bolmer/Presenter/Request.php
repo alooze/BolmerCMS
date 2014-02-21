@@ -1,10 +1,4 @@
 <?php namespace Bolmer\Presenter;
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 10.02.14
- * Time: 22:30
- */
 
 class Request
 {

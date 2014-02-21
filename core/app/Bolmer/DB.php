@@ -2,13 +2,6 @@
 
 use \Granada\ORM as ORM;
 
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 10.02.14
- * Time: 5:34
- */
-
 class DB
 {
     public $dataTypes = array();

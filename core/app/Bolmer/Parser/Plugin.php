@@ -1,10 +1,4 @@
 <?php namespace Bolmer\Parser;
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 10.02.14
- * Time: 23:03
- */
 
 class Plugin
 {

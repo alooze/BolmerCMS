@@ -1,4 +1,5 @@
 <?php namespace Bolmer\Helper;
+
 if (!defined("JSON_ERROR_UTF8")) define("JSON_ERROR_UTF8", 5); //PHP < 5.3.3
 
 class json

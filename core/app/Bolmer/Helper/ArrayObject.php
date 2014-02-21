@@ -1,10 +1,4 @@
 <?php namespace Bolmer\Helper;
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 10.02.14
- * Time: 4:33
- */
 
 class ArrayObject implements \ArrayAccess, \Countable, \IteratorAggregate
 {

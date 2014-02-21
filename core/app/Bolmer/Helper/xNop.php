@@ -1,4 +1,5 @@
 <?php namespace Bolmer\Helper;
+
 class xNop
 {
     /**

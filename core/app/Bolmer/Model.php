@@ -1,10 +1,5 @@
 <?php namespace Bolmer;
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 19.01.14
- * Time: 16:07
- */
+
 class Model extends \Granada\Model
 {
     public function save($CallEvents = false, $clearCache = false)

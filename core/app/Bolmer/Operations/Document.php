@@ -1,10 +1,5 @@
 <?php namespace Bolmer\Operations;
-/**
- * Created by PhpStorm.
- * User: Agel_Nash
- * Date: 10.02.14
- * Time: 16:17
- */
+
 class Document
 {
     /** @var \Bolmer\Pimple $_inj */
