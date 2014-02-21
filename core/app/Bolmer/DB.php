@@ -1,6 +1,7 @@
 <?php namespace Bolmer;
 
 use \Granada\ORM as ORM;
+
 /**
  * Created by PhpStorm.
  * User: Agel_Nash
@@ -8,14 +9,16 @@ use \Granada\ORM as ORM;
  * Time: 5:34
  */
 
-class DB{
+class DB
+{
     public $dataTypes = array();
     public $conn;
     public $config;
     public $isConnected;
 
-    function initDataTypes() {
-        $this->dataTypes['numeric'] = array (
+    function initDataTypes()
+    {
+        $this->dataTypes['numeric'] = array(
             'INT',
             'INTEGER',
             'TINYINT',
@@ -31,7 +34,7 @@ class DB{
             'BIGINT',
             'BIT'
         );
-        $this->dataTypes['string'] = array (
+        $this->dataTypes['string'] = array(
             'CHAR',
             'VARCHAR',
             'BINARY',
@@ -47,7 +50,7 @@ class DB{
             'ENUM',
             'SET'
         );
-        $this->dataTypes['date'] = array (
+        $this->dataTypes['date'] = array(
             'DATE',
             'DATETIME',
             'TIMESTAMP',
@@ -56,41 +59,47 @@ class DB{
         );
     }
 
-    function disconnect() {
+    function disconnect()
+    {
         ORM::set_db(null);
     }
-    function escape($s, $safecount=0) {
+
+    function escape($s, $safecount = 0)
+    {
         $safecount++;
-        if(1000<$safecount) exit("Too many loops '{$safecount}'");
+        if (1000 < $safecount) exit("Too many loops '{$safecount}'");
 
         $conn = ORM::get_db();
-        if(!is_object($conn)){
+        if (!is_object($conn)) {
             $this->connect();
         }
 
-        if(is_array($s)) {
-            if(count($s) === 0) $s = '';
+        if (is_array($s)) {
+            if (count($s) === 0) $s = '';
             else {
-                foreach($s as $i=>$v) {
-                    $s[$i] = $this->escape($v,$safecount);
+                foreach ($s as $i => $v) {
+                    $s[$i] = $this->escape($v, $safecount);
                 }
             }
-        }
-        else $s = substr(ORM::get_db()->quote($s), 1, -1);
+        } else $s = substr(ORM::get_db()->quote($s), 1, -1);
         return $s;
     }
-    function delete($from, $where='', $orderby='', $limit = '') {
+
+    function delete($from, $where = '', $orderby = '', $limit = '')
+    {
         if (!$from)
             return false;
         else {
             $from = $this->replaceFullTableName($from);
-            if($where != '') $where = "WHERE {$where}";
-            if($orderby !== '') $orderby = "ORDER BY {$orderby}";
-            if($limit != '') $limit = "LIMIT {$limit}";
+            if ($where != '') $where = "WHERE {$where}";
+            if ($orderby !== '') $orderby = "ORDER BY {$orderby}";
+            if ($limit != '') $limit = "LIMIT {$limit}";
             return $this->query("DELETE FROM {$from} {$where} {$orderby} {$limit}");
         }
     }
-    function update($fields, $table, $where = "") {
+
+    function update($fields, $table, $where = "")
+    {
         if (!$table)
             return false;
         else {
@@ -110,13 +119,15 @@ class DB{
             return $this->query("UPDATE $table SET $flds $where");
         }
     }
+
     function optimize($table_name)
     {
         $table_name = $this->replaceFullTableName($table_name);
         $rs = $this->query("OPTIMIZE TABLE {$table_name}");
-        if($rs) $rs = $this->query("ALTER TABLE {$table_name}");
+        if ($rs) $rs = $this->query("ALTER TABLE {$table_name}");
         return $rs;
     }
+
     /*function freeResult($rs) {
         mysql_free_result($rs);
     }*/
@@ -125,51 +136,58 @@ class DB{
      * @param ORM $rs
      * @return mixed
      */
-    function numFields($rs) {
+    function numFields($rs)
+    {
         return $rs->get_last_statement()->columnCount();
     }
-    function fieldName($rs,$col=0) {
-        if( ! $rs instanceof \PDOStatement){
+
+    function fieldName($rs, $col = 0)
+    {
+        if (!$rs instanceof \PDOStatement) {
             $rs = ORM::get_last_statement();
         }
         $out = $rs->getColumnMeta($col);
         return isset($out['name']) ? $out['name'] : '';
     }
-    function selectDb($name) {
+
+    function selectDb($name)
+    {
         ORM::get_db();
         //SELECT Database $name
     }
-    function getVersion() {
+
+    function getVersion()
+    {
         return ORM::get_db()->getAttribute(\PDO::ATTR_SERVER_VERSION);
     }
+
     /**
      * @TODO УДАЛИТЬ НАХУЙ
      * @param $str
      * @param null $force
      * @return mixed|string
      */
-    function replaceFullTableName($str,$force=null) {
+    function replaceFullTableName($str, $force = null)
+    {
         $str = trim($str);
-        $dbase  = trim($this->config['dbase'],'`');
+        $dbase = trim($this->config['dbase'], '`');
         $prefix = $this->config['table_prefix'];
-        if(!empty($force))
-        {
+        if (!empty($force)) {
             $result = "`{$dbase}`.`{$prefix}{$str}`";
-        }
-        elseif(strpos($str,'[+prefix+]')!==false)
-        {
+        } elseif (strpos($str, '[+prefix+]') !== false) {
             $result = preg_replace('@\[\+prefix\+\]([0-9a-zA-Z_]+)@', "`{$dbase}`.`{$prefix}$1`", $str);
-        }
-        else $result = $str;
+        } else $result = $str;
 
         return $result;
     }
-    protected function _getTable($dbTable){
+
+    protected function _getTable($dbTable)
+    {
         $table = '';
         $dbTable = explode(".", $this->replaceFullTableName($dbTable), 2);
-        if(count($dbTable)>0){
+        if (count($dbTable) > 0) {
             $table = end($dbTable);
-            if(count($dbTable)==2){
+            if (count($dbTable) == 2) {
                 $db = trim($dbTable[0], '`');
                 //ORM::set_db($db);
                 /* @TODO: select DB */
@@ -178,7 +196,9 @@ class DB{
         $out = trim($table, '`');
         return $out;
     }
-    public function query($q){
+
+    public function query($q)
+    {
         $db = ORM::get_db();
         $q = ORM::raw_execute($q);
         return ORM::get_last_statement();
@@ -187,7 +207,8 @@ class DB{
     /**
      * @TODO вернуть старый билдер запросов
      */
-    function select($fields = "*", $from = "", $where = "", $orderby = "", $limit = "") {
+    function select($fields = "*", $from = "", $where = "", $orderby = "", $limit = "")
+    {
         if (!$from)
             return false;
         else {
@@ -198,8 +219,10 @@ class DB{
             return $this->query("SELECT $fields FROM $from $where $orderby $limit");
         }
     }
-    function insert($fields, $intotable, $fromfields = "*", $fromtable = "", $where = "", $limit = "") {
-        if(empty($intotable)) return false;
+
+    function insert($fields, $intotable, $fromfields = "*", $fromtable = "", $where = "", $limit = "")
+    {
+        if (empty($intotable)) return false;
         $sql = '';
         if (!is_array($fields))
             $flds = $fields;
@@ -220,24 +243,30 @@ class DB{
         $lid = $this->getInsertId();
         return $lid ? $lid : $rt;
     }
-    function makeArray($q){
+
+    function makeArray($q)
+    {
         $out = array();
-        switch(true){
-            case ($q instanceof \PDOStatement):{
-                while($row = $this->getRow($q)){
+        switch (true) {
+            case ($q instanceof \PDOStatement):
+            {
+                while ($row = $this->getRow($q)) {
                     $out[] = $row;
                 }
                 break;
             }
-            case ($q instanceof ORM):{
+            case ($q instanceof ORM):
+            {
                 $out = $q->find_array();
                 break;
             }
         }
         return $out;
     }
-    function getInsertId($conn=NULL) {
-        if(!is_object($conn)){
+
+    function getInsertId($conn = NULL)
+    {
+        if (!is_object($conn)) {
             $conn = ORM::get_db();
         }
         return $conn->lastInsertId();
@@ -247,12 +276,14 @@ class DB{
      * @param ORM|null $conn
      * @return mixed
      */
-    function getAffectedRows($conn=NULL) {
+    function getAffectedRows($conn = NULL)
+    {
         if (!is_object($conn)) {
             $conn = ORM::get_last_statement();
         }
         return $conn->rowCount();
     }
+
     /*function getLastError($conn=NULL) {
         if (!is_resource($conn)) $conn =& $this->conn;
         return mysql_error($conn);
@@ -260,7 +291,8 @@ class DB{
     /**
      * @param ORM $ds
      */
-    function getRecordCount($ds) {
+    function getRecordCount($ds)
+    {
         return ($ds instanceof \PDOStatement) ? $ds->rowCount() : 0;
     }
 
@@ -268,43 +300,53 @@ class DB{
      * @param ORM $ds
      * @param string $mode
      */
-    function getRow($ds, $mode = 'assoc') {
-        if($ds instanceof \PDOStatement){
-            switch($mode){
-                case 'assoc':{
+    function getRow($ds, $mode = 'assoc')
+    {
+        if ($ds instanceof \PDOStatement) {
+            switch ($mode) {
+                case 'assoc':
+                {
                     return $ds->fetch(\PDO::FETCH_ASSOC);
                 }
-                case 'num':{
+                case 'num':
+                {
                     return $ds->fetch(\PDO::FETCH_NUM);
                 }
-                case 'object':{
+                case 'object':
+                {
                     return $ds->fetch(\PDO::FETCH_OBJ);
                 }
-                case 'both':{
+                case 'both':
+                {
                     return $ds->fetch(\PDO::FETCH_BOTH);
                 }
-                default:{
-                getService('core')->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
-                }
+                default:
+                    {
+                    getService('core')->messageQuit("Unknown get type ($mode) specified for fetchRow - must be empty, 'assoc', 'num' or 'both'.");
+                    }
             }
         }
     }
-    function getColumn($name, $dsq) {
+
+    function getColumn($name, $dsq)
+    {
         if (is_string($dsq))
             $dsq = $this->query($dsq);
         if ($dsq instanceof \PDOStatement) {
-            $col = array ();
+            $col = array();
             while ($row = $this->getRow($dsq)) {
                 $col[] = $row[$name];
             }
             return $col;
         }
     }
-    function getColumnNames($dsq) {
+
+    function getColumnNames($dsq)
+    {
         if (is_string($dsq))
             $dsq = $this->query($dsq);
         if ($dsq instanceof \PDOStatement) {
-            $names = array ();
+            $names = array();
             $limit = $dsq->columnCount($dsq);
             for ($i = 0; $i < $limit; $i++) {
                 $names[] = $this->fieldName($dsq, $i);
@@ -312,9 +354,11 @@ class DB{
             return $names;
         }
     }
-    function getValue($dsq) {
+
+    function getValue($dsq)
+    {
         $out = null;
-        if (is_string($dsq)){
+        if (is_string($dsq)) {
             $dsq = $this->query($dsq);
         }
         if ($dsq instanceof \PDOStatement) {
@@ -324,7 +368,8 @@ class DB{
         return $out;
     }
 
-    function getXML($dsq) {
+    function getXML($dsq)
+    {
         if (!is_resource($dsq))
             $dsq = $this->query($dsq);
         $xmldata = "<xml>\r\n<recordset>\r\n";
@@ -341,7 +386,8 @@ class DB{
         return $xmldata;
     }
 
-    function getTableMetaData($table) {
+    function getTableMetaData($table)
+    {
         $metadata = false;
         if (!empty ($table)) {
             $sql = "SHOW FIELDS FROM $table";
@@ -355,7 +401,8 @@ class DB{
         return $metadata;
     }
 
-    function prepareDate($timestamp, $fieldType = 'DATETIME') {
+    function prepareDate($timestamp, $fieldType = 'DATETIME')
+    {
         $date = '';
         if (!$timestamp === false && $timestamp > 0) {
             switch ($fieldType) {
@@ -376,7 +423,8 @@ class DB{
         return $date;
     }
 
-    function getHTMLGrid($dsq, $params) {
+    function getHTMLGrid($dsq, $params)
+    {
         if (is_string($dsq))
             $dsq = $this->query($dsq);
         if ($dsq instanceof \PDOStatement) {
@@ -414,20 +462,22 @@ class DB{
         }
     }
 
-    function __construct($host='',$dbase='', $uid='',$pwd='',$pre=NULL,$charset='',$connection_method='SET CHARACTER SET') {
+    function __construct($host = '', $dbase = '', $uid = '', $pwd = '', $pre = NULL, $charset = '', $connection_method = 'SET CHARACTER SET')
+    {
         $MainConfig = getService('global_config');
         $this->config['host'] = $host ? $host : getkey($MainConfig, 'database_server');
         $this->config['dbase'] = $dbase ? $dbase : getkey($MainConfig, 'dbase');
         $this->config['user'] = $uid ? $uid : getkey($MainConfig, 'database_user');
-        $this->config['pass'] = $pwd ? $pwd : getkey($MainConfig,'database_password');
-        $this->config['charset'] = $charset ? $charset : getkey($MainConfig,'database_connection_charset');
-        $this->config['connection_method'] =  $this->_dbconnectionmethod = getkey($MainConfig, 'database_connection_method', $connection_method);
+        $this->config['pass'] = $pwd ? $pwd : getkey($MainConfig, 'database_password');
+        $this->config['charset'] = $charset ? $charset : getkey($MainConfig, 'database_connection_charset');
+        $this->config['connection_method'] = $this->_dbconnectionmethod = getkey($MainConfig, 'database_connection_method', $connection_method);
         $this->config['table_prefix'] = ($pre !== NULL) ? $pre : $MainConfig['table_prefix'];
         $this->initDataTypes();
         $this->connect();
     }
 
-    function connect($host = '', $dbase = '', $uid = '', $pwd = '', $persist = 0, $prefix = '') {
+    function connect($host = '', $dbase = '', $uid = '', $pwd = '', $persist = 0, $prefix = '')
+    {
         $uid = $uid ? $uid : $this->config['user'];
         $pwd = $pwd ? $pwd : $this->config['pass'];
         $host = $host ? $host : $this->config['host'];
@@ -436,12 +486,12 @@ class DB{
         $prefix = $prefix ? $prefix : $this->config['table_prefix'];
         $connection_method = $this->config['connection_method'];
         ORM::configure(array(
-            'connection_string' => "mysql:host={$host};dbname=".trim($dbase,'`'),
+            'connection_string' => "mysql:host={$host};dbname=" . trim($dbase, '`'),
             'username' => $uid,
             'password' => $pwd,
             'prefix' => $prefix,
-            'driver_options' => array(\PDO::MYSQL_ATTR_INIT_COMMAND => $connection_method.' '.$charset),
-            'logger' => function($q, $time) {
+            'driver_options' => array(\PDO::MYSQL_ATTR_INIT_COMMAND => $connection_method . ' ' . $charset),
+            'logger' => function ($q, $time) {
                     getService('debug')->addQuery($q, $time);
                 },
             'logging' => true

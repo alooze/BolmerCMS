@@ -6,15 +6,17 @@
  * Time: 23:03
  */
 
-class Plugin{
+class Plugin
+{
     /** @var \Bolmer\Service $_inj */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
-    public function __construct(\Pimple $inj){
-        $this->_inj= $inj;
+    public function __construct(\Pimple $inj)
+    {
+        $this->_inj = $inj;
         $this->_core = $inj['core'];
     }
 
@@ -24,9 +26,10 @@ class Plugin{
      * @param string $pluginCode Code to run
      * @param array $params
      */
-    public function evalPlugin($pluginCode, $params) {
-        if($pluginCode){
-            $etomite = $modx = $core = &$this->_core;
+    public function evalPlugin($pluginCode, $params)
+    {
+        if ($pluginCode) {
+            $etomite = $modx = $core = & $this->_core;
             $this->_core->event->params = & $params; // store params inside event object
             if (is_array($params)) {
                 extract($params, EXTR_SKIP);
@@ -60,10 +63,11 @@ class Plugin{
      * @param string $pluginName
      * @return boolean|int
      */
-    public function addEventListener($evtName, $pluginName) {
+    public function addEventListener($evtName, $pluginName)
+    {
         if (!$evtName || !$pluginName)
             return false;
-        if (!array_key_exists($evtName,$this->_core->pluginEvent))
+        if (!array_key_exists($evtName, $this->_core->pluginEvent))
             $this->_core->pluginEvent[$evtName] = array();
         return array_push($this->_core->pluginEvent[$evtName], $pluginName); // return array count
     }
@@ -74,18 +78,22 @@ class Plugin{
      * @param string $evtName
      * @return boolean
      */
-    public function removeEventListener($evtName) {
+    public function removeEventListener($evtName)
+    {
         if (!$evtName)
             return false;
         unset ($this->_core->pluginEvent[$evtName]);
     }
+
     /**
      * Remove all event listners - only for use within the current execution cycle
      */
-    public function removeAllEventListener() {
+    public function removeAllEventListener()
+    {
         unset ($this->_core->pluginEvent);
-        $this->_core->pluginEvent= array ();
+        $this->_core->pluginEvent = array();
     }
+
     /**
      * Invoke an event.
      *
@@ -93,62 +101,63 @@ class Plugin{
      * @param array $extParams Parameters available to plugins. Each array key will be the PHP variable name, and the array value will be the variable value.
      * @return boolean|array
      */
-    public function invokeEvent($evtName, $extParams= array ()) {
+    public function invokeEvent($evtName, $extParams = array())
+    {
         if (!$evtName)
             return false;
         if (!isset ($this->_core->pluginEvent[$evtName]))
             return false;
-        $el= $this->_core->pluginEvent[$evtName];
-        $results= array ();
-        $numEvents= count($el);
+        $el = $this->_core->pluginEvent[$evtName];
+        $results = array();
+        $numEvents = count($el);
         if ($numEvents > 0)
-            for ($i= 0; $i < $numEvents; $i++) { // start for loop
+            for ($i = 0; $i < $numEvents; $i++) { // start for loop
                 if ($this->_core->dumpPlugins == 1) $eventtime = $this->_core->getMicroTime();
-                $pluginName= $el[$i];
+                $pluginName = $el[$i];
                 $pluginName = stripslashes($pluginName);
                 // reset event object
-                $e= & $this->_core->Event;
+                $e = & $this->_core->Event;
                 $e->_resetEventObject();
-                $e->name= $evtName;
-                $e->activePlugin= $pluginName;
+                $e->name = $evtName;
+                $e->activePlugin = $pluginName;
 
                 // get plugin code
                 if (isset ($this->_core->pluginCache[$pluginName])) {
-                    $pluginCode= $this->_core->pluginCache[$pluginName];
-                    $pluginProperties= isset($this->_core->pluginCache[$pluginName . "Props"]) ? $this->_core->pluginCache[$pluginName . "Props"] : '';
+                    $pluginCode = $this->_core->pluginCache[$pluginName];
+                    $pluginProperties = isset($this->_core->pluginCache[$pluginName . "Props"]) ? $this->_core->pluginCache[$pluginName . "Props"] : '';
                 } else {
-                    $sql= "SELECT `name`, `plugincode`, `properties` FROM " . $this->_core->getTableName("BPlugin") . " WHERE `name`='" . $pluginName . "' AND `disabled`=0;";
-                    $result= $this->_core->db->query($sql);
+                    $sql = "SELECT `name`, `plugincode`, `properties` FROM " . $this->_core->getTableName("BPlugin") . " WHERE `name`='" . $pluginName . "' AND `disabled`=0;";
+                    $result = $this->_core->db->query($sql);
                     if ($this->_core->db->getRecordCount($result) == 1) {
-                        $row= $this->_core->db->getRow($result);
-                        $pluginCode= $this->_core->pluginCache[$row['name']]= $row['plugincode'];
-                        $pluginProperties= $this->_core->pluginCache[$row['name'] . "Props"]= $row['properties'];
+                        $row = $this->_core->db->getRow($result);
+                        $pluginCode = $this->_core->pluginCache[$row['name']] = $row['plugincode'];
+                        $pluginProperties = $this->_core->pluginCache[$row['name'] . "Props"] = $row['properties'];
                     } else {
-                        $pluginCode= $this->_core->pluginCache[$pluginName]= "return false;";
-                        $pluginProperties= '';
+                        $pluginCode = $this->_core->pluginCache[$pluginName] = "return false;";
+                        $pluginProperties = '';
                     }
                 }
 
                 // load default params/properties
-                $parameter= $this->_inj['parser']->parseProperties($pluginProperties);
+                $parameter = $this->_inj['parser']->parseProperties($pluginProperties);
                 if (!empty ($extParams))
-                    $parameter= array_merge($parameter, $extParams);
+                    $parameter = array_merge($parameter, $extParams);
 
                 // eval plugin
                 $this->evalPlugin($pluginCode, $parameter);
                 if ($this->_core->dumpPlugins == 1) {
                     $eventtime = $this->_core->getMicroTime() - $eventtime;
-                    $this->_core->pluginsCode .= '<fieldset><legend><b>' . $evtName . ' / ' . $pluginName . '</b> ('.sprintf('%2.2f ms', $eventtime*1000).')</legend>';
-                    foreach ($parameter as $k=>$v) $this->_core->pluginsCode .= $k . ' => ' . print_r($v, true) . '<br>';
+                    $this->_core->pluginsCode .= '<fieldset><legend><b>' . $evtName . ' / ' . $pluginName . '</b> (' . sprintf('%2.2f ms', $eventtime * 1000) . ')</legend>';
+                    foreach ($parameter as $k => $v) $this->_core->pluginsCode .= $k . ' => ' . print_r($v, true) . '<br>';
                     $this->_core->pluginsCode .= '</fieldset><br />';
                     $this->_core->pluginsTime["$evtName / $pluginName"] += $eventtime;
                 }
                 if ($e->_output != "")
-                    $results[]= $e->_output;
+                    $results[] = $e->_output;
                 if ($e->_propagate != true)
                     break;
             }
-        $e->activePlugin= "";
+        $e->activePlugin = "";
         return $results;
     }
 }

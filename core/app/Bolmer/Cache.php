@@ -1,5 +1,6 @@
-<?php 
+<?php
 namespace Bolmer;
+
 /**
  * Created by PhpStorm.
  * User: Agel_Nash
@@ -24,27 +25,27 @@ class Cache extends Tcache
      */
     public function __construct(\Pimple $inj, $namespace = '', $defaultTTL = null, $ttlVariation = 0)
     {
-        $this->_inj= $inj;
+        $this->_inj = $inj;
         $this->_core = $inj['core'];
-        
+
         // создаем основной кеш
-        $options = array('dir'=>BOLMER_BASE_PATH.'assets/cache',
-                        'sub_dirs'=>false,
-                        'id_as_filename'=>true,
-                        'file_extension'=>'.pageCache.php'
-            );
+        $options = array('dir' => BOLMER_BASE_PATH . 'assets/cache',
+            'sub_dirs' => false,
+            'id_as_filename' => true,
+            'file_extension' => '.pageCache.php'
+        );
 
         $backend = new \Tcache\Backends\File($options);
-        
+
         parent::__construct($backend, $namespace, $defaultTTL, $ttlVariation);
         // файловый кеш не поддерживает теги, создаем отдельный кеш для тегов
-        $options = array('dir'=>BOLMER_BASE_PATH.'assets/cache/tags',
-                        'sub_dirs'=>false,
-                        'id_as_filename'=>true,
-                        'file_extension'=>'.tag'
-            );
+        $options = array('dir' => BOLMER_BASE_PATH . 'assets/cache/tags',
+            'sub_dirs' => false,
+            'id_as_filename' => true,
+            'file_extension' => '.tag'
+        );
 
-        $this->setTagBackend(new \Tcache\Backends\File($options)); 
+        $this->setTagBackend(new \Tcache\Backends\File($options));
     }
 
     /**
@@ -53,10 +54,10 @@ class Cache extends Tcache
      * @param int $id
      * @return string
      */
-    public function checkCache($id) 
+    public function checkCache($id)
     {
-        $tbl_document_groups= $this->_core->getTableName("BDocGroupList");
-        
+        $tbl_document_groups = $this->_core->getTableName("BDocGroupList");
+
         $cacheId = $this->getCacheId($id);
 
         $cacheContent = $this->get($cacheId);
@@ -68,16 +69,16 @@ class Cache extends Tcache
             if (count($a) == 1) {
                 return $a[0]; // return only document content
             } else {
-                $docObj= unserialize($a[0]); // rebuild document object
+                $docObj = unserialize($a[0]); // rebuild document object
                 if ($docObj['privateweb'] && isset ($docObj['__MODxDocGroups__'])) {
-                    $pass= false;
-                    $usrGrps= $this->_inj['user']->getUserDocGroups();
-                    $docGrps= explode(",", $docObj['__MODxDocGroups__']);
+                    $pass = false;
+                    $usrGrps = $this->_inj['user']->getUserDocGroups();
+                    $docGrps = explode(",", $docObj['__MODxDocGroups__']);
                     // check is user has access to doc groups
                     if (is_array($usrGrps)) {
                         foreach ($usrGrps as $k => $v)
                             if (in_array($v, $docGrps)) {
-                                $pass= true;
+                                $pass = true;
                                 break;
                             }
                     }
@@ -85,9 +86,9 @@ class Cache extends Tcache
                     if (!$pass) {
                         if ($this->_core->getConfig('unauthorized_page')) {
                             // check if file is not public
-                            $secrs= $this->_core->db->select('id', $tbl_document_groups, "document='{$id}'", '', '1');
+                            $secrs = $this->_core->db->select('id', $tbl_document_groups, "document='{$id}'", '', '1');
                             if ($secrs)
-                                $seclimit= $this->_core->db->getRecordCount($secrs);
+                                $seclimit = $this->_core->db->getRecordCount($secrs);
                         }
                         if ($seclimit > 0) {
                             // match found but not publicly accessible, send the visitor to the unauthorized_page
@@ -102,32 +103,32 @@ class Cache extends Tcache
                 }
                 // Grab the Scripts
                 if (isset($docObj['__MODxSJScripts__'])) $this->_core->sjscripts = $docObj['__MODxSJScripts__'];
-                if (isset($docObj['__MODxJScripts__']))  $this->_core->jscripts = $docObj['__MODxJScripts__'];
+                if (isset($docObj['__MODxJScripts__'])) $this->_core->jscripts = $docObj['__MODxJScripts__'];
 
                 // Remove intermediate variables
                 unset($docObj['__MODxDocGroups__'], $docObj['__MODxSJScripts__'], $docObj['__MODxJScripts__']);
 
-                $this->_core->documentObject= $docObj;
+                $this->_core->documentObject = $docObj;
                 return $a[1]; // return document content
-            }                
+            }
         } else {
-            $this->_core->documentGenerated= 1;
+            $this->_core->documentGenerated = 1;
             return "";
         }
     }
 
     /**
-     * 
+     *
      */
     public function getCacheId($id)
     {
         if ($this->_core->getConfig('cache_type') == 2) {
-            $cacheId = 'docid_'.$id.'_'.$this->getIdGivenThe('GET','*');
+            $cacheId = 'docid_' . $id . '_' . $this->getIdGivenThe('GET', '*');
             // $md5_hash = '';
             // if(!empty($_GET)) $md5_hash = '_' . md5(http_build_query($_GET));
             // $cacheFile= "assets/cache/docid_" . $id .$md5_hash. ".pageCache.php";
         } else {
-            $cacheId = 'docid_'.$id;
+            $cacheId = 'docid_' . $id;
             // $cacheFile= "assets/cache/docid_" . $id . ".pageCache.php";
         }
         return $cacheId;
@@ -139,9 +140,9 @@ class Cache extends Tcache
      *
      * @return boolean
      */
-    public function clearCache($type='', $report=false) 
+    public function clearCache($type = '', $report = false)
     {
-        if ($type=='full') {
+        if ($type == 'full') {
             $this->refreshCache($report);
             return $this->flushAll();
         } else {
@@ -154,13 +155,14 @@ class Cache extends Tcache
      *
      * @return bool
      */
-    function refreshCache($report = false) {
+    function refreshCache($report = false)
+    {
         include_once(BOLMER_MANAGER_PATH . 'processors/cache_sync.class.processor.php');
         $sync = new \synccache();
         $sync->setCachepath($this->getCachePath(true));
         $sync->setReport($report);
         $sync->emptyCache();
-        if (file_exists(BOLMER_BASE_PATH.'assets/cache/siteCache.idx.php')) {
+        if (file_exists(BOLMER_BASE_PATH . 'assets/cache/siteCache.idx.php')) {
             $this->_core->config = null;
             $this->_core->aliasListing = null;
             $this->_core->documentListing = null;
@@ -170,7 +172,7 @@ class Cache extends Tcache
             $this->_core->snippetCache = null;
             $this->_core->pluginCache = null;
             $this->_core->pluginEvent = null;
-            require(BOLMER_BASE_PATH.'assets/cache/siteCache.idx.php');
+            require(BOLMER_BASE_PATH . 'assets/cache/siteCache.idx.php');
             return true;
         } else {
             return false;
@@ -183,7 +185,7 @@ class Cache extends Tcache
      * @param string $fullLocalPath
      * @return string The complete URL/path to the cache folder
      */
-    public function getCachePath($fullLocalPath = false) 
+    public function getCachePath($fullLocalPath = false)
     {
         switch ($fullLocalPath) {
             case !false:
@@ -194,7 +196,7 @@ class Cache extends Tcache
                 $out = str_replace(BOLMER_BASE_PATH, BOLMER_BASE_URL, $this->backend->getCachePath());
                 break;
         }
-        return $out;        
+        return $out;
     }
 
     /**
@@ -205,7 +207,7 @@ class Cache extends Tcache
      * @param mixed $rules Список значений
      * @return string
      */
-    public function getIdGivenThe($name, $rules='*')
+    public function getIdGivenThe($name, $rules = '*')
     {
         // принудительно приводим список к массиву
         if (!is_array($rules)) {
@@ -226,10 +228,10 @@ class Cache extends Tcache
                 } else {
                     foreach ($rules as $rule) {
                         if (isset($_GET[$rule])) {
-                            $id.= serialize($_GET[$rule]);
+                            $id .= serialize($_GET[$rule]);
                         }
                     }
-                } 
+                }
                 break;
             case 'Post':
                 if ($rules[0] == '*') {
@@ -237,7 +239,7 @@ class Cache extends Tcache
                 } else {
                     foreach ($rules as $rule) {
                         if (isset($_POST[$rule])) {
-                            $id.= serialize($_POST[$rule]);
+                            $id .= serialize($_POST[$rule]);
                         }
                     }
                 }
@@ -249,7 +251,7 @@ class Cache extends Tcache
                 } else {
                     foreach ($rules as $rule) {
                         if (isset($_REQUEST[$rule])) {
-                            $id.= serialize($_REQUEST[$rule]);
+                            $id .= serialize($_REQUEST[$rule]);
                         }
                     }
                 }
@@ -261,7 +263,7 @@ class Cache extends Tcache
                 } else {
                     foreach ($rules as $rule) {
                         if (isset($_SESSION[$rule])) {
-                            $id.= serialize($_SESSION[$rule]);
+                            $id .= serialize($_SESSION[$rule]);
                         }
                     }
                 }
@@ -274,12 +276,12 @@ class Cache extends Tcache
                 } else {
                     foreach ($rules as $rule) {
                         if (isset($this->_core->documentObject[$rule])) {
-                            $id.= serialize($this->_core->documentObject[$rule]);
+                            $id .= serialize($this->_core->documentObject[$rule]);
                         }
                     }
                 }
                 break;
-            
+
             default:
                 return '';
                 break;
@@ -306,18 +308,18 @@ class Cache extends Tcache
      * @param array $consider Массив с переменными, которые нужно учитывать при сохранении
      * @return mixed
      */
-    public function runSnippet($name, array $options=array(), array $consider=array())
+    public function runSnippet($name, array $options = array(), array $consider = array())
     {
         // получаем ключ кеша
-        $id = serialize($name).serialize($options);
+        $id = serialize($name) . serialize($options);
 
         foreach ($consider as $type => $rules) {
             // в зависимости от указанных для отслеживания переменных, получаем данные для id
-            $id.= $this->getIdGivenThe($type, $rules);
+            $id .= $this->getIdGivenThe($type, $rules);
         }
 
-        $id = $name.'.'.md5($id); // пока искусственно добавляем "неймспейс"
-        
+        $id = $name . '.' . md5($id); // пока искусственно добавляем "неймспейс"
+
         if (($value = $this->get($id)) === null) {
             //готовим данные для сохранения в кеше
 
@@ -330,7 +332,7 @@ class Cache extends Tcache
             $phAr = array_diff($this->_inj['parser']->getPlaceholders(), $tmpAr);
 
             //дописываем плейсхолдеры в кеш
-            $res = serialize($phAr).'~~~SPLITTER~~~'.$value;
+            $res = serialize($phAr) . '~~~SPLITTER~~~' . $value;
             $this->add($id, $res);
             return $value;
         }

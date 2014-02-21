@@ -5,16 +5,19 @@
  * Date: 19.01.14
  * Time: 16:07
  */
-class Model extends \Granada\Model{
-    public function save($CallEvents = false,$clearCache = false) {
+class Model extends \Granada\Model
+{
+    public function save($CallEvents = false, $clearCache = false)
+    {
         $q = $this->orm->save();
-        if($clearCache){
+        if ($clearCache) {
             getService('core')->clearCache('full', false);
         }
         return $q;
     }
 
-    public static function factory($class_name, $connection_name = null) {
+    public static function factory($class_name, $connection_name = null)
+    {
         $table_name = static::_get_table_name($class_name);
         if ($connection_name == null) {
             $connection_name = static::_get_static_property(
@@ -29,7 +32,8 @@ class Model extends \Granada\Model{
         return $wrapper;
     }
 
-    protected static function _get_table_name($class_name) {
+    protected static function _get_table_name($class_name)
+    {
         $specified_table_name = static::_get_static_property($class_name, '_table');
         $specified_table_name = \Granada\Orm\Wrapper::get_config('prefix') . $specified_table_name;
         if (is_null($specified_table_name)) {
@@ -38,8 +42,9 @@ class Model extends \Granada\Model{
         return $specified_table_name;
     }
 
-    public static function getFullTableName($className='', $connection_name = null){
-        $class_name = $className ? (get_class() . '\\'. $className) : get_called_class();
+    public static function getFullTableName($className = '', $connection_name = null)
+    {
+        $class_name = $className ? (get_class() . '\\' . $className) : get_called_class();
         $table_name = static::_get_table_name($class_name);
         if ($connection_name == null) {
             $connection_name = static::_get_static_property(
@@ -51,16 +56,18 @@ class Model extends \Granada\Model{
         return static::getTable($table_name, $connection_name);
     }
 
-    public static function getTable($name, $connection){
+    public static function getTable($name, $connection)
+    {
         $prefix = \Granada\Orm\Wrapper::get_config('prefix', $connection);
-        if($prefix && substr($name, 0, strlen($prefix))!=$prefix){
+        if ($prefix && substr($name, 0, strlen($prefix)) != $prefix) {
             $name = $prefix . $name;
         }
         return $name;
     }
 
-    public static function __callStatic($method, $parameters) {
-        if(function_exists('get_called_class')) {
+    public static function __callStatic($method, $parameters)
+    {
+        if (function_exists('get_called_class')) {
             $model = static::factory(get_called_class());
             return call_user_func_array(array($model, $method), $parameters);
         }

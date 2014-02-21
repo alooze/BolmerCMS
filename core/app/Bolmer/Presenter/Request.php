@@ -6,15 +6,17 @@
  * Time: 22:30
  */
 
-class Request{
+class Request
+{
     /** @var \Bolmer\Pimple $_inj */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
-    public function __construct(\Pimple $inj){
-        $this->_inj= $inj;
+    public function __construct(\Pimple $inj)
+    {
+        $this->_inj = $inj;
         $this->_core = $inj['core'];
     }
 
@@ -23,12 +25,12 @@ class Request{
      *
      * @return string 'alias' (friendly url alias) or 'id'
      */
-    public function getDocumentMethod() {
+    public function getDocumentMethod()
+    {
         // function to test the query and find the retrieval method
         if (!empty ($_REQUEST['q'])) { //LANG
             return "alias";
-        }
-        elseif (isset ($_REQUEST['id'])) {
+        } elseif (isset ($_REQUEST['id'])) {
             return "id";
         } else {
             return "none";
@@ -41,22 +43,23 @@ class Request{
      * @param string $method id and alias are allowed
      * @return int
      */
-    public function getDocumentIdentifier($method) {
+    public function getDocumentIdentifier($method)
+    {
         // function to test the query and find the retrieval method
-        $docIdentifier= $this->_core->getConfig('site_start');
+        $docIdentifier = $this->_core->getConfig('site_start');
         switch ($method) {
             case 'alias' :
                 if (!is_scalar($_REQUEST['q'])) {
                     $this->_core->sendErrorPage();
-                }else{
-                    $docIdentifier= $this->_core->db->escape($_REQUEST['q']);
+                } else {
+                    $docIdentifier = $this->_core->db->escape($_REQUEST['q']);
                 }
                 break;
             case 'id' :
                 if (!is_numeric($_REQUEST['id'])) {
                     $this->_core->sendErrorPage();
                 } else {
-                    $docIdentifier= intval($_REQUEST['id']);
+                    $docIdentifier = intval($_REQUEST['id']);
                 }
                 break;
         }

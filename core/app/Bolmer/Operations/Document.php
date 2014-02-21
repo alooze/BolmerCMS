@@ -5,15 +5,17 @@
  * Date: 10.02.14
  * Time: 16:17
  */
-class Document{
+class Document
+{
     /** @var \Bolmer\Pimple $_inj */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
-    public function __construct(\Pimple $inj){
-        $this->_inj= $inj;
+    public function __construct(\Pimple $inj)
+    {
+        $this->_inj = $inj;
         $this->_core = $inj['core'];
     }
 
@@ -25,7 +27,8 @@ class Document{
      * @param array $children Optional array of docids to merge with the result.
      * @return array Contains the document Listing (tree) like the sitemap
      */
-    public function getChildIds($id, $depth= 10, $children= array ()) {
+    public function getChildIds($id, $depth = 10, $children = array())
+    {
 
         // Initialise a static array to index parents->children
         static $documentMap_cache = array();
@@ -61,9 +64,10 @@ class Document{
      * @param int $height The maximum number of levels to go up, default 10.
      * @return array
      */
-    public function getParentIds($id, $height= 10) {
-        $parents= array ();
-        while ( $id && $height-- ) {
+    public function getParentIds($id, $height = 10)
+    {
+        $parents = array();
+        while ($id && $height--) {
             $thisid = $id;
             $id = $this->_core->aliasListing[$id]['parent'];
             if (!$id) break;
@@ -78,7 +82,8 @@ class Document{
      * @param int docid
      * @return int
      */
-    function getParentId($id) {
+    function getParentId($id)
+    {
         return $this->_core->aliasListing[$id]['parent'];
     }
 
@@ -88,7 +93,8 @@ class Document{
      * @param int $id Docid to get ultimate parent.
      * @return int
      */
-    function getUltimateParentId($id) {
+    function getUltimateParentId($id)
+    {
         $last_id = 0;
         while ($id) {
             $last_id = $id;
@@ -108,27 +114,28 @@ class Document{
      * @param string $fields Default: id, pagetitle, description, parent, alias, menutitle
      * @return array
      */
-    public function getAllChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        $tblsc= $this->_core->getTableName("BDoc");
-        $tbldg= $this->_core->getTableName("BDocGroupList");
+    public function getAllChildren($id = 0, $sort = 'menuindex', $dir = 'ASC', $fields = 'id, pagetitle, description, parent, alias, menutitle')
+    {
+        $tblsc = $this->_core->getTableName("BDoc");
+        $tbldg = $this->_core->getTableName("BDocGroupList");
         // modify field names to use sc. table reference
-        $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
-        $sort= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
+        $fields = 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
+        $sort = 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
         // get document groups for current user
-        if ($docgrp= $this->_inj['user']->getUserDocGroups())
-            $docgrp= implode(",", $docgrp);
+        if ($docgrp = $this->_inj['user']->getUserDocGroups())
+            $docgrp = implode(",", $docgrp);
         // build query
-        $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+        $access = ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
             (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-        $sql= "SELECT DISTINCT $fields FROM $tblsc sc
+        $sql = "SELECT DISTINCT $fields FROM $tblsc sc
               LEFT JOIN $tbldg dg on dg.document = sc.id
               WHERE sc.parent = '$id'
               AND ($access)
               GROUP BY sc.id
               ORDER BY $sort $dir;";
-        $result= $this->db->query($sql);
-        $resourceArray= array ();
-        for ($i= 0; $i < @ $this->_core->db->getRecordCount($result); $i++) {
+        $result = $this->db->query($sql);
+        $resourceArray = array();
+        for ($i = 0; $i < @ $this->_core->db->getRecordCount($result); $i++) {
             array_push($resourceArray, @ $this->_core->db->getRow($result));
         }
         return $resourceArray;
@@ -145,28 +152,29 @@ class Document{
      * @param string $fields Default: id, pagetitle, description, parent, alias, menutitle
      * @return array
      */
-    public function getActiveChildren($id= 0, $sort= 'menuindex', $dir= 'ASC', $fields= 'id, pagetitle, description, parent, alias, menutitle') {
-        $tblsc= $this->_core->getTableName("BDoc");
-        $tbldg= $this->_core->getTableName("BDocGroupList");
+    public function getActiveChildren($id = 0, $sort = 'menuindex', $dir = 'ASC', $fields = 'id, pagetitle, description, parent, alias, menutitle')
+    {
+        $tblsc = $this->_core->getTableName("BDoc");
+        $tbldg = $this->_core->getTableName("BDocGroupList");
 
         // modify field names to use sc. table reference
-        $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
-        $sort= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
+        $fields = 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
+        $sort = 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
         // get document groups for current user
-        if ($docgrp= $this->_inj['user']->getUserDocGroups())
-            $docgrp= implode(",", $docgrp);
+        if ($docgrp = $this->_inj['user']->getUserDocGroups())
+            $docgrp = implode(",", $docgrp);
         // build query
-        $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+        $access = ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
             (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-        $sql= "SELECT DISTINCT $fields FROM $tblsc sc
+        $sql = "SELECT DISTINCT $fields FROM $tblsc sc
               LEFT JOIN $tbldg dg on dg.document = sc.id
               WHERE sc.parent = '$id' AND sc.published=1 AND sc.deleted=0
               AND ($access)
               GROUP BY sc.id
               ORDER BY $sort $dir;";
-        $result= $this->_core->db->query($sql);
-        $resourceArray= array ();
-        for ($i= 0; $i < @ $this->_core->db->getRecordCount($result); $i++) {
+        $result = $this->_core->db->query($sql);
+        $resourceArray = array();
+        for ($i = 0; $i < @ $this->_core->db->getRecordCount($result); $i++) {
             array_push($resourceArray, @ $this->_core->db->getRow($result));
         }
         return $resourceArray;
@@ -193,31 +201,32 @@ class Document{
      *                          Default: Empty string (no limit)
      * @return array
      */
-    public function getDocumentChildren($parentid= 0, $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
-        $limit= ($limit != "") ? "LIMIT $limit" : "";
-        $tblsc= $this->_core->getTableName("BDoc");
-        $tbldg= $this->_core->getTableName("BDocGroupList");
+    public function getDocumentChildren($parentid = 0, $published = 1, $deleted = 0, $fields = "*", $where = '', $sort = "menuindex", $dir = "ASC", $limit = "")
+    {
+        $limit = ($limit != "") ? "LIMIT $limit" : "";
+        $tblsc = $this->_core->getTableName("BDoc");
+        $tbldg = $this->_core->getTableName("BDocGroupList");
         // modify field names to use sc. table reference
-        $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
-        $sort= ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
+        $fields = 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
+        $sort = ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
         if ($where != '')
-            $where= 'AND ' . $where;
+            $where = 'AND ' . $where;
         // get document groups for current user
-        if ($docgrp= $this->_inj['user']->getUserDocGroups())
-            $docgrp= implode(",", $docgrp);
+        if ($docgrp = $this->_inj['user']->getUserDocGroups())
+            $docgrp = implode(",", $docgrp);
         // build query
-        $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+        $access = ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
             (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-        $sql= "SELECT DISTINCT $fields
+        $sql = "SELECT DISTINCT $fields
               FROM $tblsc sc
               LEFT JOIN $tbldg dg on dg.document = sc.id
-              WHERE sc.parent = '$parentid' ".((int)$published == 0 ? '' : "AND sc.published=$published ")."AND sc.deleted=$deleted $where
+              WHERE sc.parent = '$parentid' " . ((int)$published == 0 ? '' : "AND sc.published=$published ") . "AND sc.deleted=$deleted $where
               AND ($access)
               GROUP BY sc.id " .
             ($sort ? " ORDER BY $sort $dir " : "") . " $limit ";
-        $result= $this->_core->db->query($sql);
-        $resourceArray= array ();
-        for ($i= 0; $i < @ $this->_core->db->getRecordCount($result); $i++) {
+        $result = $this->_core->db->query($sql);
+        $resourceArray = array();
+        for ($i = 0; $i < @ $this->_core->db->getRecordCount($result); $i++) {
             array_push($resourceArray, @ $this->_core->db->getRow($result));
         }
         return $resourceArray;
@@ -245,10 +254,10 @@ class Document{
      *                          Default: Empty string (no limit)
      * @return array|boolean Result array with documents, or false
      */
-    public function getDocuments($ids= array (), $published= 1, $deleted= 0, $fields= "*", $where= '', $sort= "menuindex", $dir= "ASC", $limit= "") {
-        if(is_string($ids))
-        {
-            if(strpos($ids,',')!==false)
+    public function getDocuments($ids = array(), $published = 1, $deleted = 0, $fields = "*", $where = '', $sort = "menuindex", $dir = "ASC", $limit = "")
+    {
+        if (is_string($ids)) {
+            if (strpos($ids, ',') !== false)
                 $ids = explode(',', $ids);
             else
                 $ids = array($ids);
@@ -256,28 +265,28 @@ class Document{
         if (count($ids) == 0) {
             return false;
         } else {
-            $limit= ($limit != "") ? "LIMIT $limit" : ""; // LIMIT capabilities - rad14701
-            $tblsc= $this->_core->getTableName("BDoc");
-            $tbldg= $this->_core->getTableName("BDocGroupList");
+            $limit = ($limit != "") ? "LIMIT $limit" : ""; // LIMIT capabilities - rad14701
+            $tblsc = $this->_core->getTableName("BDoc");
+            $tbldg = $this->_core->getTableName("BDocGroupList");
             // modify field names to use sc. table reference
-            $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
-            $sort= ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
+            $fields = 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
+            $sort = ($sort == "") ? "" : 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $sort)));
             if ($where != '')
-                $where= 'AND ' . $where;
+                $where = 'AND ' . $where;
             // get document groups for current user
-            if ($docgrp= $this->_inj['user']->getUserDocGroups())
-                $docgrp= implode(",", $docgrp);
-            $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+            if ($docgrp = $this->_inj['user']->getUserDocGroups())
+                $docgrp = implode(",", $docgrp);
+            $access = ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
                 (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-            $sql= "SELECT DISTINCT $fields FROM $tblsc sc
+            $sql = "SELECT DISTINCT $fields FROM $tblsc sc
                     LEFT JOIN $tbldg dg on dg.document = sc.id
-                    WHERE (sc.id IN (" . implode(",",$ids) . ") AND sc.published=$published AND sc.deleted=$deleted $where)
+                    WHERE (sc.id IN (" . implode(",", $ids) . ") AND sc.published=$published AND sc.deleted=$deleted $where)
                     AND ($access)
                     GROUP BY sc.id " .
                 ($sort ? " ORDER BY $sort $dir" : "") . " $limit ";
-            $result= $this->_core->db->query($sql);
-            $resourceArray= array ();
-            for ($i= 0; $i < @ $this->_core->db->getRecordCount($result); $i++) {
+            $result = $this->_core->db->query($sql);
+            $resourceArray = array();
+            for ($i = 0; $i < @ $this->_core->db->getRecordCount($result); $i++) {
                 array_push($resourceArray, @ $this->_core->db->getRow($result));
             }
             return $resourceArray;
@@ -298,11 +307,12 @@ class Document{
      *                      Default: 0 (undeleted)
      * @return boolean|string
      */
-    public function getDocument($id= 0, $fields= "*", $published= 1, $deleted= 0) {
+    public function getDocument($id = 0, $fields = "*", $published = 1, $deleted = 0)
+    {
         $out = false;
         if (!empty($id)) {
-            $tmpArr[]= $id;
-            $docs= $this->getDocuments($tmpArr, $published, $deleted, $fields, "", "", "", 1);
+            $tmpArr[] = $id;
+            $docs = $this->getDocuments($tmpArr, $published, $deleted, $fields, "", "", "", 1);
             if ($docs != false) {
                 $out = $docs[0];
             }
@@ -323,28 +333,29 @@ class Document{
      *                       Default: id, pagetitle, description, alias
      * @return boolean|array
      */
-    public function getPageInfo($pageid= -1, $active= 1, $fields= 'id, pagetitle, description, alias') {
+    public function getPageInfo($pageid = -1, $active = 1, $fields = 'id, pagetitle, description, alias')
+    {
         if ($pageid == 0) {
             return false;
         } else {
-            $tblsc= $this->_core->getTableName("BDoc");
-            $tbldg= $this->_core->getTableName("BDocGroupList");
+            $tblsc = $this->_core->getTableName("BDoc");
+            $tbldg = $this->_core->getTableName("BDocGroupList");
             $activeSql = (int)$active == 1 ? "AND sc.published=1 AND sc.deleted=0" : "";
             // modify field names to use sc. table reference
-            $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
+            $fields = 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
             // get document groups for current user
-            if ($docgrp= $this->_inj['user']->getUserDocGroups())
-                $docgrp= implode(",", $docgrp);
-            $access= ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+            if ($docgrp = $this->_inj['user']->getUserDocGroups())
+                $docgrp = implode(",", $docgrp);
+            $access = ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
                 (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-            $sql= "SELECT $fields
+            $sql = "SELECT $fields
                     FROM $tblsc sc
                     LEFT JOIN $tbldg dg on dg.document = sc.id
                     WHERE (sc.id=$pageid $activeSql)
                     AND ($access)
                     LIMIT 1 ";
-            $result= $this->_core->db->query($sql);
-            $pageInfo= @ $this->_core->db->getRow($result);
+            $result = $this->_core->db->query($sql);
+            $pageInfo = @ $this->_core->db->getRow($result);
             return $pageInfo;
         }
     }
@@ -361,18 +372,19 @@ class Document{
      *                       Default: id, pagetitle, description, alias
      * @return boolean|array
      */
-    public function getParent($pid= -1, $active= 1, $fields= 'id, pagetitle, description, alias, parent') {
+    public function getParent($pid = -1, $active = 1, $fields = 'id, pagetitle, description, alias, parent')
+    {
         if ($pid == -1) {
-            $pid= $this->_core->documentObject['parent'];
+            $pid = $this->_core->documentObject['parent'];
             return ($pid == 0) ? false : $this->getPageInfo($pid, $active, $fields);
         } else
             if ($pid == 0) {
                 return false;
             } else {
                 // first get the child document
-                $child= $this->getPageInfo($pid, $active, "parent");
+                $child = $this->getPageInfo($pid, $active, "parent");
                 // now return the child's parent
-                $pid= ($child['parent']) ? $child['parent'] : 0;
+                $pid = ($child['parent']) ? $child['parent'] : 0;
                 return ($pid == 0) ? false : $this->getPageInfo($pid, $active, $fields);
             }
     }
@@ -384,31 +396,32 @@ class Document{
      * @param type $identifier
      * @return array
      */
-    public function getDocumentObject($method, $identifier, $isPrepareResponse=false) {
-        $tblsc= $this->_core->getTableName("BDoc");
-        $tbldg= $this->_core->getTableName("BDocGroupList");
+    public function getDocumentObject($method, $identifier, $isPrepareResponse = false)
+    {
+        $tblsc = $this->_core->getTableName("BDoc");
+        $tbldg = $this->_core->getTableName("BDocGroupList");
         // allow alias to be full path
-        if($method == 'alias') {
+        if ($method == 'alias') {
             $identifier = $this->_core->cleanDocumentIdentifier($identifier);
             $method = $this->_core->documentMethod;
         }
-        if($method == 'alias' && $this->_core->getConfig('use_alias_path') && array_key_exists($identifier, $this->_core->documentListing)) {
+        if ($method == 'alias' && $this->_core->getConfig('use_alias_path') && array_key_exists($identifier, $this->_core->documentListing)) {
             $method = 'id';
             $identifier = $this->_core->documentListing[$identifier];
         }
         // get document groups for current user
-        if ($docgrp= $this->_inj['user']->getUserDocGroups())
-            $docgrp= implode(",", $docgrp);
+        if ($docgrp = $this->_inj['user']->getUserDocGroups())
+            $docgrp = implode(",", $docgrp);
         // get document
-        $access=  ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+        $access = ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
             (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
-        $sql= "SELECT sc.*
+        $sql = "SELECT sc.*
               FROM $tblsc sc
               LEFT JOIN $tbldg dg ON dg.document = sc.id
               WHERE sc." . $method . " = '" . $identifier . "'
               AND ($access) LIMIT 1;";
-        $result= $this->_core->db->query($sql);
-        $rowCount= $this->_core->db->getRecordCount($result);
+        $result = $this->_core->db->query($sql);
+        $rowCount = $this->_core->db->getRecordCount($result);
         if ($rowCount < 1) {
             if ($this->_core->getConfig('unauthorized_page')) {
                 // method may still be alias, while identifier is not full path alias, e.g. id not found above
@@ -418,9 +431,9 @@ class Document{
                     $q = "SELECT id FROM $tbldg WHERE document = '{$identifier}' LIMIT 1;";
                 }
                 // check if file is not public
-                $secrs= $this->_core->db->query($q);
+                $secrs = $this->_core->db->query($q);
                 if ($secrs)
-                    $seclimit= $this->_core->db->getRecordCount($secrs);
+                    $seclimit = $this->_core->db->getRecordCount($secrs);
             }
             if ($seclimit > 0) {
                 // match found but not publicly accessible, send the visitor to the unauthorized_page
@@ -433,22 +446,22 @@ class Document{
         }
 
         # this is now the document :) #
-        $documentObject= $this->_core->db->getRow($result);
-        if($isPrepareResponse==='prepareResponse') $this->_core->documentObject = & $documentObject;
+        $documentObject = $this->_core->db->getRow($result);
+        if ($isPrepareResponse === 'prepareResponse') $this->_core->documentObject = & $documentObject;
         $this->_core->invokeEvent('OnLoadDocumentObject');
         if ($documentObject['template']) {
             // load TVs and merge with document - Orig by Apodigm - Docvars
-            $sql= "SELECT tv.*, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
+            $sql = "SELECT tv.*, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
             $sql .= "FROM " . $this->_core->getTableName("BTv") . " tv ";
-            $sql .= "INNER JOIN " . $this->_core->getTableName("BTvTemplate")." tvtpl ON tvtpl.tmplvarid = tv.id ";
-            $sql .= "LEFT JOIN " . $this->_core->getTableName("BTvValue")." tvc ON tvc.tmplvarid=tv.id ";
+            $sql .= "INNER JOIN " . $this->_core->getTableName("BTvTemplate") . " tvtpl ON tvtpl.tmplvarid = tv.id ";
+            $sql .= "LEFT JOIN " . $this->_core->getTableName("BTvValue") . " tvc ON tvc.tmplvarid=tv.id ";
             $sql .= "WHERE tvc.contentid = '" . $documentObject['id'] . "' AND tvtpl.templateid = '" . $documentObject['template'] . "'";
-            $rs= $this->_core->db->query($sql);
-            $rowCount= $this->_core->db->getRecordCount($rs);
+            $rs = $this->_core->db->query($sql);
+            $rowCount = $this->_core->db->getRecordCount($rs);
             if ($rowCount > 0) {
-                for ($i= 0; $i < $rowCount; $i++) {
-                    $row= $this->_core->db->getRow($rs);
-                    $tmplvars[$row['name']]= array (
+                for ($i = 0; $i < $rowCount; $i++) {
+                    $row = $this->_core->db->getRow($rs);
+                    $tmplvars[$row['name']] = array(
                         $row['name'],
                         $row['value'],
                         $row['display'],
@@ -456,7 +469,7 @@ class Document{
                         $row['type']
                     );
                 }
-                $documentObject= array_merge($documentObject, $tmplvars);
+                $documentObject = array_merge($documentObject, $tmplvars);
             }
         }
         return $documentObject;
@@ -477,11 +490,12 @@ class Document{
      *                        Default: 1
      * @return boolean
      */
-    public function getTemplateVar($idname= "", $fields= "*", $docid= "", $published= 1) {
+    public function getTemplateVar($idname = "", $fields = "*", $docid = "", $published = 1)
+    {
         if ($idname == "") {
             return false;
         } else {
-            $result= $this->getTemplateVars(array ($idname), $fields, $docid, $published, "", ""); //remove sorting for speed
+            $result = $this->getTemplateVars(array($idname), $fields, $docid, $published, "", ""); //remove sorting for speed
             return ($result != false) ? $result[0] : false;
         }
     }
@@ -507,38 +521,39 @@ class Document{
      *                        Default: ASC
      * @return boolean|array
      */
-    public function getTemplateVars($idnames= array (), $fields= "*", $docid= "", $published= 1, $sort= "rank", $dir= "ASC") {
+    public function getTemplateVars($idnames = array(), $fields = "*", $docid = "", $published = 1, $sort = "rank", $dir = "ASC")
+    {
         if (($idnames != '*' && !is_array($idnames)) || count($idnames) == 0) {
             return false;
         } else {
-            $result= array ();
+            $result = array();
 
             // get document record
             if ($docid == "") {
-                $docid= $this->_core->documentIdentifier;
-                $docRow= $this->_core->documentObject;
+                $docid = $this->_core->documentIdentifier;
+                $docRow = $this->_core->documentObject;
             } else {
-                $docRow= $this->getDocument($docid, '*', $published);
+                $docRow = $this->getDocument($docid, '*', $published);
                 if (!$docRow)
                     return false;
             }
 
             // get user defined template variables
-            $fields= ($fields == "") ? "tv.*" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $fields)));
-            $sort= ($sort == "") ? "" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $sort)));
+            $fields = ($fields == "") ? "tv.*" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $fields)));
+            $sort = ($sort == "") ? "" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $sort)));
             if ($idnames == "*")
-                $query= "tv.id<>0";
+                $query = "tv.id<>0";
             else
-                $query= (is_numeric($idnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $idnames) . "')";
-            $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
-            $sql .= "FROM " . $this->_core->getTableName('BTv')." tv ";
-            $sql .= "INNER JOIN " . $this->_core->getTableName('BTvTemplate')." tvtpl ON tvtpl.tmplvarid = tv.id ";
-            $sql .= "LEFT JOIN " . $this->_core->getTableName('BTvValue')." tvc ON tvc.tmplvarid=tv.id ";
+                $query = (is_numeric($idnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $idnames) . "')";
+            $sql = "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
+            $sql .= "FROM " . $this->_core->getTableName('BTv') . " tv ";
+            $sql .= "INNER JOIN " . $this->_core->getTableName('BTvTemplate') . " tvtpl ON tvtpl.tmplvarid = tv.id ";
+            $sql .= "LEFT JOIN " . $this->_core->getTableName('BTvValue') . " tvc ON tvc.tmplvarid=tv.id ";
             $sql .= "WHERE " . $query . " AND tvc.contentid = '" . $docid . "' AND tvtpl.templateid = " . $docRow['template'];
             if ($sort)
                 $sql .= " ORDER BY $sort $dir ";
-            $rs= $this->_core->db->query($sql);
-            for ($i= 0; $i < @ $this->_core->db->getRecordCount($rs); $i++) {
+            $rs = $this->_core->db->query($sql);
+            for ($i = 0; $i < @ $this->_core->db->getRecordCount($rs); $i++) {
                 array_push($result, @ $this->_core->db->getRow($rs));
             }
 
@@ -546,7 +561,7 @@ class Document{
             ksort($docRow);
             foreach ($docRow as $key => $value) {
                 if ($idnames == "*" || in_array($key, $idnames))
-                    array_push($result, array (
+                    array_push($result, array(
                         "name" => $key,
                         "value" => $value
                     ));
@@ -563,7 +578,7 @@ class Document{
      *
      * @param int $parentid The parent docid
      *                 Default: 0 (site root)
-     * @param array $tvidnames. Which TVs to fetch - Can relate to the TV ids in the db (array elements should be numeric only)
+     * @param array $tvidnames . Which TVs to fetch - Can relate to the TV ids in the db (array elements should be numeric only)
      *                                               or the TV names (array elements should be names only)
      *                      Default: Empty array
      * @param int $published Whether published or unpublished documents are in the result
@@ -576,43 +591,44 @@ class Document{
      *                      Default: *
      * @param string $tvsort How to sort each element of the result array i.e. how to sort the TVs (field)
      *                      Default: rank
-     * @param string  $tvsortdir How to sort each element of the result array i.e. how to sort the TVs (direction)
+     * @param string $tvsortdir How to sort each element of the result array i.e. how to sort the TVs (direction)
      *                      Default: ASC
      * @return boolean|array
      */
-    public function getDocumentChildrenTVars($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC", $tvfields= "*", $tvsort= "rank", $tvsortdir= "ASC") {
-        $docs= $this->getDocumentChildren($parentid, $published, 0, '*', '', $docsort, $docsortdir);
+    public function getDocumentChildrenTVars($parentid = 0, $tvidnames = array(), $published = 1, $docsort = "menuindex", $docsortdir = "ASC", $tvfields = "*", $tvsort = "rank", $tvsortdir = "ASC")
+    {
+        $docs = $this->getDocumentChildren($parentid, $published, 0, '*', '', $docsort, $docsortdir);
         if (!$docs)
             return false;
         else {
-            $result= array ();
+            $result = array();
             // get user defined template variables
-            $fields= ($tvfields == "") ? "tv.*" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $tvfields)));
-            $tvsort= ($tvsort == "") ? "" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $tvsort)));
+            $fields = ($tvfields == "") ? "tv.*" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $tvfields)));
+            $tvsort = ($tvsort == "") ? "" : 'tv.' . implode(',tv.', preg_replace("/^\s/i", "", explode(',', $tvsort)));
             if ($tvidnames == "*")
-                $query= "tv.id<>0";
+                $query = "tv.id<>0";
             else
-                $query= (is_numeric($tvidnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $tvidnames) . "')";
-            if ($docgrp= $this->_inj['user']->getUserDocGroups())
-                $docgrp= implode(",", $docgrp);
+                $query = (is_numeric($tvidnames[0]) ? "tv.id" : "tv.name") . " IN ('" . implode("','", $tvidnames) . "')";
+            if ($docgrp = $this->_inj['user']->getUserDocGroups())
+                $docgrp = implode(",", $docgrp);
 
-            $docCount= count($docs);
-            for ($i= 0; $i < $docCount; $i++) {
+            $docCount = count($docs);
+            for ($i = 0; $i < $docCount; $i++) {
 
-                $tvs= array ();
-                $docRow= $docs[$i];
-                $docid= $docRow['id'];
+                $tvs = array();
+                $docRow = $docs[$i];
+                $docid = $docRow['id'];
 
-                $sql= "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
+                $sql = "SELECT $fields, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
                 $sql .= "FROM " . $this->_core->getTableName('BTv') . " tv ";
-                $sql .= "INNER JOIN " . $this->_core->getTableName('BTvTemplate')." tvtpl ON tvtpl.tmplvarid = tv.id ";
-                $sql .= "LEFT JOIN " . $this->_core->getTableName('BTvValue')." tvc ON tvc.tmplvarid=tv.id ";
+                $sql .= "INNER JOIN " . $this->_core->getTableName('BTvTemplate') . " tvtpl ON tvtpl.tmplvarid = tv.id ";
+                $sql .= "LEFT JOIN " . $this->_core->getTableName('BTvValue') . " tvc ON tvc.tmplvarid=tv.id ";
                 $sql .= "WHERE " . $query . " AND tvc.contentid = '" . $docid . "' AND tvtpl.templateid = " . $docRow['template'];
                 if ($tvsort)
                     $sql .= " ORDER BY $tvsort $tvsortdir ";
-                $rs= $this->_core->db->query($sql);
-                $limit= @ $this->_core->db->getRecordCount($rs);
-                for ($x= 0; $x < $limit; $x++) {
+                $rs = $this->_core->db->query($sql);
+                $limit = @ $this->_core->db->getRecordCount($rs);
+                for ($x = 0; $x < $limit; $x++) {
                     array_push($tvs, @ $this->_core->db->getRow($rs));
                 }
 
@@ -620,7 +636,7 @@ class Document{
                 ksort($docRow);
                 foreach ($docRow as $key => $value) {
                     if ($tvidnames == "*" || in_array($key, $tvidnames))
-                        array_push($tvs, array (
+                        array_push($tvs, array(
                             "name" => $key,
                             "value" => $value
                         ));
@@ -632,6 +648,7 @@ class Document{
             return $result;
         }
     }
+
     /**
      * Get the TVs that belong to a template
      *
@@ -641,9 +658,9 @@ class Document{
     function getTemplateTVs($template)
     {
         $rs = $this->_inj['db']->query('SELECT tv.*
-                                    FROM '.$this->_inj['core']->getTableName('BTv').' tv
-                                    INNER JOIN '.$this->_inj['core']->getTableName('BTvTemplate').' tvtpl ON tvtpl.tmplvarid = tv.id
-                                    WHERE tvtpl.templateid = '.$template);
+                                    FROM ' . $this->_inj['core']->getTableName('BTv') . ' tv
+                                    INNER JOIN ' . $this->_inj['core']->getTableName('BTvTemplate') . ' tvtpl ON tvtpl.tmplvarid = tv.id
+                                    WHERE tvtpl.templateid = ' . $template);
         return $this->_inj['db']->makeArray($rs);
     }
 
@@ -656,7 +673,7 @@ class Document{
      *
      * @param int $parentid The parent docid
      *                        Default: 0 (site root)
-     * @param array $tvidnames. Which TVs to fetch. In the form expected by getTemplateVarOutput().
+     * @param array $tvidnames . Which TVs to fetch. In the form expected by getTemplateVarOutput().
      *                        Default: Empty array
      * @param int $published Whether published or unpublished documents are in the result
      *                        Default: 1
@@ -666,16 +683,17 @@ class Document{
      *                        Default: ASC
      * @return boolean|array
      */
-    public function getDocumentChildrenTVarOutput($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC") {
-        $docs= $this->getDocumentChildren($parentid, $published, 0, '*', '', $docsort, $docsortdir);
+    public function getDocumentChildrenTVarOutput($parentid = 0, $tvidnames = array(), $published = 1, $docsort = "menuindex", $docsortdir = "ASC")
+    {
+        $docs = $this->getDocumentChildren($parentid, $published, 0, '*', '', $docsort, $docsortdir);
         if (!$docs)
             return false;
         else {
-            $result= array ();
-            for ($i= 0; $i < count($docs); $i++) {
-                $tvs= $this->getTemplateVarOutput($tvidnames, $docs[$i]["id"], $published);
+            $result = array();
+            for ($i = 0; $i < count($docs); $i++) {
+                $tvs = $this->getTemplateVarOutput($tvidnames, $docs[$i]["id"], $published);
                 if ($tvs)
-                    $result[$docs[$i]['id']]= $tvs; // Use docid as key - netnoise 2006/08/14
+                    $result[$docs[$i]['id']] = $tvs; // Use docid as key - netnoise 2006/08/14
             }
             return $result;
         }
@@ -693,25 +711,26 @@ class Document{
      * @param string $sep
      * @return boolean|array
      */
-    public function getTemplateVarOutput($idnames= array (), $docid= "", $published= 1, $sep='') {
+    public function getTemplateVarOutput($idnames = array(), $docid = "", $published = 1, $sep = '')
+    {
         if (count($idnames) == 0) {
             return false;
         } else {
-            $output= array ();
-            $vars= ($idnames == '*' || is_array($idnames)) ? $idnames : array ($idnames);
-            $docid= intval($docid) ? intval($docid) : $this->documentIdentifier;
-            $result= $this->getTemplateVars($vars, "*", $docid, $published, "", "", $sep); // remove sort for speed
+            $output = array();
+            $vars = ($idnames == '*' || is_array($idnames)) ? $idnames : array($idnames);
+            $docid = intval($docid) ? intval($docid) : $this->documentIdentifier;
+            $result = $this->getTemplateVars($vars, "*", $docid, $published, "", "", $sep); // remove sort for speed
             if ($result == false)
                 return false;
             else {
-                $baspath= BOLMER_MANAGER_PATH . "includes";
+                $baspath = BOLMER_MANAGER_PATH . "includes";
                 include_once $baspath . "/tmplvars.format.inc.php";
                 include_once $baspath . "/tmplvars.commands.inc.php";
-                for ($i= 0; $i < count($result); $i++) {
-                    $row= $result[$i];
+                for ($i = 0; $i < count($result); $i++) {
+                    $row = $result[$i];
                     if (!$row['id'])
-                        $output[$row['name']]= $row['value'];
-                    else	$output[$row['name']]= getTVDisplayFormat($row['name'], $row['value'], $row['display'], $row['display_params'], $row['type'], $docid, $sep);
+                        $output[$row['name']] = $row['value'];
+                    else    $output[$row['name']] = getTVDisplayFormat($row['name'], $row['value'], $row['display'], $row['display_params'], $row['type'], $docid, $sep);
                 }
                 return $output;
             }
@@ -724,9 +743,10 @@ class Document{
      * @param string Alias to be formatted
      * @return string Safe alias
      */
-    public function stripAlias($alias) {
+    public function stripAlias($alias)
+    {
         // let add-ons overwrite the default behavior
-        $results = $this->_core->invokeEvent('OnStripAlias', array ('alias'=>$alias));
+        $results = $this->_core->invokeEvent('OnStripAlias', array('alias' => $alias));
         if (!empty($results)) {
             // if multiple plugins are registered, only the last one is used
             return end($results);
@@ -735,7 +755,7 @@ class Document{
             $alias = strip_tags($alias); // strip HTML
             $alias = preg_replace('/[^\.A-Za-z0-9 _-]/', '', $alias); // strip non-alphanumeric characters
             $alias = preg_replace('/\s+/', '-', $alias); // convert white-space to dash
-            $alias = preg_replace('/-+/', '-', $alias);  // convert multiple dashes to one
+            $alias = preg_replace('/-+/', '-', $alias); // convert multiple dashes to one
             $alias = trim($alias, '-'); // trim excess
             return $alias;
         }
@@ -746,30 +766,26 @@ class Document{
         $children = array();
 
         $tbl_site_content = $this->_core->getTableName('BDoc');
-        if($this->_core->getConfig('use_alias_path')==1)
-        {
-            if(strpos($alias,'/')!==false) $_a = explode('/', $alias);
+        if ($this->_core->getConfig('use_alias_path') == 1) {
+            if (strpos($alias, '/') !== false) $_a = explode('/', $alias);
             else                           $_a[] = $alias;
-            $id= 0;
+            $id = 0;
 
-            foreach($_a as $alias)
-            {
-                if($id===false) break;
+            foreach ($_a as $alias) {
+                if ($id === false) break;
                 $alias = $this->_core->db->escape($alias);
-                $rs  = $this->_core->db->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and alias='{$alias}'");
-                if($this->_core->db->getRecordCount($rs)==0) $rs  = $this->_core->db->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and id='{$alias}'");
+                $rs = $this->_core->db->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and alias='{$alias}'");
+                if ($this->_core->db->getRecordCount($rs) == 0) $rs = $this->_core->db->select('id', $tbl_site_content, "deleted=0 and parent='{$id}' and id='{$alias}'");
                 $row = $this->_core->db->getRow($rs);
 
-                if($row) $id = $row['id'];
+                if ($row) $id = $row['id'];
                 else     $id = false;
             }
-        }
-        else
-        {
+        } else {
             $rs = $this->_core->db->select('id', $tbl_site_content, "deleted=0 and alias='{$alias}'", 'parent, menuindex');
             $row = $this->_core->db->getRow($rs);
 
-            if($row) $id = $row['id'];
+            if ($row) $id = $row['id'];
             else     $id = false;
         }
         return $id;
@@ -781,11 +797,12 @@ class Document{
      * @param $docid
      * @return array
      */
-    function getDocumentAllowedChildTemplates($docid) {
+    function getDocumentAllowedChildTemplates($docid)
+    {
         $rs = $this->_core->db->query('SELECT te.restrict_children, te.allowed_child_templates
-                                    FROM '.$this->_core->getTableName('BDoc').' sc, '.$this->_core->getTableName('BTemplate').' te
+                                    FROM ' . $this->_core->getTableName('BDoc') . ' sc, ' . $this->_core->getTableName('BTemplate') . ' te
                                     WHERE sc.template = te.id
-                                    AND sc.id = '.$docid);
+                                    AND sc.id = ' . $docid);
         $row = $this->_core->db->getRow($rs);
 
         if ($row['restrict_children']) {

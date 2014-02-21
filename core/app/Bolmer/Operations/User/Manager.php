@@ -5,15 +5,17 @@
  * Date: 10.02.14
  * Time: 6:36
  */
-class Manager{
+class Manager
+{
     /** @var \Bolmer\Pimple $_inj */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
-    public function __construct(\Pimple $inj){
-        $this->_inj= $inj;
+    public function __construct(\Pimple $inj)
+    {
+        $this->_inj = $inj;
         $this->_core = $inj['core'];
     }
 
@@ -22,7 +24,8 @@ class Manager{
      *
      * @return boolean
      */
-    public function checkSession() {
+    public function checkSession()
+    {
         if (isset ($_SESSION['mgrValidated'])) {
             return true;
         } else {
@@ -35,7 +38,8 @@ class Manager{
      *
      * @return boolean
      */
-    public function checkPreview() {
+    public function checkPreview()
+    {
         if ($this->checkSession() == true) {
             if (isset ($_REQUEST['z']) && $_REQUEST['z'] == 'manprev') {
                 return true;
@@ -53,11 +57,12 @@ class Manager{
      * @param string $pm Permission name
      * @return int
      */
-    public function hasPermission($pm) {
-        $state= false;
-        $pms= $_SESSION['mgrPermissions'];
+    public function hasPermission($pm)
+    {
+        $state = false;
+        $pms = $_SESSION['mgrPermissions'];
         if ($pms)
-            $state= ($pms[$pm] == 1);
+            $state = ($pms[$pm] == 1);
         return $state;
     }
 
@@ -72,29 +77,30 @@ class Manager{
      * @param int $private Whether it is a private message, or not
      *                     Default : 0
      */
-    public function sendAlert($type, $to, $from, $subject, $msg, $private= 0) {
-        $private= ($private) ? 1 : 0;
+    public function sendAlert($type, $to, $from, $subject, $msg, $private = 0)
+    {
+        $private = ($private) ? 1 : 0;
         if (!is_numeric($to)) {
             // Query for the To ID
-            $sql= "SELECT id FROM " . $this->_core->getTableName("BManagerUser") . " WHERE username='$to';";
-            $rs= $this->_core->db->query($sql);
+            $sql = "SELECT id FROM " . $this->_core->getTableName("BManagerUser") . " WHERE username='$to';";
+            $rs = $this->_core->db->query($sql);
             if ($this->_core->db->getRecordCount($rs)) {
-                $rs= $this->_core->db->getRow($rs);
-                $to= $rs['id'];
+                $rs = $this->_core->db->getRow($rs);
+                $to = $rs['id'];
             }
         }
         if (!is_numeric($from)) {
             // Query for the From ID
-            $sql= "SELECT id FROM " . $this->_core->getTableName("BManagerUser") . " WHERE username='$from';";
-            $rs= $this->_core->db->query($sql);
+            $sql = "SELECT id FROM " . $this->_core->getTableName("BManagerUser") . " WHERE username='$from';";
+            $rs = $this->_core->db->query($sql);
             if ($this->_core->db->getRecordCount($rs)) {
-                $rs= $this->_core->db->getRow($rs);
-                $from= $rs['id'];
+                $rs = $this->_core->db->getRow($rs);
+                $from = $rs['id'];
             }
         }
         // insert a new message into user_messages
-        $sql= "INSERT INTO " . $this->_core->getTableName("BManagerUserMessage") . " ( id , type , subject , message , sender , recipient , private , postdate , messageread ) VALUES ( '', '$type', '$subject', '$msg', '$from', '$to', '$private', '" . time() . "', '0' );";
-        $rs= $this->_core->db->query($sql);
+        $sql = "INSERT INTO " . $this->_core->getTableName("BManagerUserMessage") . " ( id , type , subject , message , sender , recipient , private , postdate , messageread ) VALUES ( '', '$type', '$subject', '$msg', '$from', '$to', '$private', '" . time() . "', '0' );";
+        $rs = $this->_core->db->query($sql);
         return true;
     }
 }

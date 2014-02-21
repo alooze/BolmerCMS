@@ -6,7 +6,8 @@
  * Time: 5:00
  */
 
-class SystemEvent{
+class SystemEvent
+{
     var $name;
     var $_propagate;
     var $_output;
@@ -16,9 +17,10 @@ class SystemEvent{
     /**
      * @param string $name Name of the event
      */
-    function __construct($name= "") {
+    function __construct($name = "")
+    {
         $this->_resetEventObject();
-        $this->name= $name;
+        $this->name = $name;
     }
 
     /**
@@ -27,14 +29,15 @@ class SystemEvent{
      * @global array $SystemAlertMsgQueque
      * @param string $msg The message
      */
-    public function alert($msg) {
+    public function alert($msg)
+    {
         global $SystemAlertMsgQueque;
         if ($msg == "")
             return;
         if (is_array($SystemAlertMsgQueque)) {
             if ($this->name && $this->activePlugin)
-                $title= "<div><b>" . $this->activePlugin . "</b> - <span style='color:maroon;'>" . $this->name . "</span></div>";
-            $SystemAlertMsgQueque[]= "$title<div style='margin-left:10px;margin-top:3px;'>$msg</div>";
+                $title = "<div><b>" . $this->activePlugin . "</b> - <span style='color:maroon;'>" . $this->name . "</span></div>";
+            $SystemAlertMsgQueque[] = "$title<div style='margin-left:10px;margin-top:3px;'>$msg</div>";
         }
     }
 
@@ -43,22 +46,25 @@ class SystemEvent{
      *
      * @param string $msg
      */
-    public function output($msg) {
+    public function output($msg)
+    {
         $this->_output .= $msg;
     }
 
     /**
      * Stop event propogation
      */
-    public function stopPropagation() {
-        $this->_propagate= false;
+    public function stopPropagation()
+    {
+        $this->_propagate = false;
     }
 
-    public function _resetEventObject() {
+    public function _resetEventObject()
+    {
         unset ($this->returnedValues);
-        $this->name= "";
-        $this->_output= "";
-        $this->_propagate= true;
-        $this->activated= false;
+        $this->name = "";
+        $this->_output = "";
+        $this->_propagate = true;
+        $this->activated = false;
     }
 }

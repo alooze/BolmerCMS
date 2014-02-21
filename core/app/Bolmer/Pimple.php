@@ -5,7 +5,8 @@
  * Date: 10.02.14
  * Time: 5:21
  */
-class Pimple extends \Pimple{
+class Pimple extends \Pimple
+{
 
     public function __construct($data)
     {
@@ -58,10 +59,10 @@ class Pimple extends \Pimple{
         $this['response'] = function ($inj) {
             return new \Bolmer\Presenter\Response($inj);
         };
-        $this['user'] = function($inj){
+        $this['user'] = function ($inj) {
             return new \Bolmer\Operations\User($inj);
         };
-        $this['manager'] = function($inj){
+        $this['manager'] = function ($inj) {
             return new \Bolmer\Operations\User\Manager($inj);
         };
     }
