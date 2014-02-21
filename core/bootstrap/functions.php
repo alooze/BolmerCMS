@@ -10,10 +10,10 @@
 if (!function_exists('errorLog')) {
     function errorLog($message)
     {
-        if (is_dir(PATH_BOLMER_CORE.'/log')
-            && is_writable(PATH_BOLMER_CORE .'/log')) {
+        if (is_dir(BOLMER_CORE_PATH.'/log')
+            && is_writable(BOLMER_CORE_PATH .'/log')) {
             file_put_contents(
-                PATH_BOLMER_CORE .'/log/'.(date('Y-m-d')).'.log',
+                BOLMER_CORE_PATH .'/log/'.(date('Y-m-d')).'.log',
                 "[".date("H:i:s")."]\t".$message."\n",
                 FILE_APPEND | LOCK_EX
             );
@@ -53,7 +53,7 @@ if (!function_exists('errorDisplay')) {
             || !in_array($e['type'], array(E_ERROR, E_USER_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR))) {
             return;
         }
-        require_once PATH_BOLMER_CORE . '/error.php';
+        require_once BOLMER_CORE_PATH . '/error.php';
     }
 }
 

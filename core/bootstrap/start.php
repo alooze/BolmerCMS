@@ -25,7 +25,7 @@ if(BOLMER_DEBUG){
     ini_set('display_errors', 0);
 }
 
-require PATH_BOLMER_CORE . "/bootstrap/functions.php";
+require BOLMER_CORE_PATH . "/bootstrap/functions.php";
 
 //trigger_error("File not found ".$f, E_USER_ERROR);
 if(function_exists('errorHandler')){
@@ -38,7 +38,7 @@ if(function_exists('errorDisplay')){
 /**
  * Autoload files
  */
-$files = require PATH_BOLMER_CORE . "/bootstrap/autoload.php";
+$files = require BOLMER_CORE_PATH . "/bootstrap/autoload.php";
 $logStack = array();
 foreach($files as $i => $f){
     try{
@@ -63,9 +63,9 @@ foreach($files as $i => $f){
         trigger_error($e->getMessage(), E_USER_ERROR);
     }
 }
-require PATH_BOLMER_CORE . "/app/Pimple.class.php";
-require PATH_BOLMER_CORE . "/app/SplClassLoader.class.php";
+require BOLMER_CORE_PATH . "/app/Pimple.class.php";
+require BOLMER_CORE_PATH . "/app/SplClassLoader.class.php";
 
-with(new SplClassLoader('Bolmer', PATH_BOLMER_CORE ."/app/"))->register();
-with(new SplClassLoader('Granada', PATH_BOLMER_CORE ."/app/Granada/src/"))->register();
-with(new SplClassLoader('Tcache', PATH_BOLMER_CORE ."/app/Tcache/src/"))->register();
+with(new SplClassLoader('Bolmer', BOLMER_CORE_PATH ."/app/"))->register();
+with(new SplClassLoader('Granada', BOLMER_CORE_PATH ."/app/Granada/src/"))->register();
+with(new SplClassLoader('Tcache', BOLMER_CORE_PATH ."/app/Tcache/src/"))->register();
