@@ -10,36 +10,8 @@ class OldFunctions {
     function insertId($rs)               {global $modx;return $modx->db->getInsertId($rs);}
     function dbClose()                   {global $modx;       $modx->db->disconnect();}
     
-    function makeList($array, $ulroot= 'root', $ulprefix= 'sub_', $type= '', $ordered= false, $tablevel= 0) {
-        // first find out whether the value passed is an array
-        if (!is_array($array)) {
-            return "<ul><li>Bad list</li></ul>";
-        }
-        if (!empty ($type)) {
-            $typestr= " style='list-style-type: $type'";
-        } else {
-            $typestr= "";
-        }
-        $tabs= "";
-        for ($i= 0; $i < $tablevel; $i++) {
-            $tabs .= "\t";
-        }
-        $listhtml= $ordered == true ? $tabs . "<ol class='$ulroot'$typestr>\n" : $tabs . "<ul class='$ulroot'$typestr>\n";
-        foreach ($array as $key => $value) {
-            if (is_array($value)) {
-                $listhtml .= $tabs . "\t<li>" . $key . "\n" . $this->makeList($value, $ulprefix . $ulroot, $ulprefix, $type, $ordered, $tablevel +2) . $tabs . "\t</li>\n";
-            } else {
-                $listhtml .= $tabs . "\t<li>" . $value . "</li>\n";
-            }
-        }
-        $listhtml .= $ordered == true ? $tabs . "</ol>\n" : $tabs . "</ul>\n";
-        return $listhtml;
-    }
-    function getUserData() {
-        $client['ip'] = $_SERVER['REMOTE_ADDR'];
-        $client['ua'] = $_SERVER['HTTP_USER_AGENT'];
-    	return $client;
-    }
+
+
 
     function getDocGroups() {
     	global $modx;
@@ -103,29 +75,6 @@ class OldFunctions {
             }
         }
         return $metatags;
-    }
-    
-    function userLoggedIn() {
-    	global $modx;
-        $userdetails= array ();
-        if ($modx->isFrontend() && isset ($_SESSION['webValidated'])) {
-            // web user
-            $userdetails['loggedIn']= true;
-            $userdetails['id']= $_SESSION['webInternalKey'];
-            $userdetails['username']= $_SESSION['webShortname'];
-            $userdetails['usertype']= 'web'; // added by Raymond
-            return $userdetails;
-        } else
-            if ($modx->isBackend() && isset ($_SESSION['mgrValidated'])) {
-                // manager user
-                $userdetails['loggedIn']= true;
-                $userdetails['id']= $_SESSION['mgrInternalKey'];
-                $userdetails['username']= $_SESSION['mgrShortname'];
-                $userdetails['usertype']= 'manager'; // added by Raymond
-                return $userdetails;
-            } else {
-                return false;
-            }
     }
     
     function getKeywords($id= 0) {

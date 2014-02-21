@@ -220,4 +220,42 @@ class User{
                     return $dgn;
                 }
     }
+
+    /**
+     * Returns user login information, as loggedIn (true or false), internal key, username and usertype (web or manager).
+     *
+     * @return boolean|array
+     */
+    function userLoggedIn() {
+        $userdetails= array ();
+        if ($this->_core->isFrontend() && isset ($_SESSION['webValidated'])) {
+            // web user
+            $userdetails['loggedIn']= true;
+            $userdetails['id']= $_SESSION['webInternalKey'];
+            $userdetails['username']= $_SESSION['webShortname'];
+            $userdetails['usertype']= 'web'; // added by Raymond
+            return $userdetails;
+        } else
+            if ($this->_core->isBackend() && isset ($_SESSION['mgrValidated'])) {
+                // manager user
+                $userdetails['loggedIn']= true;
+                $userdetails['id']= $_SESSION['mgrInternalKey'];
+                $userdetails['username']= $_SESSION['mgrShortname'];
+                $userdetails['usertype']= 'manager'; // added by Raymond
+                return $userdetails;
+            } else {
+                return false;
+            }
+    }
+    /**
+     * Get data from phpSniff
+     *
+     * @category API-Function
+     * @return array
+     */
+    function getUserData() {
+        $client['ip'] = $_SERVER['REMOTE_ADDR'];
+        $client['ua'] = $_SERVER['HTTP_USER_AGENT'];
+        return $client;
+    }
 }

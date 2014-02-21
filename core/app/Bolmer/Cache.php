@@ -142,14 +142,38 @@ class Cache extends Tcache
     public function clearCache($type='', $report=false) 
     {
         if ($type=='full') {
-            include_once(BOLMER_MANAGER_PATH . 'processors/cache_sync.class.processor.php');
-            $sync = new \synccache();
-            $sync->setCachepath($this->backend->getCachePath());
-            $sync->setReport($report);
-            $sync->emptyCache();
+            $this->refreshCache($report);
             return $this->flushAll();
         } else {
             return $this->flushAll();
+        }
+    }
+
+    /**
+     * Refresh the entire cache of MODX including cache files and script caches that are properties of $this
+     *
+     * @return bool
+     */
+    function refreshCache($report = false) {
+        include_once(BOLMER_MANAGER_PATH . 'processors/cache_sync.class.processor.php');
+        $sync = new \synccache();
+        $sync->setCachepath($this->getCachePath(true));
+        $sync->setReport($report);
+        $sync->emptyCache();
+        if (file_exists(BOLMER_BASE_PATH.'assets/cache/siteCache.idx.php')) {
+            $this->_core->config = null;
+            $this->_core->aliasListing = null;
+            $this->_core->documentListing = null;
+            $this->_core->documentMap = null;
+            $this->_core->contentTypes = null;
+            $this->_core->chunkCache = null;
+            $this->_core->snippetCache = null;
+            $this->_core->pluginCache = null;
+            $this->_core->pluginEvent = null;
+            require(BOLMER_BASE_PATH.'assets/cache/siteCache.idx.php');
+            return true;
+        } else {
+            return false;
         }
     }
 

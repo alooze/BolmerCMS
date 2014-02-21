@@ -52,20 +52,31 @@
             }
             $LoginUserID = $this->_inj['user']->getLoginUserID();
             if ($LoginUserID == '') $LoginUserID = 0;
+            $usertype = $this->_inj['response']->isFrontend() ? 1 : 0;
             $evtid= intval($evtid);
             $type = intval($type);
-            if ($type < 1) $type= 1; // Types: 1 = information, 2 = warning, 3 = error
-            if (3 < $type) $type= 3;
-            $sql= "INSERT INTO " . $this->_core->getFullTableName("event_log") . " (eventid,type,createdon,source,description,user) " .
-                "VALUES($evtid,$type," . time() . ",'$source','$msg','" . $LoginUserID . "')";
-            $ds= @$this->_core->db->query($sql);
-            if(!$this->_core->db->conn) $source = 'DB connect error';
+            // Types: 1 = information, 2 = warning, 3 = error
+            if ($type < 1){
+                $type= 1;
+            } elseif ( $type > 3 ) {
+                $type= 3;
+            }
+            $ds = $this->_core->db->insert(array(
+                'eventid' => $evtid,
+                'type' =>$type,
+                'createdon' => time(),
+                'source' => $source,
+                'description' => $msg,
+                'user' => $LoginUserID,
+                'usertype' => $usertype
+            ), $this->_core->getFullTableName("event_log"));
+
             if($this->_core->getConfig('send_errormail') != '0')
             {
                 if($this->_core->getConfig('send_errormail') <= $type)
                 {
                     $subject = 'Error mail from ' . $this->_core->getConfig('site_name');
-                    $this->_core->sendmail($subject,$source);
+                    $this->_core->sendmail($subject, $source);
                 }
             }
             if (!$ds) {

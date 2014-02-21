@@ -73,6 +73,31 @@ class Document{
     }
 
     /**
+     * Get the parent docid of a document
+     *
+     * @param int docid
+     * @return int
+     */
+    function getParentId($id) {
+        return $this->_core->aliasListing[$id]['parent'];
+    }
+
+    /**
+     * Returns the ultimate parent of a document
+     *
+     * @param int $id Docid to get ultimate parent.
+     * @return int
+     */
+    function getUltimateParentId($id) {
+        $last_id = 0;
+        while ($id) {
+            $last_id = $id;
+            $id = $this->_core->aliasListing[$id]['parent'];
+        }
+        return $last_id;
+    }
+
+    /**
      * Gets all child documents of the specified document, including those which are unpublished or deleted.
      *
      * @param int $id The Document identifier to start with
@@ -186,7 +211,7 @@ class Document{
         $sql= "SELECT DISTINCT $fields
               FROM $tblsc sc
               LEFT JOIN $tbldg dg on dg.document = sc.id
-              WHERE sc.parent = '$parentid' AND sc.published=$published AND sc.deleted=$deleted $where
+              WHERE sc.parent = '$parentid' ".((int)$published == 0 ? '' : "AND sc.published=$published ")."AND sc.deleted=$deleted $where
               AND ($access)
               GROUP BY sc.id " .
             ($sort ? " ORDER BY $sort $dir " : "") . " $limit ";
@@ -274,17 +299,15 @@ class Document{
      * @return boolean|string
      */
     public function getDocument($id= 0, $fields= "*", $published= 1, $deleted= 0) {
-        if ($id == 0) {
-            return false;
-        } else {
+        $out = false;
+        if (!empty($id)) {
             $tmpArr[]= $id;
             $docs= $this->getDocuments($tmpArr, $published, $deleted, $fields, "", "", "", 1);
             if ($docs != false) {
-                return $docs[0];
-            } else {
-                return false;
+                $out = $docs[0];
             }
         }
+        return $out;
     }
 
     /**
@@ -306,7 +329,7 @@ class Document{
         } else {
             $tblsc= $this->_core->getFullTableName("site_content");
             $tbldg= $this->_core->getFullTableName("document_groups");
-            $activeSql= $active == 1 ? "AND sc.published=1 AND sc.deleted=0" : "";
+            $activeSql = (int)$active == 1 ? "AND sc.published=1 AND sc.deleted=0" : "";
             // modify field names to use sc. table reference
             $fields= 'sc.' . implode(',sc.', preg_replace("/^\s/i", "", explode(',', $fields)));
             // get document groups for current user
@@ -377,7 +400,7 @@ class Document{
         if ($docgrp= $this->_inj['user']->getUserDocGroups())
             $docgrp= implode(",", $docgrp);
         // get document
-        $access=  "1='" . $_SESSION['mgrRole'] . "'" . ($this->_core->isFrontend() ? " OR sc.privateweb=0" : " OR sc.privatemgr=0") .
+        $access=  ($this->_core->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
             (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
         $sql= "SELECT sc.*
               FROM $tblsc sc
@@ -609,6 +632,20 @@ class Document{
             return $result;
         }
     }
+    /**
+     * Get the TVs that belong to a template
+     *
+     * @param int $template
+     * @return array
+     */
+    function getTemplateTVs($template)
+    {
+        $rs = $this->_inj['db']->query('SELECT tv.*
+                                    FROM '.$this->_inj['core']->getFullTableName('site_tmplvars').' tv
+                                    INNER JOIN '.$this->_inj['core']->getFullTableName('site_tmplvar_templates').' tvtpl ON tvtpl.tmplvarid = tv.id
+                                    WHERE tvtpl.templateid = '.$template);
+        return $this->_inj['db']->makeArray($rs);
+    }
 
     /**
      * Get the TV outputs of a document's children.
@@ -736,5 +773,27 @@ class Document{
             else     $id = false;
         }
         return $id;
+    }
+
+    /**
+     * Returns allowed child templates for a document
+     *
+     * @param $docid
+     * @return array
+     */
+    function getDocumentAllowedChildTemplates($docid) {
+        $rs = $this->_core->db->query('SELECT te.restrict_children, te.allowed_child_templates
+                                    FROM '.$this->_core->getFullTableName('site_content').' sc, '.$this->_core->getFullTableName('site_templates').' te
+                                    WHERE sc.template = te.id
+                                    AND sc.id = '.$docid);
+        $row = $this->_core->db->getRow($rs);
+
+        if ($row['restrict_children']) {
+            $allowed_child_templates = trim($row['allowed_child_templates']);
+            return $allowed_child_templates ? explode(',', $allowed_child_templates) : array();
+        } else {
+            $rs2 = $this->_core->db->select('id', $this->_core->getFullTableName('site_templates'));
+            return $this->_core->db->getColumn('id', $rs2);
+        }
     }
 }

@@ -39,6 +39,9 @@ class Parser{
         $this->eval_type = $type;
         $this->eval_name = $name;
         $this->eval_hash = $hash;
+        if($this->eval_type == 'snippet'){
+            $this->_core->currentSnippet = $this->eval_name;
+        }
         return $hash;
     }
 
@@ -54,10 +57,14 @@ class Parser{
     public function unregisterEvalInfo($time = 0.0) {
         $this->_inj['debug']->setDataEvalStack($this->eval_hash, 'time', $time);
         $tmp = array_pop($this->eval_stack);
+        $this->_core->currentSnippet = null;
         if(is_array($tmp)){
             $this->eval_type = $tmp['type'];
             $this->eval_name = $tmp['name'];
             $this->eval_hash = $tmp['hash'];
+            if($this->eval_type == 'snippet'){
+                $this->_core->currentSnippet = $this->eval_name;
+            }
         }else{
             $this->eval_name = $this->eval_type = $this->eval_hash = null;
         }

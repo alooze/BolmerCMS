@@ -40,9 +40,7 @@ class Snippet{
      * @return string
      */
     public function getSnippetName() {
-        $out = $this->_inj['parser']->getCurrentEval();
-        return $out['name'];
-        //return $this->_core->currentSnippet;
+        return $this->_core->currentSnippet;
     }
 
     /**

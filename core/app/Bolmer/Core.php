@@ -274,7 +274,7 @@ class Core {
      *
      * @return boolean|string
      */
-    function getConfig($name= '', $default = false) {
+    function getConfig($name= '', $default = null) {
         return getkey($this->config, $name, $default);
     }
 
@@ -513,7 +513,19 @@ class Core {
             return $q;
         }
     }
-
+    /**
+     * Set PHP error handlers
+     *
+     * @return void
+     */
+    function set_error_handler()
+    {
+        set_error_handler(
+            array (&$this, 'phpError'),
+            (error_reporting() & ~E_DEPRECATED & ~E_USER_DEPRECATED) | ($this->getConfig('error_handling_deprecated') ? E_DEPRECATED | E_USER_DEPRECATED : 0)
+        );
+        //register_shutdown_function(array(&$this, 'fatalErrorCheck'));
+    }
     /**
      * Starts the parsing operations.
      *
@@ -523,14 +535,7 @@ class Core {
      * - finally calls prepareResponse()
      */
     function executeParser() {
-
-       //error_reporting(0);
-        set_error_handler(array (
-            & $this,
-            "phpError"
-        ), E_ALL);
-
-        //$this->db->connect();
+        $this->set_error_handler();
 
         // get the settings
         if (empty ($this->config)) {
@@ -641,29 +646,41 @@ class Core {
         if($mode !== 'formatOnly' && empty($timestamp)) return '-';
         $timestamp = intval($timestamp);
 
-        switch(getService('core')->getConfig('datetime_format')) {
-            case 'YYYY/mm/dd':
+        switch($this->getConfig('datetime_format')) {
+            case 'YYYY/mm/dd':{
                 $dateFormat = '%Y/%m/%d';
                 break;
-            case 'dd-mm-YYYY':
+            }
+            case 'dd-mm-YYYY':{
                 $dateFormat = '%d-%m-%Y';
                 break;
+            }
             case 'mm/dd/YYYY':
+            default:{
                 $dateFormat = '%m/%d/%Y';
                 break;
-            /*
-            case 'dd-mmm-YYYY':
-                $dateFormat = '%e-%b-%Y';
-                break;
-            */
+            }
         }
 
-        if (empty($mode)) {
-            $strTime = strftime($dateFormat . " %H:%M:%S", $timestamp);
-        } elseif ($mode == 'dateOnly') {
-            $strTime = strftime($dateFormat, $timestamp);
-        } elseif ($mode == 'formatOnly') {
-            $strTime = $dateFormat;
+        switch($this->getConfig('time_format')) {
+            case 'HH:mm:ss':
+            default:{
+                $timeFormat = '%H:%M:%S';
+                break;
+            }
+        }
+        switch($mode){
+            case 'dateOnly':{
+                $strTime = strftime($dateFormat, $timestamp);
+                break;
+            }
+            case 'formatOnly':{
+                $strTime = $dateFormat;
+                break;
+            }
+            default:{
+                $strTime = strftime($dateFormat . " ".$timeFormat, $timestamp);
+            }
         }
         return $strTime;
     }
@@ -677,25 +694,23 @@ class Core {
         $str = trim($str);
         if (empty($str)) {return '';}
 
-        switch(getService('core')->getConfig('datetime_format')) {
-            case 'YYYY/mm/dd':
+        switch($this->getConfig('datetime_format')) {
+            case 'YYYY/mm/dd':{
                 if (!preg_match('/^[0-9]{4}\/[0-9]{2}\/[0-9]{2}[0-9 :]*$/', $str)) {return '';}
                 list ($Y, $m, $d, $H, $M, $S) = sscanf($str, '%4d/%2d/%2d %2d:%2d:%2d');
                 break;
-            case 'dd-mm-YYYY':
+            }
+            case 'dd-mm-YYYY':{
                 if (!preg_match('/^[0-9]{2}-[0-9]{2}-[0-9]{4}[0-9 :]*$/', $str)) {return '';}
                 list ($d, $m, $Y, $H, $M, $S) = sscanf($str, '%2d-%2d-%4d %2d:%2d:%2d');
                 break;
+            }
             case 'mm/dd/YYYY':
+            default:{
                 if (!preg_match('/^[0-9]{2}\/[0-9]{2}\/[0-9]{4}[0-9 :]*$/', $str)) {return '';}
                 list ($m, $d, $Y, $H, $M, $S) = sscanf($str, '%2d/%2d/%4d %2d:%2d:%2d');
                 break;
-            /*
-            case 'dd-mmm-YYYY':
-            	if (!preg_match('/^[0-9]{2}-[0-9a-z]+-[0-9]{4}[0-9 :]*$/i', $str)) {return '';}
-            	list ($m, $d, $Y, $H, $M, $S) = sscanf($str, '%2d-%3s-%4d %2d:%2d:%2d');
-                break;
-            */
+            }
         }
         if (!$H && !$M && !$S) {$H = 0; $M = 0; $S = 0;}
         $timeStamp = mktime($H, $M, $S, $m, $d, $Y);
@@ -727,6 +742,9 @@ class Core {
         $t= preg_replace('~\[\((.*?)\)\]~', "", $t); //settings
         $t= preg_replace('~\[\+(.*?)\+\]~', "", $t); //placeholders
         $t= preg_replace('~{{(.*?)}}~', "", $t); //chunks
+
+        $t= preg_replace('/(\[\*|\[\[|\[\!|\[\(|\[\+|\{\{|\*\]|\]\]|\!\]|\)\]|\}\})/', '', $t); // All half tags (TimGS)
+
         $t= preg_replace('~&#x005B;\*(.*?)\*&#x005D;~', "", $t); //encoded tv
         $t= preg_replace('~&#x005B;&#x005B;(.*?)&#x005D;&#x005D;~', "", $t); //encoded snippet
         $t= preg_replace('~&#x005B;\!(.*?)\!&#x005D;~', "", $t); //encoded snippet
@@ -869,6 +887,9 @@ class Core {
     function getDocumentChildrenTVars($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC", $tvfields= "*", $tvsort= "rank", $tvsortdir= "ASC") {
         return $this->_service->get('document')->getDocumentChildrenTVars($parentid, $tvidnames, $published, $docsort, $docsortdir, $tvfields, $tvsort, $tvsortdir);
     }
+    function getTemplateTVs($template){
+        return $this->_service->get('document')->getTemplateTVs($template);
+    }
     function getDocumentChildrenTVarOutput($parentid= 0, $tvidnames= array (), $published= 1, $docsort= "menuindex", $docsortdir= "ASC") {
         return $this->_service->get('document')->getDocumentChildrenTVarOutput($parentid, $tvidnames, $published, $docsort, $docsortdir);
     }
@@ -981,6 +1002,9 @@ class Core {
     function isMemberOfWebGroup($groupNames= array ()) {
         return $this->_service->get('user')->isMemberOfWebGroup($groupNames);
     }
+    function userLoggedIn(){
+        return $this->_service->get('user')->userLoggedIn();
+    }
     function parseProperties($propertyString) {
         return $this->_service->get('parser')->parseProperties($propertyString);
     }
@@ -1019,5 +1043,45 @@ class Core {
     }
     function sendUnauthorizedPage() {
         $this->_service->get('response')->sendUnauthorizedPage();
+    }
+    function getUserData() {
+        return $this->_service->get('user')->getUserData();
+    }
+
+    /**
+     * Returns an ordered or unordered HTML list.
+     *
+     * @param array $array
+     * @param string $ulroot Default: root
+     * @param string $ulprefix Default: sub_
+     * @param string $type Default: Empty string
+     * @param boolean $ordered Default: false
+     * @param int $tablevel Default: 0
+     * @return string
+     */
+    function makeList($array, $ulroot= 'root', $ulprefix= 'sub_', $type= '', $ordered= false, $tablevel= 0) {
+        // first find out whether the value passed is an array
+        if (!is_array($array)) {
+            return "<ul><li>Bad list</li></ul>";
+        }
+        if (!empty ($type)) {
+            $typestr= " style='list-style-type: $type'";
+        } else {
+            $typestr= "";
+        }
+        $tabs= "";
+        for ($i= 0; $i < $tablevel; $i++) {
+            $tabs .= "\t";
+        }
+        $listhtml= $ordered == true ? $tabs . "<ol class='$ulroot'$typestr>\n" : $tabs . "<ul class='$ulroot'$typestr>\n";
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $listhtml .= $tabs . "\t<li>" . $key . "\n" . $this->makeList($value, $ulprefix . $ulroot, $ulprefix, $type, $ordered, $tablevel +2) . $tabs . "\t</li>\n";
+            } else {
+                $listhtml .= $tabs . "\t<li>" . $value . "</li>\n";
+            }
+        }
+        $listhtml .= $ordered == true ? $tabs . "</ol>\n" : $tabs . "</ul>\n";
+        return $listhtml;
     }
 }
