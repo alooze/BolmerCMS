@@ -58,7 +58,7 @@ class Cache extends Tcache
 
         if ($cacheContent !== NULL) {
             $this->_core->documentGenerated = 0;
-            $cacheContent = substr($flContent, 37); // remove php header
+            $cacheContent = substr($cacheContent, 37); // remove php header
             $a = explode("<!--__MODxCacheSpliter__-->", $cacheContent, 2);
             if (count($a) == 1) {
                 return $a[0]; // return only document content
