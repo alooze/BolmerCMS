@@ -2,12 +2,24 @@
 
 class Parser
 {
+    /**
+     * @var array $_eval_stack стек вызовов плагинов/сниппетов
+     */
     protected $_eval_stack = array();
+    /**
+     * @var null|string $_eval_type тип обрабатываемого на данный момент элемента (Snippet или Plugin)
+     */
     protected $_eval_type = null;
+    /**
+     * @var null|string $_eval_name имя обрабатываемого на данный момент элемента (имя сниппета или плагина)
+     */
     protected $_eval_name = null;
+    /**
+     * @var null|string $_eval_hash подпись обрабатываемого на данный момент
+     */
     protected $_eval_hash = null;
 
-    /** @var \Bolmer\Pimple $_inj */
+    /** @var \Bolmer\Pimple $_inj коллекция зависимостей */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
@@ -23,13 +35,12 @@ class Parser
     }
 
     /**
-     * Set eval type and name
-     * Used by the fatal error handler.
-     * After the eval'd code is run, call unregisterEvalInfo().
+     * Сохранение типа и имени выполняемого объекта
+     * После выполнения кода вызывается метод unregisterEvalInfo().
      *
-     * @param string $type
-     * @param string $name
-     * @return string
+     * @param string $type тип выполняемого объекта (Snippet или Plugin)
+     * @param string $name имя выполняемого объекта (имя сниппета или плагина)
+     * @return null|string уникальный идентификатор выполняемого объекта устанавливаемй в методе addToEvalStack() дебагера
      */
     public function registerEvalInfo($type, $name)
     {
@@ -46,7 +57,8 @@ class Parser
     }
 
     /**
-     * @return array
+     * Общая информация о выполняемом на текущий момент объекте
+     * @return array массив данных о выполняемом на текущий момент объекте
      */
     public function getCurrentEval()
     {
@@ -54,10 +66,10 @@ class Parser
     }
 
     /**
-     * Unset eval type and name
+     * Удаление из стека объектов выполненного объекта
      *
-     * @param float $time
-     * @return void
+     * @param float $time время выполнения объекта
+     * @return bool этот метод всегда возвращает true
      */
     public function unregisterEvalInfo($time = 0.0)
     {
@@ -74,13 +86,15 @@ class Parser
         } else {
             $this->_eval_name = $this->_eval_type = $this->_eval_hash = null;
         }
+        return true;
     }
 
     /**
-     * Merge content fields and TVs
+     * Подстановка значений плейсхолдеров и ТВ параметров документа
+     * Пример плейсхолдера: [*placeholder_name*]
      *
-     * @param string $content
-     * @return string
+     * @param string $content текст в котором следует произвести замену
+     * @return string обработаная строка
      */
     public function mergeDocumentContent($content)
     {
@@ -108,10 +122,11 @@ class Parser
     }
 
     /**
-     * Merge system settings
+     * Подстановка значений системных настроек
+     * Пример плейсхолдера: [(config_name)]
      *
-     * @param string $content
-     * @return string
+     * @param string $content текст в котором следует произвести замену
+     * @return string обработаная строка
      */
     public function mergeSettingsContent($content)
     {
@@ -131,10 +146,11 @@ class Parser
     }
 
     /**
-     * Merge chunks
+     * Подстановка содержимого чанков в текст
+     * Пример плейсхолдера: {{chunk_name}}
      *
-     * @param string $content
-     * @return string
+     * @param string $content текст в котором следует произвести замену
+     * @return string обработаная строка
      */
     public function mergeChunkContent($content)
     {
@@ -169,10 +185,11 @@ class Parser
     }
 
     /**
-     * Merge placeholder values
+     * Подстановка значений плейсхолдеров в текст
+     * Пример плейсхолдера: [+placeholder_name+]
      *
-     * @param string $content
-     * @return string
+     * @param string $content текст в котором следует произвести замену
+     * @return string обработаная строка
      */
     public function mergePlaceholderContent($content)
     {
@@ -198,10 +215,17 @@ class Parser
     }
 
     /**
-     * Parses a resource property string and returns the result as an array
+     * Перевод строки параметров в ассоциативный массив параметров
+     * Пример строки:
+     *      &nameA=Имя параметра A;text;Значение параметра A &nameB=Имя параметра B;list;Вариант 1,Вариант 2,Вариант 3;Вариант 2
+     * Пример массива на выходе:
+     *      array(
+     *          'nameA' => 'Значение параметра А',
+     *          'nameB' => 'Вариант 2'
+     *      )
      *
-     * @param string $propertyString
-     * @return array Associative array in the form property name => property value
+     * @param string $propertyString разбираемая стркока параметров
+     * @return array ассоциативный массив с параметрами array('имя параметра' => 'значение')
      */
     public function parseProperties($propertyString)
     {
@@ -224,10 +248,12 @@ class Parser
     }
 
     /**
-     * @param $content
-     * @param string $left
-     * @param string $right
-     * @return array
+     * Поиск Bolmer|MODX тегов в тексте
+     *
+     * @param $content разбираемая строка
+     * @param string $left префикс тега
+     * @param string $right постфикс тега
+     * @return array массив обнаруженых тегов
      */
     public function getTagsFromContent($content, $left = '[+', $right = '+]')
     {
@@ -336,7 +362,9 @@ class Parser
     }
 
     /**
-     * @return array
+     * Получение всех плейсхолдеров зарегистрированных на странице на текущий момент
+     *
+     * @return array массив плейсхолдеров
      */
     public function getPlaceholders()
     {
@@ -466,8 +494,13 @@ class Parser
     }
 
     /**
-     * @param $content
-     * @return mixed
+     * Вызов сниппетов указанных в обрабатываемом тексте
+     * Пример плейсхолдеров:
+     *      [[snippet_name]]
+     *      [!snippet_name!]
+     *
+     * @param string $content текст в котором следует произвести замену
+     * @return string обработаная строка
      */
     public function mergeSnippetsContent($content)
     {
@@ -475,10 +508,11 @@ class Parser
     }
 
     /**
-     * Convert URL tags [~...~] to URLs
+     * Подстановка ссылок на документы Bolmer|MODX
+     * Пример плейсхолдера: [~id_документа~]
      *
-     * @param string $documentSource
-     * @return string
+     * @param string $documentSource текст в котором следует произвести замену
+     * @return string обработаная строка
      */
     public function rewriteUrls($documentSource)
     {
@@ -519,12 +553,14 @@ class Parser
     }
 
     /**
-     * @param $pre
-     * @param $suff
-     * @param $alias
-     * @param int $isfolder
-     * @param int $id
-     * @return string
+     * Trailing Slash для ссылок на документы контейнеры
+     *
+     * @param string $pre префикс для автоматической подстановки к алиасу документа
+     * @param string $suff суффикс для автоматической подстановки к алиасу документа
+     * @param string $alias алиас документа
+     * @param int $isfolder является ли документ контейнером
+     * @param int $id ID документа
+     * @return string обработанная ссылка
      */
     public function makeFriendlyURL($pre, $suff, $alias, $isfolder = 0, $id = 0)
     {
@@ -540,8 +576,10 @@ class Parser
     }
 
     /**
-     * @param $text
-     * @return mixed
+     * Формирование ссылки с корректым расширением имени файла
+     *
+     * @param string $text ссылка
+     * @return string обработанная ссылка
      */
     public function toAlias($text)
     {
