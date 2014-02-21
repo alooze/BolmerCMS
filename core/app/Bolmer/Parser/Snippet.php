@@ -21,14 +21,11 @@ class Snippet
      */
     public function getSnippetId()
     {
-        if ($this->_core->currentSnippet) {
-            $tbl = $this->_core->getTableName("BSnippet");
-            $rs = $this->_core->db->query("SELECT id FROM $tbl WHERE name='" . $this->_core->db->escape($this->_core->currentSnippet) . "' LIMIT 1");
-            $row = @ $this->_core->db->getRow($rs);
-            if ($row['id'])
-                return $row['id'];
+        $id = 0;
+        if ($this->getSnippetName()) {
+            $id = (int)\Bolmer\Model\BSnippet::filter('getItem', $this->getSnippetName())->id;
         }
-        return 0;
+        return $id;
     }
 
     /**
@@ -54,16 +51,10 @@ class Snippet
             $snippet = $this->_core->snippetCache[$snippetName];
             $properties = $this->_core->snippetCache[$snippetName . "Props"];
         } else { // not in cache so let's check the db
-            $sql = "SELECT `name`, `snippet`, `properties` FROM " . $this->_core->getTableName("BSnippet") . " WHERE " . $this->_core->getTableName("BSnippet") . ".`name`='" . $this->_core->db->escape($snippetName) . "';";
-            $result = $this->_core->db->query($sql);
-            if ($this->_core->db->getRecordCount($result) == 1) {
-                $row = $this->_core->db->getRow($result);
-                $snippet = $this->_core->snippetCache[$row['name']] = $row['snippet'];
-                $properties = $this->_core->snippetCache[$row['name'] . "Props"] = $row['properties'];
-            } else {
-                $snippet = $this->_core->snippetCache[$snippetName] = "return false;";
-                $properties = '';
-            }
+            $row = \Bolmer\Model\BPlugin::where('disabled', 0)->filter('getItem', $snippetName, true);
+
+            $snippet = $this->_core->snippetCache[$row['name']] = getkey($row, 'snippet', 'return false;');
+            $properties = $this->_core->snippetCache[$row['name'] . "Props"] = getkey($row, 'properties');
         }
         // load default params/properties
         $parameters = $this->_inj['parser']->parseProperties($properties);
@@ -275,25 +266,13 @@ class Snippet
                 $snippetObject['properties'] = $this->_core->snippetCache[$snip_name . 'Props'];
             }
         } else {
-            $tbl_snippets = $this->_core->getTableName('BSnippet');
-            $esc_snip_name = $this->_core->db->escape($snip_name);
             // get from db and store a copy inside cache
-            $result = $this->_core->db->select('name,snippet,properties', $tbl_snippets, "name='{$esc_snip_name}'");
-            $added = false;
-            if ($this->_core->db->getRecordCount($result) == 1) {
-                $row = $this->_core->db->getRow($result);
-                if ($row['name'] == $snip_name) {
-                    $snippetObject['name'] = $row['name'];
-                    $snippetObject['content'] = $this->_core->snippetCache[$snip_name] = $row['snippet'];
-                    $snippetObject['properties'] = $this->_core->snippetCache[$snip_name . 'Props'] = $row['properties'];
-                    $added = true;
-                }
-            }
-            if ($added === false) {
-                $snippetObject['name'] = $snip_name;
-                $snippetObject['content'] = $this->_core->snippetCache[$snip_name] = 'return false;';
-                $snippetObject['properties'] = '';
-            }
+            $row = \Bolmer\Model\BSnippet::filter('getItem', $snip_name, true);
+
+            $snippetObject['name'] = getkey($row, 'name', $snip_name);
+            $snippetObject['content'] = $this->_core->snippetCache[$snip_name] = getkey($row, 'snippet', 'return false;');
+            $snippetObject['properties'] = $this->_core->snippetCache[$snip_name . 'Props'] = getkey($row, 'properties');
+
         }
         return $snippetObject;
     }

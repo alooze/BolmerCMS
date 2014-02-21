@@ -51,8 +51,8 @@ if(!defined('MGR_DIR') && is_dir("{$base_path}manager"))
 	define('MGR_DIR','manager');
 if(is_file($base_path . 'assets/cache/siteHostnames.php'))
     include_once($base_path . 'assets/cache/siteHostnames.php');
-if(!defined('MODX_SITE_HOSTNAMES'))
-	define('MODX_SITE_HOSTNAMES','');
+if(!defined('BOLMER_SITE_HOSTNAMES'))
+	define('BOLMER_SITE_HOSTNAMES','');
 
 // get start time
 $tstart = microtime(true);//isset($_SERVER['REQUEST_TIME_FLOAT']) ? $_SERVER['REQUEST_TIME_FLOAT'] : microtime(true);
@@ -79,8 +79,8 @@ define("IN_ETOMITE_PARSER", "true"); // provides compatibility with etomite 0.6 
 define("IN_PARSER_MODE", "true");
 define("IN_MANAGER_MODE", "false");
 
-if (!defined('MODX_API_MODE')) {
-    define('MODX_API_MODE', false);
+if (!defined('BOLMER_API_MODE')) {
+    define('BOLMER_API_MODE', defined('MODX_API_MODE') ? MODX_API_MODE : false);
 }
 
 // initialize the variables prior to grabbing the config file
@@ -107,7 +107,7 @@ p{ margin:20px 0; }
 a{font-size:200%;color:#f22;text-decoration:underline;margin-top: 30px;padding: 5px;}
 </style>
 <div class=\"install\">
-<p>MODX is not currently installed or the configuration file cannot be found.</p>
+<p>Bolmer is not currently installed or the configuration file cannot be found.</p>
 <p>Do you want to <a href=\"install/index.php\">install now</a>?</p>
 </div>";
 		exit;
@@ -118,28 +118,28 @@ a{font-size:200%;color:#f22;text-decoration:underline;margin-top: 30px;padding: 
 startCMSSession();
 
 // initiate a new document parser
-include_once(MODX_MANAGER_PATH.'includes/document.parser.class.inc.php');
-$modx = new DocumentParser;
-$etomite = &$modx; // for backward compatibility
+include_once(BOLMER_MANAGER_PATH.'includes/document.parser.class.inc.php');
+$core = $modx = new DocumentParser;
+$etomite = $modx = &$core; // for backward compatibility
 
 // set some parser options
-$modx->minParserPasses = 1; // min number of parser recursive loops or passes
-$modx->maxParserPasses = 10; // max number of parser recursive loops or passes
-$modx->dumpSQL = false;
-$modx->dumpSnippets = false; // feed the parser the execution start time
-$modx->dumpPlugins = false;
-$modx->tstart = $tstart;
-$modx->mstart = $mstart;
+$core->minParserPasses = 1; // min number of parser recursive loops or passes
+$core->maxParserPasses = 10; // max number of parser recursive loops or passes
+$core->dumpSQL = false;
+$core->dumpSnippets = false; // feed the parser the execution start time
+$core->dumpPlugins = false;
+$core->tstart = $tstart;
+$core->mstart = $mstart;
 
 // Debugging mode:
-$modx->stopOnNotice = false;
+$core->stopOnNotice = false;
 
 // Don't show PHP errors to the public
 if(!isset($_SESSION['mgrValidated']) || !$_SESSION['mgrValidated']) {
     @ini_set("display_errors","0");
 }
 // execute the parser if index.php was not included
-if (!MODX_API_MODE) {
-    $modx->executeParser();
+if (!BOLMER_API_MODE) {
+    $core->executeParser();
 }
 ?>

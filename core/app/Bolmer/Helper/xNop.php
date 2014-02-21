@@ -47,4 +47,14 @@ class xNop
     {
         return '';
     }
+
+    /**
+     * __get
+     *
+     * @param $key
+     * @return null
+     */
+    public function __get($key){
+        return null;
+    }
 }

@@ -1,7 +1,12 @@
 <?php namespace Bolmer;
 
+use Granada\Orm\Wrapper as ORMWrapper;
+
 class Model extends \Granada\Model
 {
+    /** @var string $UKey поле с уникальным значением в таблице */
+    public static $UKey = 'id';
+
     public function save($CallEvents = false, $clearCache = false)
     {
         $q = $this->orm->save();
@@ -66,5 +71,35 @@ class Model extends \Granada\Model
             $model = static::factory(get_called_class());
             return call_user_func_array(array($model, $method), $parameters);
         }
+    }
+
+    /***********************************************************************/
+    /*                                                                     */
+    /*                       Заготовки фильтров                            */
+    /*                                                                     */
+    /***********************************************************************/
+    /**
+     * Получение информации о об элементе по его имени
+     * Пример выполнения запроса:
+     *      $row = \Bolmer\Model\BModelName::filter('getItem', $name, false);
+     *      $out = getkey($row, 'field_name', '');
+     *
+     *      $row = \Bolmer\Model\BModelName::filter('getItem', $name);
+     *      $row->field_name;
+     *
+     * @param ORMWrapper $orm
+     * @param string $name Имя чанка
+     * @param bool $asArray В каком виде получить данны (объект или массив)
+     * @return array
+     */
+    public static function getItem(ORMWrapper $orm, $name, $asArray = false)
+    {
+        $row = is_scalar($name) ? $orm->where(static::$UKey, $name)->find_one() : null;
+        if (!empty($row)) {
+            $out = $asArray ? $row->as_array() : $row;
+        } else {
+            $out = $asArray ? array() : new \Bolmer\Helper\xNop;
+        }
+        return $out;
     }
 }

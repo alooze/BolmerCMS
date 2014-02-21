@@ -164,17 +164,8 @@ class Parser
                     if (isset($this->_core->chunkCache[$matches[1][$i]])) {
                         $replace[$i] = $this->_core->chunkCache[$matches[1][$i]];
                     } else {
-                        $sql = 'SELECT `snippet` FROM ' . $this->getTableName('BChunk') . ' WHERE ' . $this->_core->getTableName('BChunk') . '.`name`="' . $this->_core->db->escape($matches[1][$i]) . '";';
-                        $result = $this->_core->db->query($sql);
-                        $limit = $this->_core->db->getRecordCount($result);
-                        if ($limit < 1) {
-                            $this->_core->chunkCache[$matches[1][$i]] = '';
-                            $replace[$i] = '';
-                        } else {
-                            $row = $this->_core->db->getRow($result);
-                            $this->_core->chunkCache[$matches[1][$i]] = $row['snippet'];
-                            $replace[$i] = $row['snippet'];
-                        }
+                        $row = \Bolmer\Model\BChunk::filter('getItem', $matches[1][$i]);
+                        $this->_core->chunkCache[$matches[1][$i]] = $replace[$i] = $row->snippet;
                     }
                 }
             }

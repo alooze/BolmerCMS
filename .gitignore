@@ -10,3 +10,4 @@ config.inc.php
 # except do not ignore .gitignore
 !.gitignore
 *\-bkp*
+/test.php

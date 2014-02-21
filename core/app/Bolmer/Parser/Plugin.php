@@ -120,16 +120,9 @@ class Plugin
                     $pluginCode = $this->_core->pluginCache[$pluginName];
                     $pluginProperties = isset($this->_core->pluginCache[$pluginName . "Props"]) ? $this->_core->pluginCache[$pluginName . "Props"] : '';
                 } else {
-                    $sql = "SELECT `name`, `plugincode`, `properties` FROM " . $this->_core->getTableName("BPlugin") . " WHERE `name`='" . $pluginName . "' AND `disabled`=0;";
-                    $result = $this->_core->db->query($sql);
-                    if ($this->_core->db->getRecordCount($result) == 1) {
-                        $row = $this->_core->db->getRow($result);
-                        $pluginCode = $this->_core->pluginCache[$row['name']] = $row['plugincode'];
-                        $pluginProperties = $this->_core->pluginCache[$row['name'] . "Props"] = $row['properties'];
-                    } else {
-                        $pluginCode = $this->_core->pluginCache[$pluginName] = "return false;";
-                        $pluginProperties = '';
-                    }
+                    $row = \Bolmer\Model\BPlugin::where('disabled', 0)->filter('getItem', $pluginName, true);
+                    $pluginCode = $this->_core->pluginCache[$row['name']] = getkey($row, 'plugincode', 'return false;');
+                    $pluginProperties = $this->_core->pluginCache[$row['name'] . "Props"] = getkey($row, 'properties');
                 }
 
                 // load default params/properties
