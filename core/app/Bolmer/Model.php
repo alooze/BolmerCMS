@@ -94,11 +94,30 @@ class Model extends \Granada\Model
      */
     public static function getItem(ORMWrapper $orm, $name, $asArray = false)
     {
-        $row = is_scalar($name) ? $orm->where(static::$UKey, $name)->find_one() : null;
+        $row = is_scalar($name) ? $orm->where(static::$UKey, $name)->filter('cached', 'find_one') : null;
         if (!empty($row)) {
             $out = $asArray ? $row->as_array() : $row;
         } else {
             $out = $asArray ? array() : new \Bolmer\Helper\xNop;
+        }
+        return $out;
+    }
+
+    /**
+     * Фильтр для выборочного кеширования запросов
+     *
+     * @param ORMWrapper $orm
+     * @param string $method метод которым стоит получить данные
+     * @return \Granada\Orm
+     */
+    public static function cached(ORMWrapper $orm, $method = 'find_one'){
+        $isCached = $orm->get_config('caching');
+        if(!$isCached){
+            $orm->configure('caching', true);
+        }
+        $out = $orm->$method();
+        if(!$isCached){
+            $orm->configure('caching', $isCached);
         }
         return $out;
     }
