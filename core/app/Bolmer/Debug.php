@@ -2,32 +2,62 @@
 
 class Debug
 {
+    /**
+     * @var array список SQL запросов
+     */
     protected $_queryCode = array();
+    /**
+     * @var array стек запуска элементов
+     */
     protected $_evalStack = array();
 
-    /** @var \Bolmer\Pimple $_inj */
+    /** @var \Bolmer\Pimple $_inj коллекция зависимостей*/
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+    /**
+     * Конструктор класса \Bolmer\Debug
+     *
+     * @param \Pimple $inj коллекция зависимостей
+     */
     public function __construct(\Pimple $inj)
     {
         $this->_inj = $inj;
         $this->_core = $inj['core'];
     }
 
+    /**
+     * Получение всего стека
+     *
+     * @return array
+     */
     public function getEvalStack()
     {
         return $this->_evalStack;
     }
 
+    /**
+     * Поиск элемента в стеке
+     *
+     * @param string $hash уникальный идентификатор по кторому нужно найти элемент в стеке
+     * @return null|array элемент из стека
+     */
     public function findEvalStack($hash)
     {
         return (!empty($hash) && is_scalar($hash) && isset($this->_evalStack[$hash])) ? $this->_evalStack[$hash] : null;
     }
 
-    public function setDataEvalStack($hash, $data, $value = 0)
+    /**
+     * Добавление инфомрации к записи в стеке
+     *
+     * @param string $hash уникальный идентификатор записи в стеке
+     * @param string $data ключ под которым нужно сохранить данные у записи
+     * @param int|string $value значение которое нужно сохранить у записи
+     * @return null|array элемент из стека найденный по уникальному идентификатору $hash
+     */
+    public function setDataEvalStack($hash, $data, $value = null)
     {
         $stack = $this->findEvalStack($hash);
         if (!empty($stack)) {
@@ -36,16 +66,28 @@ class Debug
         return $stack;
     }
 
+    /**
+     * Добавление элемента (сниппета/плагина) в стек
+     *
+     * @param string $type тип элемента (сниппет/плагин)
+     * @param string $name имя элемента
+     * @return null|string уникальный идентификатор записи в стеке
+     */
     public function addToEvalStack($type, $name)
     {
-        $self = null;
+        $hash = null;
         if (is_scalar($type) && (is_scalar($name) || is_null($name))) {
-            $self = md5(time() . $type . $name);
-            $this->_evalStack[$self] = compact('self', 'type', 'name');
+            $hash = md5(time() . $type . $name);
+            $this->_evalStack[$hash] = compact('self', 'type', 'name');
         }
-        return $self;
+        return $hash;
     }
 
+    /**
+     * Построение древовидного стека запуска сниппетов/плагинов
+     *
+     * @return array
+     */
     public function buildTreeEvalStack()
     {
         $tree = $this->getEvalStack();
@@ -54,6 +96,12 @@ class Debug
         return $tree;
     }
 
+    /**
+     * Добавление SQL запроса со временем выполнения в стек
+     *
+     * @param string $q SQL запрос
+     * @param int $time время выполнения запроса
+     */
     public function addQuery($q, $time = 0)
     {
         $this->_core->queryTime += $time;
@@ -62,6 +110,11 @@ class Debug
         $this->_queryCode[] = '[' . sprintf("%2.5f", $time) . '] ' . $q;
     }
 
+    /**
+     * Показать стек SQL запросов
+     *
+     * @return string строка со списоком SQL запросов для подстановки в HTML код страницы
+     */
     public function showQuery()
     {
         return implode("<br />", $this->_queryCode);
@@ -126,6 +179,18 @@ class Debug
         return $detected;
     }
 
+    /**
+     * @param string $msg текст ошибки
+     * @param string $query текст SQL запроса
+     * @param bool $is_error остановка парсера во время ошибки или по требованию
+     * @param string $nr номер ошибки
+     * @param string $file файл в котором произошла ошибка
+     * @param string $source источник в котором произошла ошибка (Сниппет/плагин/файл)
+     * @param string $text описание ошибки
+     * @param string $line строка на которой произошла ошибка
+     * @param string $output дополнительный текст для вывода в таблицу с ошибкой
+     * @return bool
+     */
     function messageQuit($msg = 'unspecified error', $query = '', $is_error = true, $nr = '', $file = '', $source = '', $text = '', $line = '', $output = '')
     {
         $version = $this->_core->getVersionData('version');
@@ -312,6 +377,12 @@ class Debug
         exit;
     }
 
+    /**
+     * Подготовка таблицы со стеком вызова функций и методов
+     *
+     * @param array $backtrace стек вызова
+     * @return string HTML таблица
+     */
     function get_backtrace($backtrace)
     {
 
