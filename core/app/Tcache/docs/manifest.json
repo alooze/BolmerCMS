@@ -1,9 +1,0 @@
-{
-    "title": "CacheCache",
-    "home": "../README.md",
-    "github": "maximebf/CacheCache",
-    "files": [
-        "usage.md",
-        "backends.md"
-    ]
-}
