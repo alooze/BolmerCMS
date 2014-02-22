@@ -121,9 +121,9 @@ class DB
         return $rs;
     }
 
-    /*function freeResult($rs) {
-        mysql_free_result($rs);
-    }*/
+    function freeResult($rs) {
+        $rs = null;
+    }
 
     /**
      * @param ORM $rs
