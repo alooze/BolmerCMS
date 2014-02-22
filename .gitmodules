@@ -4,3 +4,6 @@
 [submodule "core/app/Granada"]
 	path = core/app/Granada
 	url = https://github.com/BolmerCMS/Granada.git
+[submodule "core/app/Tcache"]
+	path = core/app/Tcache
+	url = https://github.com/BolmerCMS/Tcache.git
