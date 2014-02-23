@@ -8,6 +8,11 @@ class Snippet
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+	/**
+     * @var array массив соответствий имен сниппетов - анонимным функциям
+     */
+    protected $_lambdaFunction = array();
+	
     /**
      * Конструктор класса \Bolmer\Parser\Snippet
      *
@@ -19,6 +24,30 @@ class Snippet
         $this->_core = $inj['core'];
     }
 
+	/**
+     * Добавление анонимной функции в стек
+     *
+     * @param string $key ключ в массиве по которому можно будет обратиться к анонимной функции
+     * @param \Closure $function функция
+     */
+    public function addLambdaFunction($key, $function){
+        $this->_lambdaFunction[$key] = $function;
+    }
+
+	/**
+	 * Получение анонимной функции из стека
+	 *
+	 * @param string $key Ключ по которому нужно изъять анонимную функцию в стеке функций
+     * @return \Closure функция вызываемая при обращении к сниппету
+	*/
+    public function getLambdaFunction($key){
+        $out = '';
+        if(array_key_exists($key, $this->_lambdaFunction)){
+            $out = $this->_lambdaFunction[$key];
+        }
+        return $out;
+    }
+	
     /**
      * Returns the id of the current snippet.
      *
@@ -79,7 +108,6 @@ class Snippet
     public function evalSnippet($___code, $___params, $___name = null)
     {
         if ($___code) {
-            $etomite = $modx = $core = & $this->_core;
             $this->_core->event->params = & $___params; // store params inside event object
             if (is_array($___params)) {
                 extract($___params, EXTR_SKIP);
@@ -88,7 +116,23 @@ class Snippet
             $this->_inj['debug']->setDataEvalStack($___hash, 'params', $___params);
             $time = $this->_core->getMicroTime();
             ob_start();
-            $___snip = eval($___code);
+            if(!$fName = $this->getLambdaFunction($___name)){
+                $fName = create_function('$core',
+                    '$etomite = $modx = $core;
+                     if (is_array($core->event->params)) {
+                        extract($core->event->params, EXTR_SKIP);
+                     }'.$___code
+                );
+                if($fName){
+                    die('TODO: error create function');
+                }
+            }
+            $this->addLambdaFunction($___name, $fName);
+            if(is_callable($fName)){
+                $___snip = call_user_func($fName, $this->_core);
+            }else{
+                $___snip = '';
+            }
             $___msg = ob_get_contents();
             ob_end_clean();
 
