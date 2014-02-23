@@ -105,7 +105,7 @@ class Snippet
                     }
                 }
             }
-            unset($this->_core->event->params);
+            unset($core->event->params);
             $this->_core->currentSnippet = '';
             if (is_array($___snip) || is_object($___snip)) {
                 return $___snip;
@@ -269,7 +269,7 @@ class Snippet
             $name = $call;
             $params = '';
         }
-        return array('name' => trim($name), 'params' => $params);
+        return array_merge($snip, array('name' => trim($name), 'params' => $params));
     }
 
     /**
