@@ -2,12 +2,17 @@
 
 class Document
 {
-    /** @var \Bolmer\Pimple $_inj */
+    /** @var \Bolmer\Pimple $_inj коллекция зависимостей */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+    /**
+     * Конструктор класса \Bolmer\Operations\Document
+     *
+     * @param \Pimple $inj коллекция зависимостей
+     */
     public function __construct(\Pimple $inj)
     {
         $this->_inj = $inj;
@@ -74,7 +79,7 @@ class Document
     /**
      * Get the parent docid of a document
      *
-     * @param int docid
+     * @param int $id ID документа
      * @return int
      */
     function getParentId($id)
@@ -188,7 +193,7 @@ class Document
      *                       Default: * (all fields)
      * @param string $where Where condition in SQL style. Should include a leading 'AND '
      *                      Default: Empty string
-     * @param type $sort Should be a comma-separated list of field names on which to sort
+     * @param string $sort Should be a comma-separated list of field names on which to sort
      *                    Default: menuindex
      * @param string $dir Sort direction, ASC and DESC is possible
      *                    Default: ASC
@@ -241,7 +246,7 @@ class Document
      *                       Default: * (all fields)
      * @param string $where Where condition in SQL style. Should include a leading 'AND '.
      *                      Default: Empty string
-     * @param type $sort Should be a comma-separated list of field names on which to sort
+     * @param string $sort Should be a comma-separated list of field names on which to sort
      *                    Default: menuindex
      * @param string $dir Sort direction, ASC and DESC is possible
      *                    Default: ASC
@@ -387,8 +392,9 @@ class Document
     /**
      * Get all db fields and TVs for a document/resource
      *
-     * @param type $method
-     * @param type $identifier
+     * @param string $method
+     * @param string $identifier
+     * @param bool $isPrepareResponse
      * @return array
      */
     public function getDocumentObject($method, $identifier, $isPrepareResponse = false)
@@ -480,12 +486,12 @@ class Document
      *
      * @param string $idname Can be a TV id or name
      * @param string $fields Fields to fetch from site_tmplvars. Default: *
-     * @param type $docid Docid. Defaults to empty string which indicates the current document.
+     * @param int $docid Docid. Defaults to empty string which indicates the current document.
      * @param int $published Whether published or unpublished documents are in the result
      *                        Default: 1
      * @return boolean
      */
-    public function getTemplateVar($idname = "", $fields = "*", $docid = "", $published = 1)
+    public function getTemplateVar($idname = "", $fields = "*", $docid = 0, $published = 1)
     {
         if ($idname == "") {
             return false;
@@ -507,7 +513,7 @@ class Document
      *                        Default: Empty array
      * @param string $fields Fields to fetch from site_tmplvars.
      *                        Default: *
-     * @param string $docid Docid. Defaults to empty string which indicates the current document.
+     * @param int $docid Docid. Defaults to empty string which indicates the current document.
      * @param int $published Whether published or unpublished documents are in the result
      *                        Default: 1
      * @param string $sort How to sort the result array (field)
@@ -516,7 +522,7 @@ class Document
      *                        Default: ASC
      * @return boolean|array
      */
-    public function getTemplateVars($idnames = array(), $fields = "*", $docid = "", $published = 1, $sort = "rank", $dir = "ASC")
+    public function getTemplateVars($idnames = array(), $fields = "*", $docid = 0, $published = 1, $sort = "rank", $dir = "ASC")
     {
         if (($idnames != '*' && !is_array($idnames)) || count($idnames) == 0) {
             return false;
@@ -524,7 +530,7 @@ class Document
             $result = array();
 
             // get document record
-            if ($docid == "") {
+            if (empty($docid)) {
                 $docid = $this->_core->documentIdentifier;
                 $docRow = $this->_core->documentObject;
             } else {
@@ -580,7 +586,7 @@ class Document
      *                      Default: 1
      * @param string $docsort How to sort the result array (field)
      *                      Default: menuindex
-     * @param ASC $docsortdir How to sort the result array (direction)
+     * @param string $docsortdir How to sort the result array (direction)
      *                      Default: ASC
      * @param string $tvfields Fields to fetch from site_tmplvars, default '*'
      *                      Default: *
@@ -674,7 +680,7 @@ class Document
      *                        Default: 1
      * @param string $docsort How to sort the result array (field)
      *                        Default: menuindex
-     * @param ASC $docsortdir How to sort the result array (direction)
+     * @param string $docsortdir How to sort the result array (direction)
      *                        Default: ASC
      * @return boolean|array
      */
@@ -697,16 +703,16 @@ class Document
     /**
      * Returns an associative array containing TV rendered output values.
      *
-     * @param type $idnames Which TVs to fetch - Can relate to the TV ids in the db (array elements should be numeric only)
+     * @param array $idnames Which TVs to fetch - Can relate to the TV ids in the db (array elements should be numeric only)
      *                                               or the TV names (array elements should be names only)
      *                        Default: Empty array
-     * @param string $docid Docid. Defaults to empty string which indicates the current document.
+     * @param int $docid Docid. Defaults to empty string which indicates the current document.
      * @param int $published Whether published or unpublished documents are in the result
      *                        Default: 1
      * @param string $sep
      * @return boolean|array
      */
-    public function getTemplateVarOutput($idnames = array(), $docid = "", $published = 1, $sep = '')
+    public function getTemplateVarOutput($idnames = array(), $docid = 0, $published = 1, $sep = '')
     {
         if (count($idnames) == 0) {
             return false;
@@ -735,7 +741,7 @@ class Document
     /**
      * Format alias to be URL-safe. Strip invalid characters.
      *
-     * @param string Alias to be formatted
+     * @param string $alias Alias to be formatted
      * @return string Safe alias
      */
     public function stripAlias($alias)
@@ -756,6 +762,12 @@ class Document
         }
     }
 
+    /**
+     * Поиск ID документа по его псевдониму
+     *
+     * @param string $alias псевдоним документа
+     * @return bool|int
+     */
     public function getIdFromAlias($alias)
     {
         $children = array();

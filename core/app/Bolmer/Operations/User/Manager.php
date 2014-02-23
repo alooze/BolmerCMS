@@ -2,12 +2,17 @@
 
 class Manager
 {
-    /** @var \Bolmer\Pimple $_inj */
+    /** @var \Bolmer\Pimple $_inj коллекция зависимостей */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+    /**
+     * Конструктор класса \Bolmer\Operations\User\Manager
+     *
+     * @param \Pimple $inj коллекция зависимостей
+     */
     public function __construct(\Pimple $inj)
     {
         $this->_inj = $inj;
@@ -71,6 +76,7 @@ class Manager
      * @param string $msg The message body
      * @param int $private Whether it is a private message, or not
      *                     Default : 0
+     * @return bool эта функция всегда возвращает true
      */
     public function sendAlert($type, $to, $from, $subject, $msg, $private = 0)
     {

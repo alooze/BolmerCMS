@@ -8,6 +8,11 @@ class Plugin
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+    /**
+     * Конструктор класса \Bolmer\Parser\Plugin
+     *
+     * @param \Pimple $inj коллекция зависимостей
+     */
     public function __construct(\Pimple $inj)
     {
         $this->_inj = $inj;

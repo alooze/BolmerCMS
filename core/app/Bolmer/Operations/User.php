@@ -2,12 +2,17 @@
 
 class User
 {
-    /** @var \Bolmer\Pimple $_inj */
+    /** @var \Bolmer\Pimple $_inj коллекция зависимостей */
     private $_inj = null;
 
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+    /**
+     * Конструктор класса \Bolmer\Operations\User
+     *
+     * @param \Pimple $inj коллекция зависимостей
+     */
     public function __construct(\Pimple $inj)
     {
         $this->_inj = $inj;

@@ -8,6 +8,11 @@ class Snippet
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+    /**
+     * Конструктор класса \Bolmer\Parser\Snippet
+     *
+     * @param \Pimple $inj коллекция зависимостей
+     */
     public function __construct(\Pimple $inj)
     {
         $this->_inj = $inj;
@@ -66,8 +71,9 @@ class Snippet
     /**
      * Run a snippet
      *
-     * @param string $snippet Code to run
-     * @param array $params
+     * @param string $___code Код который необходимо выполнить
+     * @param array $___params параметры сниппета
+     * @param string $___name имя сниппета
      * @return string
      */
     public function evalSnippet($___code, $___params, $___name = null)
@@ -99,7 +105,7 @@ class Snippet
                     }
                 }
             }
-            unset($core->event->params);
+            unset($this->_core->event->params);
             $this->_core->currentSnippet = '';
             if (is_array($___snip) || is_object($___snip)) {
                 return $___snip;
@@ -149,6 +155,12 @@ class Snippet
         return $stack;
     }
 
+    /**
+     * Выполнение сниппета с вызовом из шаблона
+     *
+     * @param $piece строка с вызовом сниппета
+     * @return string результат выполнения сниппета
+     */
     private function _get_snip_result($piece)
     {
         if ($this->_core->dumpSnippets == 1) $sniptime = $this->_core->getMicroTime();
@@ -232,8 +244,15 @@ class Snippet
         return $value . $except_snip_call;
     }
 
+    /**
+     * Разбор строки с вызовом сниппета
+     *
+     * @param string $src строка с вызовом сниппета
+     * @return array массив с именем сниппета и его параметрами
+     */
     private function _split_snip_call($src)
     {
+        $snip = array();
         list($call, $snip['except_snip_call']) = explode(']]', $src, 2);
         if (strpos($call, '?') !== false && strpos($call, "\n") !== false && strpos($call, '?') < strpos($call, "\n")) {
             list($name, $params) = explode('?', $call, 2);
@@ -250,14 +269,24 @@ class Snippet
             $name = $call;
             $params = '';
         }
-        $snip['name'] = trim($name);
-        $snip['params'] = $params;
-        return $snip;
+        return array('name' => trim($name), 'params' => $params);
     }
 
+    /**
+     * Получение информации о сниппете который необходимо выполнить
+     *
+     * @param array $snip_call
+     * @return array
+     */
     private function _get_snip_properties($snip_call)
     {
         $snip_name = $snip_call['name'];
+        $snippetObject = array(
+            'name' => '',
+            'content' => '',
+            'properties' => ''
+        );
+        $this->_core->snippetCache[$snip_name . 'Props'] = '';
 
         if (isset($this->_core->snippetCache[$snip_name])) {
             $snippetObject['name'] = $snip_name;
