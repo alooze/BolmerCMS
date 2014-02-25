@@ -40,4 +40,8 @@ class BDoc extends \Bolmer\Model
     public function publishUser(){
         return $this->has_one('\Bolmer\Model\BManagerUser', 'id', 'publishedby');
     }
+
+    public function docGroup() {
+        return $this->has_many('\Bolmer\Model\BDocGroupList', 'document', 'id');
+    }
 }
