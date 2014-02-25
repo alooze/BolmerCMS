@@ -7,13 +7,25 @@ class Model extends \Granada\Model
     /** @var string $UKey поле с уникальным значением в таблице */
     public static $UKey = 'id';
 
-    public function save($CallEvents = false, $clearCache = false)
+    /**
+     * Прослойка для сохранения объекта
+     *
+     * @param bool $CallEvents вызывать ли события заложенные в модели при сохранении объекта
+     * @param bool $clearCache производить ли полную очистку кеша после сохранения объекта
+     * @param bool $ignore Игнорировать существующую запись и на базе нее создать новую
+     * @return mixed статус сохранения объекта
+     */
+    public function save($CallEvents = false, $clearCache = false, $ignore = false)
     {
-        $q = $this->orm->save();
+        $q = parent::save($ignore);
         if ($clearCache) {
             getService('core')->clearCache('full', false);
         }
         return $q;
+    }
+
+    public function set($property, $value = null) {
+        return parent::set($property, $value);
     }
 
     public static function factory($class_name, $connection_name = null)
@@ -92,7 +104,7 @@ class Model extends \Granada\Model
      * @param bool $asArray В каком виде получить данны (объект или массив)
      * @return array
      */
-    public static function getItem(ORMWrapper $orm, $name, $asArray = false)
+    public function getItem(ORMWrapper $orm, $name, $asArray = false)
     {
         $row = is_scalar($name) ? $orm->where(static::$UKey, $name)->filter('cached', 'find_one') : null;
         if (!empty($row)) {
@@ -110,7 +122,7 @@ class Model extends \Granada\Model
      * @param string $method метод которым стоит получить данные
      * @return \Granada\Orm
      */
-    public static function cached(ORMWrapper $orm, $method = 'find_one')
+    public function cached(ORMWrapper $orm, $method = 'find_one')
     {
         $isCached = $orm->get_config('caching');
         if (!$isCached) {
@@ -130,7 +142,7 @@ class Model extends \Granada\Model
      * @param string $field имя поля по которому нужно сформировать результатирующий массив
      * @return array
      */
-    public static function makeArray(ORMWrapper $orm, $field)
+    public function makeArray(ORMWrapper $orm, $field)
     {
         $out = array();
         if (is_scalar($field)) {

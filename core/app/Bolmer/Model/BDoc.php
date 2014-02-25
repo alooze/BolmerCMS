@@ -16,4 +16,8 @@ class BDoc extends \Bolmer\Model
     {
         return $orm->where_equal('parent', $id);
     }
+
+    public function tv() {
+        return $this->has_many('\Bolmer\Model\BTvValue', 'contentid');
+    }
 }
