@@ -1,5 +1,7 @@
 <?php namespace Bolmer;
 
+use Bolmer\Helper\xNop;
+
 class Core
 {
     var $db; // db object
@@ -408,8 +410,9 @@ class Core
         } elseif ($this->getConfig('friendly_urls') == 1 && $alias == '') {
             $alias = $id;
             if ($this->getConfig('friendly_alias_urls') == 1) {
-                $al = $this->aliasListing[$id];
-                if ($al['isfolder'] === 1 && $this->getConfig('make_folders') === '1')
+                $al = isset($this->aliasListing[$id]) ? $this->aliasListing[$id] : array();
+                //$al = $this->aliasListing[$id];
+                if (isset($al['isfolder']) && $al['isfolder'] === 1 && $this->getConfig('make_folders') === '1')
                     $f_url_suffix = '/';
                 $alPath = !empty ($al['path']) ? $al['path'] . '/' : '';
                 if ($al && $al['alias'])
