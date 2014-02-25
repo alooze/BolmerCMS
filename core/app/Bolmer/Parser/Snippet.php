@@ -56,7 +56,7 @@ class Snippet
             $snippet = $this->_core->snippetCache[$snippetName];
             $properties = $this->_core->snippetCache[$snippetName . "Props"];
         } else { // not in cache so let's check the db
-            $row = \Bolmer\Model\BPlugin::where('disabled', 0)->filter('getItem', $snippetName, true);
+            $row = \Bolmer\Model\BSnippet::where('disabled', 0)->filter('getItem', $snippetName, true);
 
             $snippet = $this->_core->snippetCache[$row['name']] = getkey($row, 'snippet', 'return false;');
             $properties = $this->_core->snippetCache[$row['name'] . "Props"] = getkey($row, 'properties');
