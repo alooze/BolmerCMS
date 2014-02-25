@@ -6,4 +6,8 @@ class BSnippet extends \Bolmer\Model
     public static $UKey = 'name';
 
     public static $_table = 'site_snippets';
+
+    public function category(){
+        return $this->has_one('\Bolmer\Model\BCategory', 'id', 'category');
+    }
 }

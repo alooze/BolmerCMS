@@ -6,4 +6,8 @@ class BChunk extends \Bolmer\Model
     public static $UKey = 'name';
 
     public static $_table = 'site_htmlsnippets';
+
+    public function category(){
+        return $this->has_one('\Bolmer\Model\BCategory', 'id', 'category');
+    }
 }

@@ -6,4 +6,8 @@ class BPlugin extends \Bolmer\Model
     public static $UKey = 'name';
 
     public static $_table = 'site_plugins';
+
+    public function category(){
+        return $this->has_one('\Bolmer\Model\BCategory', 'id', 'category');
+    }
 }

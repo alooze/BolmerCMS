@@ -20,4 +20,24 @@ class BDoc extends \Bolmer\Model
     public function tv() {
         return $this->has_many('\Bolmer\Model\BTvValue', 'contentid');
     }
+
+    public function template(){
+        return $this->has_one('\Bolmer\Model\BTemplate', 'id', 'template');
+    }
+
+    public function createUser(){
+        return $this->has_one('\Bolmer\Model\BManagerUser', 'id', 'createdby');
+    }
+
+    public function deleteUser(){
+        return $this->has_one('\Bolmer\Model\BManagerUser', 'id', 'deletedby');
+    }
+
+    public function editUser(){
+        return $this->has_one('\Bolmer\Model\BManagerUser', 'id', 'editedby');
+    }
+
+    public function publishUser(){
+        return $this->has_one('\Bolmer\Model\BManagerUser', 'id', 'publishedby');
+    }
 }

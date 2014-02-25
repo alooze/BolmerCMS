@@ -11,6 +11,26 @@ class BManagerUser extends \Bolmer\Model
         return $this->belongs_to('\Bolmer\Model\BManagerUserAttr', 'id', 'internalkey');
     }
 
+    public function createDoc()
+    {
+        return $this->belongs_to('\Bolmer\Model\BDoc', 'id', 'createdby');
+    }
+
+    public function deleteDoc()
+    {
+        return $this->belongs_to('\Bolmer\Model\BDoc', 'id', 'deletedby');
+    }
+
+    public function editDoc()
+    {
+        return $this->belongs_to('\Bolmer\Model\BDoc', 'id', 'editedby');
+    }
+
+    public function publishDoc()
+    {
+        return $this->belongs_to('\Bolmer\Model\BDoc', 'id', 'publishedby');
+    }
+
     /**
      * SELECT mu.username, mu.password, mua.* FROM `manager_users` `mu` INNER JOIN `user_attributes` `mua` ON `mua`.`internalkey` = `mu`.`id` WHERE `mu`.`id` = '?' LIMIT 1
      */
