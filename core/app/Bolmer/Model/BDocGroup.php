@@ -13,4 +13,8 @@ class BDocGroup extends \Bolmer\Model
     public function webUserGroup() {
         return $this->has_many('\Bolmer\Model\BWebUserGroupDocGroup', 'documentgroup', 'id');
     }
+
+    public function mgrUserGroup() {
+        return $this->has_many('\Bolmer\Model\BManagerGroupDocGroup', 'documentgroup', 'id');
+    }
 }

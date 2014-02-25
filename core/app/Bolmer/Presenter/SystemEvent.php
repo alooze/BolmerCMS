@@ -8,6 +8,15 @@ class SystemEvent
     var $activated;
     var $activePlugin;
 
+    protected $_eventService = array(
+        1 => "Parser Service Events",
+        2 => "Manager Access Events",
+        3 => "Web Access Service Events",
+        4 => "Cache Service Events",
+        5 => "Template Service Events",
+        6 => "User Defined Events"
+    );
+
     /**
      * @param string $name Name of the event
      */
@@ -15,6 +24,26 @@ class SystemEvent
     {
         $this->_resetEventObject();
         $this->name = $name;
+    }
+
+    /**
+     * Получение имени группы событий плагинов
+     * @TODO: Переписать метод для работы с новой таблицей
+     *
+     * @param int $id ID События
+     * @param $default Имя группы по умолчанию
+     * @return string
+     */
+    public function getEventService($id, $default){
+        /**
+         * $out = $default;
+         * $service = \Bolmer\Model\BEventService::find_one($id);
+         * if(!empty($service)){
+         *      $out = $service->name;
+         * }
+         * return $out;
+         */
+        return getkey($this->_eventService, $id, $default);
     }
 
     /**

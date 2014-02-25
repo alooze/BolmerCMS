@@ -44,4 +44,12 @@ class BDoc extends \Bolmer\Model
     public function docGroup() {
         return $this->has_many('\Bolmer\Model\BDocGroupList', 'document', 'id');
     }
+
+    public function docKey() {
+        return $this->has_many('\Bolmer\Model\BDocKeywordList', 'content_id', 'id');
+    }
+
+    public function docMeta() {
+        return $this->has_many('\Bolmer\Model\BDocMetaList', 'content_id', 'id');
+    }
 }
