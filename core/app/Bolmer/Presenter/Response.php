@@ -106,6 +106,9 @@ class Response
         exit();
     }
 
+    /**
+     * Отправляет в браузер заголовок 401 Unauthorized
+     */
     public function sendUnauthorizedPage()
     {
         // invoke OnPageUnauthorized event
@@ -287,7 +290,9 @@ class Response
         return !$this->insideManager() ? true : false;
     }
 
-    # Returns true, install or interact when inside manager
+    /**
+     * Returns true, install or interact when inside manager
+     */ 
     public function insideManager()
     {
         $m = false;
@@ -302,6 +307,9 @@ class Response
         return $m;
     }
 
+    /**
+     * Перенаправляет запрос на адрес, согласно заданной политики Strict URL
+     */
     public function sendStrictURI()
     {
         // FIX URLs
