@@ -8,6 +8,10 @@ class HTML
     /** @var \Bolmer\Core $_core */
     protected $_core = null;
 
+    /**
+     * Конструктор
+     * @param Pimple $inj
+     */
     public function __construct(\Pimple $inj)
     {
         $this->_inj = $inj;
@@ -15,10 +19,10 @@ class HTML
     }
 
     /**
-     * Displays a javascript alert message in the web browser
-     *
-     * @param string $msg Message to show
-     * @param string $url URL to redirect to
+     * Создает с помощью javascript всплывающее сообщение в браузере (alert)
+     * 
+     * @param string $msg текст сообщения
+     * @param string $url URL для редиректа
      */
     public function webAlert($msg, $url = "")
     {
@@ -162,11 +166,19 @@ class HTML
         $this->regClientScript($html, true);
     }
 
+    /**
+     * Возвращает все скрипты, зарегистрированные для подключения
+     * @return string
+     */
     public function getRegisteredClientScripts()
     {
         return implode("\n", $this->_core->jscripts);
     }
 
+    /**
+     * Возвращает все скрипты, зарегистрированные для подключения в <head>
+     * @return string
+     */
     public function getRegisteredClientStartupScripts()
     {
         return implode("\n", $this->_core->sjscripts);
