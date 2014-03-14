@@ -24,10 +24,27 @@ class Model extends \Granada\Model
         return $q;
     }
 
+    /**
+     * Устанавливает значение атрибута
+     * @param string $property имя атрибута
+     * @param mixed $value значение атрибута
+     * 
+     */
     public function set($property, $value = null) {
         return parent::set($property, $value);
     }
 
+    /**
+     * Метод завод используется для получения экземпляров данного класса. 
+     * Имя класса задается в виде строки, а класс 
+     * должен быть уже подключен. Этот метод возвращает обертку для ORM объекта, 
+     * который позволяет запрос к базе данных должны быть построены. 
+     * Обертка служит для возвращения экземпляров соответствующего класса, когда 
+     * вызваны его методы find_one или find_many.
+     * @param string $class_name имя класса
+     * @param string $connection_name внутреннее название подключения к БД
+     * @return mixed 
+     */
     public static function factory($class_name, $connection_name = null)
     {
         $table_name = static::_get_table_name($class_name);
@@ -44,6 +61,11 @@ class Model extends \Granada\Model
         return $wrapper;
     }
 
+    /**
+     * Возвращает полное название таблицы в БД по названию класса
+     * @param string $class_name название класса
+     * @return string полное название таблицы в БД
+     */
     protected static function _get_table_name($class_name)
     {
         $specified_table_name = static::_get_static_property($class_name, '_table');
@@ -54,6 +76,13 @@ class Model extends \Granada\Model
         return $specified_table_name;
     }
 
+    
+    /**
+     * Возвращает полное название таблицы в БД 
+     * @param string $className название класса
+     * @param string $connection_name внутреннее название подключения к БД
+     * @return string полное название таблицы в БД
+     */
     public static function getFullTableName($className = '', $connection_name = null)
     {
         $class_name = $className ? (get_class() . '\\' . $className) : get_called_class();
@@ -68,6 +97,12 @@ class Model extends \Granada\Model
         return static::getTable($table_name, $connection_name);
     }
 
+    /**
+     * Возвращает полное название таблицы в БД 
+     * @param string $name название класса
+     * @param string $connection внутреннее название подключения к БД
+     * @return string полное название таблицы в БД
+     */
     public static function getTable($name, $connection)
     {
         $prefix = \Granada\Orm\Wrapper::get_config('prefix', $connection);
@@ -77,6 +112,12 @@ class Model extends \Granada\Model
         return $name;
     }
 
+    /**
+     * Магический метод для вызова статических методов  
+     * @param string $method название метода
+     * @param array $parameters параметры вызова метода
+     * @return mixed
+     */
     public static function __callStatic($method, $parameters)
     {
         if (function_exists('get_called_class')) {
