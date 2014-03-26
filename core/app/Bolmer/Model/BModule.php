@@ -7,4 +7,12 @@ class BModule extends \Bolmer\Model
     public function category(){
         return $this->has_one('\Bolmer\Model\BCategory', 'id', 'category');
     }
+
+    /**
+     * @TODO: связь с создателем
+     */
+
+    /**
+     * @TODO: связь с редакттором
+     */
 }

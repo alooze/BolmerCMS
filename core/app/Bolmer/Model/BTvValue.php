@@ -9,4 +9,8 @@ class BTvValue extends \Bolmer\Model
     public function doc() {
         return $this->belongs_to('\Bolmer\Model\BDoc', 'contentid');
     }
+
+    /**
+     * @TODO: связь с ТВ
+     */
 }

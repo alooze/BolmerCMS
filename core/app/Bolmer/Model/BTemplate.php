@@ -11,4 +11,12 @@ class BTemplate extends \Bolmer\Model
     public function category(){
         return $this->has_one('\Bolmer\Model\BCategory', 'id', 'category');
     }
+
+    /**
+     * @TODO: Непонятный тип шаблона
+     */
+
+    /**
+     * @TODO: Неиспользуемая иконка шаблона
+     */
 }

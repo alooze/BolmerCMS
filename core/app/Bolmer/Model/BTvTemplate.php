@@ -3,4 +3,8 @@
 class BTvTemplate extends \Bolmer\Model
 {
     public static $_table = 'site_tmplvar_templates';
+
+    /**
+     * @TODO: связь ТВ с шаблонами
+     */
 }

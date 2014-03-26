@@ -3,4 +3,8 @@
 class BManagerLog extends \Bolmer\Model
 {
     public static $_table = 'manager_log';
+
+    /**
+     * @TODO: связь с менеджерами
+     */
 }

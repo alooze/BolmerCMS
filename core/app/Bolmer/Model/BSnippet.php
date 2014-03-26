@@ -10,4 +10,8 @@ class BSnippet extends \Bolmer\Model
     public function category(){
         return $this->has_one('\Bolmer\Model\BCategory', 'id', 'category');
     }
+
+    /**
+     * @TODO: связь с модулем
+     */
 }

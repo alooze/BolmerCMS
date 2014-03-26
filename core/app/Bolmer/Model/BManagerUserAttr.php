@@ -8,4 +8,9 @@ class BManagerUserAttr extends \Bolmer\Model
     {
         return $this->has_one('\Bolmer\Model\BManagerUser', 'id', 'internalKey');
     }
+
+
+    /**
+     * @TODO: Связь с ролью
+     */
 }
