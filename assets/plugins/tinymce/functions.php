@@ -476,9 +476,8 @@ class TinyMCE
 		$mce_path = $params['mce_path'];
 		$mce_url  = $params['mce_url'];
 		
-		$ph['cmsurl']  = MODX_MANAGER_URL . 'media/browser/mcpuk/browser.php?Connector=';
-		$ph['cmsurl'] .= MODX_MANAGER_URL . 'media/browser/mcpuk/connectors/php/connector.php&manager_url=';
-		$ph['cmsurl'] .= MODX_MANAGER_URL . "&editor=tinymce&editorpath={$mce_url}";
+		$ph['cmsurl']  = MODX_MANAGER_URL . 'media/browser/mcpuk/browse.php?cms='.CMS_NAME.'&lang='.$modx->getShortLangName($modx->getConfig('manager_language'));
+		$ph['cmsurl'] .= "&editor=tinymce&editorpath={$mce_url}";
 		$modx_fb = file_get_contents("{$mce_path}js/modx_fb.js.inc");
 		
 		foreach($ph as $name => $value)
