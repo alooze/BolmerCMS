@@ -1301,4 +1301,12 @@ class Core
         $listhtml .= $ordered == true ? $tabs . "</ol>\n" : $tabs . "</ul>\n";
         return $listhtml;
     }
+
+    public function getShortLangName($name){
+       $alias = array(
+           'russian' => 'ru',
+           'russian-UTF8' => 'ru'
+       );
+       return getkey($alias, $name, 'en');
+    }
 }

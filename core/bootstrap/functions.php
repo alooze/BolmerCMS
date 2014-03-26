@@ -137,7 +137,7 @@ if ( ! function_exists('with'))
 // start cms session
 if(!function_exists('startCMSSession')) {
     function startCMSSession(){
-        global $site_sessionname;
+        $site_sessionname = getkey(getService('global_config'), 'site_sessionname');
         session_name($site_sessionname);
         session_start();
         $cookieExpiration = $cookieLifetime = 0;
