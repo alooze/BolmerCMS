@@ -5,6 +5,7 @@
 /assets/cache/*
 /assets/.thumbs/*
 /assets/images/.thumbs/*
+/.idea/*
 
 # and the config file
 /manager/includes/config.inc.php
