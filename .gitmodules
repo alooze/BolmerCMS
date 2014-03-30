@@ -7,3 +7,6 @@
 [submodule "core/app/Tcache"]
 	path = core/app/Tcache
 	url = https://github.com/BolmerCMS/Tcache.git
+[submodule "install"]
+	path = install
+	url = git@github.com:BolmerCMS/install.git
